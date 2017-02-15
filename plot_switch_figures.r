@@ -8,7 +8,8 @@ library(ggplot2)
 library(dplyr)
 
 
-source('C:/Users/EC/Desktop/Plot Switch/summarySE.r')
+source('summarySE.r')
+source('rodent_abundance_by_period_and_plot.r')
 
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -68,7 +69,7 @@ granivores  = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF'
 smgran = c('BA','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')
 
 alldat = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent.csv',stringsAsFactors = F)
-source('C:/Users/EC/Dropbox/Thesis/ch2/rodent_energy_by_period_and_plot.r')
+source('rodent_energy_from_wgt.r')
 
 rmass = alldat %>% filter(period>420,period %in% fullcensus$period, 
                species %in% smgran,
