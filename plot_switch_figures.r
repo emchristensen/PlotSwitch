@@ -6,6 +6,7 @@ library(vegan)
 library(reshape)
 library(ggplot2)
 library(dplyr)
+library(RCurl)
 
 
 source('summarySE.r')
@@ -21,8 +22,9 @@ treatment = data.frame(treatment = c('CX','CE','EE','CC',
                                      'EC','CC','EE','XX',
                                      'CC','EC','EE','EE',
                                      'EE','CE','XX','XC'),plot=seq(1,24))
-
-trapping = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent_trapping.csv')
+http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
+trapping = read.csv(text=getURL(http)) 
+#trapping = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent_trapping.csv')
 trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
 plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
 fullcensus = plotstrapped[plotstrapped$x>20,]
