@@ -21,7 +21,7 @@ trapdat = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent_tra
 allplots = aggregate(trapdat$Sampled,by=list(period=trapdat$Period),FUN=sum) %>% filter(x>22)
 
 # create table of species abundances: 1989 - 2015 so we can use more k-rat removal plots
-absabund = rdat %>% filter(period>129, period< 437, period %in% allplots$period, species %in% rodents, plot %in% c(2,4,8,11,12,14,17,22,3,6,13,15,18,19,20,21)) %>% 
+absabund = rdat %>% filter(period>380, period< 437, period %in% allplots$period, species %in% rodents, plot %in% c(2,4,8,11,12,14,17,22,3,6,13,15,18,19,20,21)) %>% 
   select(period,plot,species) 
 counts = aggregate(absabund$species,by=list(period=absabund$period,plot=absabund$plot,species=absabund$species),FUN=length)
 counttable = data.frame(reshape(counts,timevar='species',idvar=c('period','plot'),direction='wide')) %>% arrange(period,plot)
@@ -55,7 +55,7 @@ ldamodel6 = LDA(dat,6,control=list(estimate.alpha=F,alpha=.5, nstart = nstart),m
 
 
 # composition of component communities, to identify most important species
-structure(round(exp(ldamodel2@beta), 3), dimnames = list(NULL, ldamodel2@terms))
+structure(round(exp(ldamodel4@beta), 3), dimnames = list(NULL, ldamodel4@terms))
 
 
 # ===========================================
@@ -92,7 +92,7 @@ plot_component_communities = function(ldamodel,k,index,treatment) {
 index = countstreatment[,1:2]
 
 # plots
-plot_component_communities(ldamodel2,2,index,'C')
+plot_component_communities(ldamodel2,2,index,'E')
 plot_component_communities(ldamodel3,3,index,'C')
 plot_component_communities(ldamodel4,4,index,'E')
 plot_component_communities(ldamodel5,5,index,'E')
