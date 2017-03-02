@@ -10,9 +10,11 @@ library(dplyr)
 # This function was made specifically for working with the 2015 plot switch
 
 
-rodent_abundance = function(rdat,
-                            targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH'),
-                            start_period = 130) {
+rodent_abundance = function(species='All') {
+  library(RCurl)
+  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
+  rdat = read.csv(text=getURL(http),as.is=T,na.strings = '')
+
   
   # filter data by desired species; remove early trapping periods; exclude "Removed" animals (R in note5)
   rdat_filtered = filter(rdat, species %in% targetsp, period >= start_period)

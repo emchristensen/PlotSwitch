@@ -6,6 +6,7 @@ library(vegan)
 library(reshape)
 library(ggplot2)
 library(dplyr)
+library(RCurl)
 
 #setwd('C:/Users/EC/Desktop/git/PlotSwitch')
 source('summarySE.r')
@@ -24,11 +25,13 @@ treatment = data.frame(treatment = c('CX','CE','EE','CC',
                                      'CC','EC','EE','EE',
                                      'EE','CE','XX','XC'),plot=seq(1,24))
 
+http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
+trapping = read.csv(text=getURL(http)) 
+
 allrodents = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')
 granivores  = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')
 smgran = c('BA','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')
 
-trapping = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent_trapping.csv')
 trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
 plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
 fullcensus = plotstrapped[plotstrapped$x>20,]
