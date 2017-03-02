@@ -47,10 +47,10 @@ make_dipo_data = function(){
   # adding sampling date to the dipo table
   
   first_date = trapping %>% select(Period,date) %>% group_by(Period) %>% summarise_each(funs(min), date)
-  first_date = rename(first_date, c("Period"="period"))
+  first_date = rename(first_date,period=Period)
   
   dipo_gam = left_join(dipos, first_date)
-  dipo_gam = rename(dipo_gam, c("x" = "DipoN"))
+  dipo_gam = rename(dipo_gam, DipoN = x)
   dipo_gam = dipo_gam %>% mutate(month = as.numeric(format(date, "%m")),
                      Year = as.numeric(format(date, "%Y")),
                      Time = as.numeric(date) / 1000)
