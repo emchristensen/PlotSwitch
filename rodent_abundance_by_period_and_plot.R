@@ -3,26 +3,23 @@ library(dplyr)
 
 # ======================================================================================
 # Function to tally captures by species, period, and plot
-# Parameter: species='All' for all rodent species
-#                    'Granivore' for just granivores
+# Parameters: rdat = rodent capture data, as in Portal_rodent.csv
+#             targetsp = list of species desired; default is all target rodent species
+#             start_period = first period number of data desired; default is 130 (1989)
 
-# This function is specifically for working with the 2015 plot switch; it excludes periods
-# before 1988 (periods 1-129)
+# This function was made specifically for working with the 2015 plot switch
 
-rodent_abundance = function(species='All') {
-  
-  
-  rdat = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent.csv',as.is=T,na.strings = '')
+
+rodent_abundance = function(rdat,
+                            targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH'),
+                            start_period = 130) {
   
   # filter data by desired species; remove early trapping periods; exclude "Removed" animals (R in note5)
-  if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
-  if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
-  
-  rdat = filter(rdat, species %in% targetsp, period > 129)
-  rdat = rdat[(is.na(rdat$note5) | rdat$note5 %in% c('E','D')),]
+  rdat_filtered = filter(rdat, species %in% targetsp, period >= start_period)
+  #rdat_filtered = rdat_filtered[(is.na(rdat_filtered$note5) | rdat_filtered$note5 %in% c('E','D')),]
   
   # aggregate by species, plot, period
-  byspecies = aggregate(rdat$species,by=list(period = rdat$period, plot = rdat$plot,species = rdat$species),FUN=length)
+  byspecies = aggregate(rdat_filtered$species,by=list(period = rdat_filtered$period, plot = rdat_filtered$plot,species = rdat_filtered$species),FUN=length)
   
   plottype = data.frame(plot = seq(1,24),type_before=c('C','C','E','C','X','E','X','C','C','X','C','C','E','C','E','X','C','E','E','E','E','C','X','X'),
                         type_after=c('X','E','E','C','C','C','C','E','X','X','C','X','C','C','E','X','C','C','E','E','E','E','X','C'),stringsAsFactors = F)
@@ -32,3 +29,5 @@ rodent_abundance = function(species='All') {
   return(byspecies_merge)
 }
 
+#rdat = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent.csv',as.is=T,na.strings = '')
+#rodents = rodent_abundance(rdat)
