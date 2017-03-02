@@ -10,9 +10,9 @@ library(dplyr)
 # before 1988 (periods 1-129)
 
 rodent_abundance = function(species='All') {
-  
-  
-  rdat = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent.csv',as.is=T,na.strings = '')
+  library(RCurl)
+  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
+  rdat = read.csv(text=getURL(http),as.is=T,na.strings = '')
   
   # filter data by desired species; remove early trapping periods; exclude "Removed" animals (R in note5)
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
