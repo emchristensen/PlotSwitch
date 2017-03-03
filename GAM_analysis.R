@@ -1,3 +1,12 @@
+############ Running GAMs on Plot Switch ########
+#
+# Current state: technically fits GAMs to each treatment
+#                Dipo data only
+# TO DO: 1) Add negative binomial model
+#        2) Add autocorrelation residual structure
+#        3) Plot confidence intervals on trend fits
+#################################################
+
 library(dplyr)
 library(RCurl)
 library(mgcv)
@@ -8,7 +17,7 @@ ylab = "# of Dipos"
 
 dipo_data = make_dipo_data()
   
-# Seasonal GAM on CC plots only, no autocorrelation correction
+##### CC Plots 
 CC = dipo_data %>% filter(treatment == "CC") %>% arrange(date)
 m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC)
 
@@ -31,7 +40,7 @@ EC = dipo_data %>% filter(treatment == "EC") %>% arrange(date)
 plot(DipoN ~ date, data = EC, type = "p", ylab = ylab)
 abline(v=16.52)
 
-# Seasonal GAM on EC plots only, no autocorrelation correction
+# Seasonal GAM on EC plots 
 m_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = EC)
 gam_diagnostics(m_EC, "EC no AR")
 
@@ -52,7 +61,7 @@ XC = dipo_data %>% filter(treatment == "XC") %>% arrange(date)
 plot(DipoN ~ date, data = XC, type = "p", ylab = ylab)
 abline(v=16.52)
 
-# Seasonal GAM on EC plots only, no autocorrelation correction
+# Seasonal GAM on XC plots 
 m_XC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC)
 gam_diagnostics(m_XC, "XC no AR")
 
