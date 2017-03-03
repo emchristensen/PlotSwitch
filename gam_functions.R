@@ -60,12 +60,12 @@ make_dipo_data = function(){
 gam_diagnostics = function(model, title){
   
   layout(matrix(1:2, ncol = 2))
-  plot(m_CC$gam, scale = 0, main = title)
+  plot(model$gam, scale = 0, main = title)
   layout(1)
   
   layout(matrix(1:2, ncol = 2))
-  acf(resid(m_CC$lme), lag.max = 36, main = "ACF")
-  pacf(resid(m_CC$lme), lag.max = 36, main = "pACF")
+  acf(resid(model$lme), lag.max = 36, main = "ACF")
+  pacf(resid(model$lme), lag.max = 36, main = "pACF")
   layout(1)
-  return(summary(m_CC$gam))
+  return(summary(model$gam))
 }
