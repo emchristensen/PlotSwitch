@@ -11,6 +11,7 @@ make_prediction = function(data, model, numpredictions=50){
                                 month = month[want]))
   p  <- predict(model$gam,  newdata = pdat, type = "terms", se.fit = TRUE)
   pdat <- transform(pdat, p  = p$fit[,2], p_raw=p$fit[,2] +avg, se  = p$se.fit[,2])
+  pdat = pdat %>% mutate(lower = p_raw - 1.96*se, upper = p_raw + 1.96*se)
   return(pdat)
 }
 
