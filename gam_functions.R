@@ -70,3 +70,24 @@ gam_diagnostics = function(model, title){
   layout(1)
   return(summary(model$gam))
 }
+  
+plot_singleGAM = function(data, title, ylab, treatment){
+  if (treatment == 'CC'){
+    lincol= 'blue'
+    title = paste("Control -", title, sep= " ")
+  } else if (treatment == 'EC'){
+    lincol='green'
+    title = paste("Krat Exclosure -", title, sep= " ")
+  } else {
+    lincol='red'
+    title = paste("Removals -", title, sep= " ")
+    }
+  transition = as.Date("2015-03-15", format="%Y-%m-%d")
+  ggplot(aes(x=date, y=p_raw), data = data) +
+    geom_ribbon(aes(ymin=lower, ymax=upper), fill='gray90') +
+    geom_line(color=lincol) +
+    geom_vline(xintercept =  as.numeric(transition)) +
+    ggtitle("Dipodomys response to plot flip (uncorrelated errors & gaussian)") +
+    xlab("Date") + ylab("Dipodomys abundance per plot") +
+    theme_classic()
+}
