@@ -14,9 +14,11 @@ library(ggplot2)
 
 source('gam_functions.R')
 
-ylab = "# of Dipos"
-
+##### Items for all Dipo analyses
 dipo_data = make_dipo_data()
+GAM_type = 'uncorrelated errors/gaussian'
+Ylab = 'Dipodomys abundance/plot'
+
   
 ##### CC Plots 
 CC = dipo_data %>% filter(treatment == "CC") %>% arrange(date)
@@ -24,20 +26,14 @@ CC$plot = as.factor(CC$plot)
 m_CC_plot <- gamm(DipoN ~ plot + s(month, bs = "cc", k = 12) + s(Time), data = CC)
 m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC)
 
-# plot trend on data
+# create trend info 
 CC_trend = make_prediction(CC,m_CC)
 op <- par(mar = c(5,4,2,2) + 0.1)
 
-transition = as.Date("2015-03-15", format="%Y-%m-%d")
-plot_CC = ggplot(aes(x=date, y=p_raw), data = CC_trend) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), data= CC_trend,fill='gray90') +
-  geom_line(color='blue') +
-  geom_vline(xintercept =  as.numeric(transition)) +
-  ggtitle("Dipodomys response to plot flip (uncorrelated errors & gaussian)") +
-  xlab("Date") + ylab("Dipodomys abundance per plot") +
-  theme_classic()
+# plot gam results
+plot_singleGAM(CC_trend, GAM_type, Ylab, "CC")
 
-plot_CC
+
               
 ######  EC PLOTS ###############
 EC = dipo_data %>% filter(treatment == "EC") %>% arrange(date)
@@ -52,6 +48,8 @@ EC_trend = make_prediction(EC,m_EC)
 
 op <- par(mar = c(5,4,2,2) + 0.1)
 
+plot_singleGAM(EC_trend, GAM_type, Ylab, "EC")
+
 ######  XC PLOTS ###############
 XC = dipo_data %>% filter(treatment == "XC") %>% arrange(date)
 plot(DipoN ~ date, data = XC, type = "p", ylab = ylab)
@@ -62,8 +60,9 @@ m_XC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC)
 gam_diagnostics(m_XC, "XC no AR")
 
 XC_trend = make_prediction(XC,m_XC)
-
 op <- par(mar = c(5,4,2,2) + 0.1)
+
+plot_singleGAM(XC_trend, GAM_type, Ylab, "XC")
 
 ######## Plot all plots together, with CI ################
 ggplot(aes(x=date, y=p_raw), data = CC_trend) +

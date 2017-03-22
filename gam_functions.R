@@ -75,7 +75,7 @@ plot_singleGAM = function(data, title, ylab, treatment){
   if (treatment == 'CC'){
     lincol= 'blue'
     title = paste("Control -", title, sep= " ")
-  } else if (treatment == 'EC'){
+  } else if (treatment == 'XC'){
     lincol='green'
     title = paste("Krat Exclosure -", title, sep= " ")
   } else {
@@ -87,7 +87,7 @@ plot_singleGAM = function(data, title, ylab, treatment){
     geom_ribbon(aes(ymin=lower, ymax=upper), fill='gray90') +
     geom_line(color=lincol) +
     geom_vline(xintercept =  as.numeric(transition)) +
-    ggtitle("Dipodomys response to plot flip (uncorrelated errors & gaussian)") +
+    ggtitle(title) +
     xlab("Date") + ylab("Dipodomys abundance per plot") +
     theme_classic()
 }
