@@ -10,6 +10,7 @@
 library(dplyr)
 library(RCurl)
 library(mgcv)
+library(ggplot2)
 
 source('gam_functions.R')
 
@@ -19,22 +20,25 @@ dipo_data = make_dipo_data()
   
 ##### CC Plots 
 CC = dipo_data %>% filter(treatment == "CC") %>% arrange(date)
+CC$plot = as.factor(CC$plot)
+m_CC_plot <- gamm(DipoN ~ plot + s(month, bs = "cc", k = 12) + s(Time), data = CC)
 m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC)
-
-gam_diagnostics(m_CC, "CC no AR")
 
 # plot trend on data
 CC_trend = make_prediction(CC,m_CC)
 op <- par(mar = c(5,4,2,2) + 0.1)
 
-plot(DipoN  ~ date, data = CC, type = "p", 
-     ylab = ylab)
-abline(v=as.Date("2015-03-15", format="%Y-%m-%d"))
-lines(p_raw  ~ date, data = CC_trend, col = "black")
-legend("topleft", legend = c("Uncorrelated Errors"), lty = 1, lwd = c(1,1,1))
-par(op)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+plot_CC = ggplot(aes(x=date, y=p_raw), data = CC_trend) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), data= CC_trend,fill='gray90') +
+  geom_line(color='blue') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Dipodomys response to plot flip (uncorrelated errors & gaussian)") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
 
-
+plot_CC
+              
 ######  EC PLOTS ###############
 EC = dipo_data %>% filter(treatment == "EC") %>% arrange(date)
 plot(DipoN ~ date, data = EC, type = "p", ylab = ylab)
@@ -47,14 +51,6 @@ gam_diagnostics(m_EC, "EC no AR")
 EC_trend = make_prediction(EC,m_EC)
 
 op <- par(mar = c(5,4,2,2) + 0.1)
-
-plot(DipoN  ~ date, data = EC, type = "p", 
-     ylab = ylab)
-abline(v=as.Date("2015-03-15", format="%Y-%m-%d"))
-lines(p_raw  ~ date, data = EC_trend, col = "black")
-lines(p_raw ~ date, data = CC_trend, col = "blue")
-legend("topleft", legend = c("Uncorrelated Errors"), lty = 1, lwd = c(1,1,1))
-par(op)
 
 ######  XC PLOTS ###############
 XC = dipo_data %>% filter(treatment == "XC") %>% arrange(date)
@@ -69,11 +65,17 @@ XC_trend = make_prediction(XC,m_XC)
 
 op <- par(mar = c(5,4,2,2) + 0.1)
 
-plot(DipoN  ~ date, data = XC, type = "p", 
-     ylab = ylab)
-abline(v=as.Date("2015-03-15", format="%Y-%m-%d"))
-lines(p_raw  ~ date, data = XC_trend, col = "black")
-lines(p_raw ~ date, data = CC_trend, col = "blue")
-lines(p_raw ~ date, data = EC_trend, col = 'green')
-legend("topleft", legend = c("Uncorrelated Errors"), lty = 1, lwd = c(1,1,1))
-par(op)
+######## Plot all plots together, with CI ################
+ggplot(aes(x=date, y=p_raw), data = CC_trend) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), data= CC_trend,fill='gray90') +
+  geom_line(color='blue') +
+  geom_ribbon(aes(ymin=lower, ymax=upper), data= EC_trend,fill='gray90') +
+  geom_line(color='green', data = EC_trend) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), data= XC_trend,fill='gray90') +
+  geom_line(color='red', data = XC_trend) +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Dipodomys response to plot flip (uncorrelated errors & gaussian)") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+
+
