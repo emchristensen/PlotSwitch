@@ -65,6 +65,7 @@ op <- par(mar = c(5,4,2,2) + 0.1)
 plot_singleGAM(XC_trend, GAM_type, Ylab, "XC")
 
 ######## Plot all plots together, with CI ################
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
 ggplot(aes(x=date, y=p_raw), data = CC_trend) +
   geom_ribbon(aes(ymin=lower, ymax=upper), data= CC_trend,fill='gray90') +
   geom_line(color='blue') +
