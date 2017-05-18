@@ -66,12 +66,14 @@ abline(v=16.52)
 transition = as.Date("2015-03-15", format="%Y-%m-%d")
 ggplot(aes(x=date, y=p_raw), data = CC_trend) +
   geom_ribbon(aes(ymin=lower, ymax=upper), data= CC_trend,fill='gray90') +
-  geom_line(color='blue') +
+  geom_line(color='red') +
   geom_ribbon(aes(ymin=lower, ymax=upper), data= EC_trend,fill='gray90') +
   geom_line(color='green', data = EC_trend) +
   geom_ribbon(aes(ymin=lower, ymax=upper), data= XC_trend,fill='gray90') +
-  geom_line(color='red', data = XC_trend) +
-  geom_vline(xintercept =  as.numeric(transition)) +
+  geom_line(color='blue', data = XC_trend) +
+  geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
   ggtitle("Dipodomys response to plot flip (uncorrelated errors & gaussian)") +
   xlab("Date") + ylab("Dipodomys abundance per plot") +
-  theme_classic()
+  theme_classic() +
+  geom_point(aes(x=date,y=DipoN,color=treatment),data=dipo_data)
+
