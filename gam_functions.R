@@ -58,6 +58,14 @@ make_dipo_data = function(){
   return(dipo_gam)
 }
 
+trt_data = function(data){
+  data$plot = as.factor(data$plot)
+  CC = data %>% filter(treatment == "CC") %>% arrange(date)
+  EC = data %>% filter(treatment == "EC") %>% arrange(date)
+  XC = data %>% filter(treatment == "XC") %>% arrange(date)
+  return(list(CC,EC,XC))
+}
+
 gam_diagnostics = function(model, title){
   
   layout(matrix(1:2, ncol = 2))
