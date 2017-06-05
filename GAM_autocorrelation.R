@@ -44,27 +44,53 @@ lines(p_raw ~ date, data = CC5_trend, col = "blue")
 EC = dipo_data %>% filter(treatment == "EC") %>% arrange(date)
 m_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = EC)
 m1_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = EC, correlation = corARMA(form = ~ 1|Year, p = 1),
-              control = ctrl)
+              data = EC, correlation = corARMA(form = ~ 1|Year, p = 1))
 m2_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = EC, correlation = corARMA(form = ~ 1|Year, p = 2),
-              control = ctrl)
+              data = EC, correlation = corARMA(form = ~ 1|Year, p = 2))
 m3_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = EC, correlation = corARMA(form = ~ 1|Year, p = 3),
-              control = ctrl)
+              data = EC, correlation = corARMA(form = ~ 1|Year, p = 3))
 m4_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = EC, correlation = corARMA(form = ~ 1|Year, p = 4),
-              control = ctrl)
+              data = EC, correlation = corARMA(form = ~ 1|Year, p = 4))
 m5_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
               data = EC, correlation = corARMA(form = ~ 1|Year, p = 5),
               control = ctrl)
-m7_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 7),
-              control = ctrl)
+m7_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
+              data = EC, correlation = corARMA(form = ~ 1|Year, p = 7))
 
-anova(m_EC$lme, m1_EC$lme, m2_EC$lme, m3_EC$lme, m4_EC$lme, m5_EC$lme, m6_EC$lme)
-gam_diagnostics(m7_CC,'EC AR5')
+anova(m_EC$lme, m1_EC$lme, m2_EC$lme, m3_EC$lme, m4_EC$lme,m7_EC$lme)
+gam_diagnostics(m1_CC,'')
 
+# ===========================================================================================
+# EC plots starting at flip
+EC2 = read.csv('EC_startatswitch.csv')  # this file contains interpolations to estimate missing data from skipped months
+EC2$date = as.Date(EC2$date,format='%m/%d/%Y')
+m_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = EC2)
+m1_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
+              data = EC2, correlation = corARMA(form = ~ 1|Year, p = 1))
+m2_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
+              data = EC2, correlation = corARMA(form = ~ 1|Year, p = 2))
+m3_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
+              data = EC2, correlation = corARMA(form = ~ 1|Year, p = 3))
+m4_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
+              data = EC2, correlation = corARMA(form = ~ 1|Year, p = 4))
+m5_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
+              data = EC2, correlation = corARMA(form = ~ 1|Year, p = 5))
+m6_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
+              data = EC2, correlation = corARMA(form = ~ 1|Year, p = 6))
+
+anova(m_EC2$lme, m1_EC2$lme, m2_EC2$lme, m3_EC2$lme, m4_EC2$lme,m5_EC2$lme)
+gam_diagnostics(m_EC2,'')
+
+EC2_trend = make_prediction(EC2,m_EC2)
+plot_singleGAM(EC2_trend, GAM_type, Ylab, "EC")
+
+XC2 = read.csv('XC_startatswitch.csv')  # this file contains interpolations to estimate missing data from skipped months
+XC2$date = as.Date(XC2$date,format='%m/%d/%Y')
+m_XC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = XC2)
+gam_diagnostics(m_XC2,'')
+
+XC2_trend = make_prediction(XC2,m_XC2)
+plot_singleGAM(XC2_trend, GAM_type, Ylab, "XC")
 
 # =============================================================
 # http://multithreaded.stitchfix.com/blog/2015/07/30/gam/
