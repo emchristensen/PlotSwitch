@@ -2,7 +2,7 @@ library(dplyr)
 
 source('rodent_abundance_by_period_and_plot.r')
 
-make_prediction = function(data, model, numpredictions=50){
+make_prediction_gamm = function(data, model, numpredictions=50){
   
   # Make data to plot the trend line on the data
   avg = mean(data$DipoN)
@@ -11,6 +11,20 @@ make_prediction = function(data, model, numpredictions=50){
   pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
                                 month = month[want]))
   p  <- predict(model$gam,  newdata = pdat, type = "terms", se.fit = TRUE)
+  pdat <- transform(pdat, p  = p$fit[,2], p_raw=p$fit[,2] +avg, se  = p$se.fit[,2])
+  pdat = pdat %>% mutate(lower = p_raw - 1.96*se, upper = p_raw + 1.96*se)
+  return(pdat)
+}
+
+make_prediction_gam = function(data, model, numpredictions=50){
+  
+  # Make data to plot the trend line on the data
+  avg = mean(data$DipoN)
+  times = select(data,date,month,Time) %>% unique()
+  want <- seq(1, nrow(times), length.out = 50)
+  pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+  p  <- predict(model,  newdata = pdat, type = "terms", se.fit = TRUE)
   pdat <- transform(pdat, p  = p$fit[,2], p_raw=p$fit[,2] +avg, se  = p$se.fit[,2])
   pdat = pdat %>% mutate(lower = p_raw - 1.96*se, upper = p_raw + 1.96*se)
   return(pdat)
