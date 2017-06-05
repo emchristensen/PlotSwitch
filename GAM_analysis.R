@@ -26,10 +26,10 @@ XC = filtered_data[[3]]
 
 ##### CC Plots 
 m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC)
-gam_diagnostics(m_CC, "CC no AR")
+gamm_diagnostics(m_CC, "CC no AR")
 
 # create trend info 
-CC_trend = make_prediction(CC,m_CC)
+CC_trend = make_prediction_gamm(CC,m_CC)
 op <- par(mar = c(5,4,2,2) + 0.1)
 
 # plot gam results
@@ -41,9 +41,9 @@ plot(DipoN ~ date, data = EC, type = "p", ylab = ylab)
 
 # Seasonal GAM on EC plots 
 m_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = EC)
-gam_diagnostics(m_EC, "EC no AR")
+gamm_diagnostics(m_EC, "EC no AR")
 
-EC_trend = make_prediction(EC,m_EC)
+EC_trend = make_prediction_gamm(EC,m_EC)
 
 op <- par(mar = c(5,4,2,2) + 0.1)
 
@@ -55,9 +55,9 @@ plot(DipoN ~ date, data = XC, type = "p", ylab = ylab)
 
 # Seasonal GAM on XC plots 
 m_XC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC)
-gam_diagnostics(m_XC, "XC no AR")
+gamm_diagnostics(m_XC, "XC no AR")
 
-XC_trend = make_prediction(XC,m_XC)
+XC_trend = make_prediction_gamm(XC,m_XC)
 op <- par(mar = c(5,4,2,2) + 0.1)
 
 plot_singleGAM(XC_trend, GAM_type, Ylab, "XC")

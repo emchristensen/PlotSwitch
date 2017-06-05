@@ -81,7 +81,7 @@ trt_data = function(data){
   return(list(CC,EC,XC))
 }
 
-gam_diagnostics = function(model, title){
+gamm_diagnostics = function(model, title){
   
   layout(matrix(1:2, ncol = 2))
   plot(model$gam, scale = 0, main = title)
@@ -92,6 +92,19 @@ gam_diagnostics = function(model, title){
   pacf(resid(model$lme), lag.max = 36, main = "pACF")
   layout(1)
   return(summary(model$gam))
+}
+
+gam_diagnostics = function(model, title){
+  
+  layout(matrix(1:2, ncol = 2))
+  plot(model, scale = 0, main = title)
+  layout(1)
+  
+  layout(matrix(1:2, ncol = 2))
+  acf(resid(model), lag.max = 36, main = "ACF")
+  pacf(resid(model), lag.max = 36, main = "pACF")
+  layout(1)
+  return(summary(model))
 }
   
 plot_singleGAM = function(data, title, ylab, treatment){
