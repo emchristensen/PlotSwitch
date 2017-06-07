@@ -10,24 +10,25 @@ library(ggplot2)
 source('gam_functions.R')
 
 
+fam = Gamma
 # with dipo data
 dipo_data = make_dipo_data()
 CC = dipo_data %>% filter(treatment == "CC") %>% arrange(date)
-m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = CC)
+m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = CC, family = fam)
 m1_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-           data = CC, correlation = corARMA(form = ~ 1|Year, p = 1))
+           data = CC, correlation = corARMA(form = ~ 1|Year, p = 1), family = fam)
 m2_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 2))
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 2), family = fam)
 m3_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 3))
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 3), family = fam)
 m4_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 4))
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 4), family = fam)
 m5_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 5))
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 5),family = fam)
 m6_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 6))
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 6),family = fam)
 
-anova(m_CC$lme, m1_CC$lme, m2_CC$lme, m3_CC$lme, m4_CC$lme, m5_CC$lme, m6_CC$lme)
+anova(m_CC$lme, m1_CC$lme, m2_CC$lme)
 
 layout(matrix(1:2, ncol = 2))
 plot(m5_CC$gam, scale = 0)

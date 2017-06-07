@@ -16,7 +16,7 @@ GAM_type = 'uncorrelated errors/gaussian'
 Ylab = 'Dipodomys abundance/plot'
 
 ##### CC Plots -- GAMM
-m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC)
+m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family=poisson)
 gamm_diagnostics(m_CC, "CC no AR")
 
 # create trend info 
@@ -29,7 +29,7 @@ plot_singleGAM(CC_trend, GAM_type, Ylab, "CC")
 
 ###### CC Plots -- GAM
 m3 = gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family=poisson)
-CC_gamtrend = make_prediction_gam(CC,m)
+CC_gamtrend = make_prediction_gam(CC,m3)
 plot_singleGAM(CC_gamtrend, GAM_type, Ylab, "CC")
 gam_diagnostics(m3,'')
 gam.check(m3)
