@@ -25,7 +25,7 @@ EC = filtered_data[[2]]
 XC = filtered_data[[3]]
 
 ##### CC Plots 
-m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = filter(CC,plot=='4'))
+m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC)
 gamm_diagnostics(m_CC, "CC no AR")
 
 # create trend info 
