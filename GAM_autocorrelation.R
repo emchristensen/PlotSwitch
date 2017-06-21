@@ -65,7 +65,7 @@ gamm_diagnostics(m1_CC,'')
 # EC plots starting at flip
 EC2 = read.csv('EC_startatswitch.csv')  # this file contains interpolations to estimate missing data from skipped months
 EC2$date = as.Date(EC2$date,format='%m/%d/%Y')
-m_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = EC2)
+m_EC2 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = EC2, family=poisson)
 m1_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
               data = EC2, correlation = corARMA(form = ~ 1|Year, p = 1))
 m2_EC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
@@ -87,7 +87,7 @@ plot_singleGAM(EC2_trend, GAM_type, Ylab, "EC")
 
 XC2 = read.csv('XC_startatswitch.csv')  # this file contains interpolations to estimate missing data from skipped months
 XC2$date = as.Date(XC2$date,format='%m/%d/%Y')
-m_XC2 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = XC2)
+m_XC2 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = XC2)
 gamm_diagnostics(m_XC2,'')
 
 XC2_trend = make_prediction_gamm(XC2,m_XC2)
