@@ -2,9 +2,10 @@
 #
 # Current state: technically fits GAMs to each treatment
 #                Dipo data only
-# TO DO: 1) Add negative binomial model
-#        2) Add autocorrelation residual structure
-#        3) Plot confidence intervals on trend fits
+# TO DO: 1) Find acceptable means to evaluate/choose models
+#           - autocorrelation?  family?
+#           - can fit different models to different treatment types
+#
 #################################################
 
 library(dplyr)
@@ -25,11 +26,11 @@ EC = filtered_data[[2]]
 XC = filtered_data[[3]]
 
 ##### CC Plots 
-m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC)
-gamm_diagnostics(m_CC, "CC no AR")
+m_CC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family=Gamma)
+gam_diagnostics(m_CC, "CC no AR")
 
 # create trend info 
-CC_trend = make_prediction_gamm(CC,m_CC)
+CC_trend = make_prediction_gam(CC,m_CC)
 op <- par(mar = c(5,4,2,2) + 0.1)
 
 # plot gam results
@@ -40,10 +41,10 @@ plot(DipoN ~ date, data = EC, type = "p", ylab = ylab)
 
 
 # Seasonal GAM on EC plots 
-m_EC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = EC)
-gamm_diagnostics(m_EC, "EC no AR")
+m_EC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = EC)
+gam_diagnostics(m_EC, "EC no AR")
 
-EC_trend = make_prediction_gamm(EC,m_EC)
+EC_trend = make_prediction_gam(EC,m_EC)
 
 op <- par(mar = c(5,4,2,2) + 0.1)
 
@@ -54,10 +55,10 @@ abline(v=16.52)
 plot(DipoN ~ date, data = XC, type = "p", ylab = ylab)
 
 # Seasonal GAM on XC plots 
-m_XC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC)
-gamm_diagnostics(m_XC, "XC no AR")
+m_XC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC, family=poisson)
+gam_diagnostics(m_XC, "XC no AR")
 
-XC_trend = make_prediction_gamm(XC,m_XC)
+XC_trend = make_prediction_gam(XC,m_XC)
 op <- par(mar = c(5,4,2,2) + 0.1)
 
 plot_singleGAM(XC_trend, GAM_type, Ylab, "XC")
@@ -77,3 +78,9 @@ ggplot(aes(x=date, y=p_raw), data = CC_trend) +
   theme_classic() +
   geom_point(aes(x=date,y=DipoN,color=treatment),data=dipo_data)
 
+####################################
+#GAM evaluation
+gam.check(m_CC) # gives qqplots, residulas
+plot(residuals(m_CC)) # plot residuals over time
+plot(m_EC,residuals=T,pch=19)
+concurvity(m_CC)
