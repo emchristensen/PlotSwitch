@@ -1,7 +1,5 @@
 library(dplyr)
 
-source('rodent_abundance_by_period_and_plot.r')
-
 
 
 make_prediction_gam = function(data, model, numpredictions=50){
@@ -17,71 +15,6 @@ make_prediction_gam = function(data, model, numpredictions=50){
   pdat = pdat %>% mutate(lower = p_raw - 1.96*se, upper = p_raw + 1.96*se)
   return(pdat)
 }
-
-
-#' @title Make Dipo Data
-#' 
-#' @description make a data frame for running GAM models
-#' 
-#' @param
-#' 
-#' @return data frame with columns:
-#'            plot
-#'            period
-#'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
-#'            DipoN (number of DM, DO, DS summed)
-#'            date 
-#'            month
-#'            Year
-#'            Time
-#' 
-make_dipo_data = function(){
-  # Create species abundances by plot by period
-  byspecies = rodent_abundance('Granivore')
-
-  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
-  trapping = read.csv(text=RCurl::getURL(http)) 
-  trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
-  plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
-  fullcensus = plotstrapped[plotstrapped$x>20,]
-  
-  byspecies$type = paste(byspecies$type_before,byspecies$type_after,sep='')
-  
-  rdat = byspecies %>% 
-    filter(period>414, type %in% c('EC','CC','XC'), period %in% fullcensus$period) %>% 
-    select(plot,period,species,x,type)
-  
-  # number of dipos per plot
-  
-  d = filter(rdat,species %in% c('DM','DO','DS'))
-  dipos = aggregate(d$x,by=list(period=d$period,treatment=d$type,plot=d$plot),FUN=sum)
-  allplotsperiod = expand.grid(period=unique(dipos$period),plot=unique(dipos$plot))
-  allplotsperiod = merge(allplotsperiod,treatment)
-  
-  dipos = merge(allplotsperiod,dipos,all=T)
-  dipos$x[is.na(dipos$x)] = 0
-  
-  # adding sampling date to the dipo table
-  
-  first_date = trapping %>% select(Period,date) %>% group_by(Period) %>% summarise_each(funs(min), date)
-  first_date = rename(first_date,period=Period)
-  
-  dipo_gam = left_join(dipos, first_date)
-  dipo_gam = rename(dipo_gam, DipoN = x)
-  dipo_gam = dipo_gam %>% mutate(month = as.numeric(format(date, "%m")),
-                     Year = as.numeric(format(date, "%Y")),
-                     Time = as.numeric(date) / 1000)
-  return(dipo_gam)
-}
-
-trt_data = function(data){
-  data$plot = as.factor(data$plot)
-  CC = data %>% filter(treatment == "CC") %>% arrange(date)
-  EC = data %>% filter(treatment == "EC") %>% arrange(date)
-  XC = data %>% filter(treatment == "XC") %>% arrange(date)
-  return(list(CC,EC,XC))
-}
-
 
 
 gam_diagnostics = function(model, title){

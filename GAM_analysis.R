@@ -13,6 +13,7 @@ library(RCurl)
 library(mgcv)
 library(ggplot2)
 source('gam_functions.R')
+source('data_functions.R')
 
 
 GAM_type = 'uncorrelated errors/gaussian'
@@ -25,8 +26,9 @@ CC = filtered_data[[1]]
 EC = filtered_data[[2]]
 XC = filtered_data[[3]]
 
+
 ##### CC Plots 
-m_CC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family=Gamma)
+m_CC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family= poisson)
 gam_diagnostics(m_CC, "CC no AR")
 
 # create trend info 
@@ -37,7 +39,6 @@ op <- par(mar = c(5,4,2,2) + 0.1)
 plot_singleGAM(CC_trend, GAM_type, Ylab, "CC")
 
 ######  EC PLOTS ###############
-plot(DipoN ~ date, data = EC, type = "p", ylab = ylab)
 
 
 # Seasonal GAM on EC plots 
@@ -55,7 +56,7 @@ abline(v=16.52)
 plot(DipoN ~ date, data = XC, type = "p", ylab = ylab)
 
 # Seasonal GAM on XC plots 
-m_XC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC, family=poisson)
+m_XC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC)
 gam_diagnostics(m_XC, "XC no AR")
 
 XC_trend = make_prediction_gam(XC,m_XC)
