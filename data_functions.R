@@ -6,23 +6,43 @@ library(dplyr)
 #' 
 #' @param species species desired; either "All" or "Granivore"
 #' @param start_period first period number of data desired; default is 130 (1989)
+#' @param incomplete T/F, wheter or not to include incomplete censuses
 #' 
-#' @return data frame with columns 'plot', 'period', 'species', 'x' (abundance)
+#' @return data frame with columns 'plot', 'period', 'species', 'x' (abundance), 'date','month','Year','Time'
 
-rodent_abundance = function(species='All',start_period=130) {
+rodent_abundance = function(species='All',start_period=130,incomplete=F) {
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
   rdat = read.csv(text=RCurl::getURL(http),as.is=T,na.strings = '')
 
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
   if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
   
+  # Get trapping history in order to find and remove incomplete censuses
+  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
+  trapping = read.csv(text=RCurl::getURL(http)) 
+  trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
+  plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
+  fullcensus = plotstrapped[plotstrapped$x>=21,] #I'm using 21 instead of 24 because  I know period 457 only trapped 21 plots, but the skipped plots aren't used in this project
+  
   # filter data by desired species; remove early trapping periods
-  rdat_filtered = filter(rdat, species %in% targetsp, period >= start_period)
+  rdat_filtered = dplyr::filter(rdat, species %in% targetsp, period >= start_period)
+  
+  # if desired, remove incompete trapping periods
+  if (incomplete==F) {
+    rdat_filtered = filter(rdat_filtered, period %in% fullcensus$period)
+  }
   
   # aggregate by species, plot, period
   byspecies = aggregate(rdat_filtered$species,by=list(period = rdat_filtered$period, plot = rdat_filtered$plot,species = rdat_filtered$species),FUN=length)
   
-  return(byspecies)
+  # adding sampling date to the dipo table
+  first_date = trapping %>% select(Period,date) %>% group_by(Period) %>% summarise_each(funs(min), date)
+  byspecies_date = left_join(byspecies, first_date, by=c('period'='Period'))
+  byspecies_date = byspecies_date %>% mutate(month = as.numeric(format(date, "%m")),
+                                 Year = as.numeric(format(date, "%Y")),
+                                 Time = as.numeric(date) / 1000)
+  
+  return(byspecies_date)
 }
 
 
@@ -44,20 +64,12 @@ rodent_abundance = function(species='All',start_period=130) {
 
 make_dipo_data = function(){
   # Create species abundances by plot by period
-  byspecies = rodent_abundance('Granivore')
-  
-  # Get trapping history in order to find and remove incomplete censuses
-  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
-  trapping = read.csv(text=RCurl::getURL(http)) 
-  trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
-  plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
-  fullcensus = plotstrapped[plotstrapped$x>20,]
+  byspecies = rodent_abundance(species='Granivore',incomplete=F)
   
   # number of dipos per plot
   d = byspecies %>% 
-    filter(period>414, period %in% fullcensus$period, species %in% c('DM','DO','DS')) %>% 
-    select(plot,period,species,x)
-  dipos = aggregate(d$x, by=list(period=d$period, plot=d$plot), FUN=sum)
+    filter(period>414, species %in% c('DM','DO','DS'))
+  dipos = aggregate(d$x, by=list(period=d$period, plot=d$plot, date=d$date, month=d$month, Year=d$Year, Time=d$Time), FUN=sum)
   allplotsperiod = expand.grid(period=unique(dipos$period), plot=unique(dipos$plot))
   treatment = data.frame(treatment = c('CX','CE','EE','CC',
                                        'XC','EC','XC','CE',
@@ -68,16 +80,10 @@ make_dipo_data = function(){
   allplotsperiod = merge(allplotsperiod,treatment)
   dipos = merge(allplotsperiod,dipos,all=T)
   dipos$x[is.na(dipos$x)] = 0
+  dipos_gam =  rename(dipos,DipoN=x)
+  dipos_gam = dipos_gam[order(dipos_gam$period),]
   
-  # adding sampling date to the dipo table
-  first_date = trapping %>% select(Period,date) %>% group_by(Period) %>% summarise_each(funs(min), date)
-  dipo_gam = left_join(dipos, first_date, by=c('period'='Period'))
-  dipo_gam = rename(dipo_gam, DipoN = x)
-  dipo_gam = dipo_gam %>% mutate(month = as.numeric(format(date, "%m")),
-                                 Year = as.numeric(format(date, "%Y")),
-                                 Time = as.numeric(date) / 1000)
-  
-  return(dipo_gam)
+  return(dipos_gam)
 }
 
 
@@ -95,4 +101,39 @@ trt_data = function(data){
   EC = data %>% filter(treatment == "EC") %>% arrange(date)
   XC = data %>% filter(treatment == "XC") %>% arrange(date)
   return(list(CC,EC,XC))
+}
+
+
+
+#' @title Species richness
+#' 
+#' @description get species richness at period and plot level
+#' 
+#' @param rdat rodent data; column period, plot, species
+#' 
+#' @return data frame with period, plot, nsp (number of species)
+
+species_rich = function(rdat) {
+  
+  # count number of species in rodent data
+  richness = aggregate(rdat$species,
+                       by=list(period=rdat$period,plot=rdat$plot,date=rdat$date,month=rdat$month,Year=rdat$Year,Time=rdat$Time),
+                       FUN=unique)
+  for (n in 1:length(richness$period)) {
+    richness$nsp[n] = length(unlist(richness$x[n]))
+  }
+  
+  # make sure there are zeros where plot was trapped but nothing caught; add column for treatment type
+  allplotsperiod = expand.grid(period=unique(sprich$period), plot=unique(sprich$plot))
+  treatment = data.frame(treatment = c('CX','CE','EE','CC',
+                                       'XC','EC','XC','CE',
+                                       'CX','XX','CC','CX',
+                                       'EC','CC','EE','XX',
+                                       'CC','EC','EE','EE',
+                                       'EE','CE','XX','XC'),plot=seq(1,24))
+  allplotsperiod = merge(allplotsperiod,treatment)
+  sprich = merge(allplotsperiod,richness,all=T)
+  sprich$nsp[is.na(sprich$nsp)] = 0
+  
+  return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,Year,Time))
 }

@@ -1,11 +1,20 @@
 library(dplyr)
 
 
+#' @title Make GAM prediction
+#' 
+#' @description calculate predicted values from the model for plotting
+#' 
+#' @param data original dataset used for the GAM
+#' @param model output of gam model
+#' @param colname name of column from data to use as predictor
+#' @param numpredictions number of predictions
 
-make_prediction_gam = function(data, model, numpredictions=50){
+make_prediction_gam = function(data, model, colname, numpredictions=50){
+  data$x = data[,colname]
   
   # Make data to plot the trend line on the data
-  avg = mean(data$DipoN)
+  avg = mean(data$x)
   times = select(data,date,month,Time) %>% unique()
   want <- seq(1, nrow(times), length.out = 50)
   pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
@@ -30,7 +39,7 @@ gam_diagnostics = function(model, title){
   return(summary(model))
 }
   
-plot_singleGAM = function(data, title, ylab, treatment){
+plot_singleGAM = function(data, title='', ylab='', treatment){
   if (treatment == 'CC'){
     lincol= 'blue'
     title = paste("Control -", title, sep= " ")

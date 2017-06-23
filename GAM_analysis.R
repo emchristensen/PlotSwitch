@@ -9,7 +9,6 @@
 #################################################
 
 library(dplyr)
-library(RCurl)
 library(mgcv)
 library(ggplot2)
 source('gam_functions.R')
@@ -32,7 +31,7 @@ m_CC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family= po
 gam_diagnostics(m_CC, "CC no AR")
 
 # create trend info 
-CC_trend = make_prediction_gam(CC,m_CC)
+CC_trend = make_prediction_gam(CC,m_CC,colname='DipoN')
 op <- par(mar = c(5,4,2,2) + 0.1)
 
 # plot gam results
