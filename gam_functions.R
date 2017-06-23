@@ -9,6 +9,8 @@ library(dplyr)
 #' @param model output of gam model
 #' @param colname name of column from data to use as predictor
 #' @param numpredictions number of predictions
+#' 
+#' @return data frame with dates, predictions, and confidence intervals
 
 make_prediction_gam = function(data, model, colname, numpredictions=50){
   data$x = data[,colname]
@@ -25,6 +27,14 @@ make_prediction_gam = function(data, model, colname, numpredictions=50){
   return(pdat)
 }
 
+#' @title gam diagnostics
+#' 
+#' @description plots trends of gam and plots acf and pacf
+#' 
+#' @param model output of gam model
+#' @param title title of plot
+#' 
+#' @return summary info
 
 gam_diagnostics = function(model, title){
   
@@ -38,7 +48,17 @@ gam_diagnostics = function(model, title){
   layout(1)
   return(summary(model))
 }
-  
+
+
+#' @title plot single GAM
+#' 
+#' @description plots model predicion  
+#' 
+#' @param data output from make_prediction_gam
+#' @param title
+#' @param ylab yaxis label
+#' @param treatment treatment type for description purposes
+
 plot_singleGAM = function(data, title='', ylab='', treatment){
   if (treatment == 'CC'){
     lincol= 'blue'
