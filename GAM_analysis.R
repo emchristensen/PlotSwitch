@@ -27,7 +27,7 @@ XC = filtered_data[[3]]
 
 
 ##### CC Plots 
-m_CC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family= poisson)
+m_CC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family= Gamma(link=log))
 gam_diagnostics(m_CC, "CC no AR")
 
 # create trend info 
@@ -41,10 +41,10 @@ plot_singleGAM(CC_trend, GAM_type, Ylab, "CC")
 
 
 # Seasonal GAM on EC plots 
-m_EC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = EC)
+m_EC <- gam(DipoN ~ s(month, bs = "cc", k = 10) + s(Time), data = EC, family = Gamma(link=log))
 gam_diagnostics(m_EC, "EC no AR")
 
-EC_trend = make_prediction_gam(EC,m_EC)
+EC_trend = make_prediction_gam(EC,m_EC,colname='DipoN')
 
 op <- par(mar = c(5,4,2,2) + 0.1)
 
@@ -55,10 +55,10 @@ abline(v=16.52)
 plot(DipoN ~ date, data = XC, type = "p", ylab = ylab)
 
 # Seasonal GAM on XC plots 
-m_XC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC)
+m_XC <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC, family=Gamma)
 gam_diagnostics(m_XC, "XC no AR")
 
-XC_trend = make_prediction_gam(XC,m_XC)
+XC_trend = make_prediction_gam(XC,m_XC,colname='DipoN')
 op <- par(mar = c(5,4,2,2) + 0.1)
 
 plot_singleGAM(XC_trend, GAM_type, Ylab, "XC")
