@@ -8,38 +8,43 @@ library(RCurl)
 library(mgcv)
 library(ggplot2)
 source('gam_functions.R')
+source('gamm_functions.R')
 
 
 fam = Gamma
+ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
+knots <- list(nMonth = c(0.5, seq(1, 12, length = 10), 12.5))
 # with dipo data
 dipo_data = make_dipo_data()
 CC = dipo_data %>% filter(treatment == "CC") %>% arrange(date)
-m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time),data = CC, family = fam)
+
+m_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k= 20),data = CC, family = fam(link=log), knots = knots)
+
 m1_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-           data = CC, correlation = corARMA(form = ~ 1|Year, p = 1), family = fam)
+           data = CC, correlation = corARMA(form = ~ 1|Year, p = 1), family = fam(link=log), knots = knots)
 m2_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 2), family = fam)
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 2), family = fam(link=log), knots = knots)
 m3_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 3), family = fam)
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 3), family = fam(link=log), knots = knots)
 m4_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 4), family = fam)
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 4), family = fam(link=log), knots = knots)
 m5_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 5),family = fam)
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 5),family = fam(link=log), knots = knots)
 m6_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k = 20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 6),family = fam)
+              data = CC, correlation = corARMA(form = ~ 1|Year, p = 6),family = fam, knots = knots)
 
-anova(m_CC$lme, m1_CC$lme, m2_CC$lme)
-
+anova(m_CC$lme, m1_CC$lme)
+AIC(m_CC$lme,m1_CC$lme,m2_CC$lme,m3_CC$lme,m4_CC$lme,m5_CC$lme)
 layout(matrix(1:2, ncol = 2))
-plot(m5_CC$gam, scale = 0)
-acf(resid(m5_CC$lme,type='normalized'), lag.max = 36, main = "ACF")
-pacf(resid(m5_CC$lme,type='normalized'), lag.max = 36, main = "pACF")
+plot(m2_CC$gam, scale = 0)
+acf(resid(m2_CC$lme,type='normalized'), lag.max = 36, main = "ACF")
+pacf(resid(m2_CC$lme,type='normalized'), lag.max = 36, main = "pACF")
 layout(1)
 
-CC5_trend = make_prediction_gamm(CC,m5_CC)
+CC2_trend = make_prediction_gamm(CC,m2_CC)
 plot(DipoN  ~ date, data = CC, type = "p", 
      ylab = ylab)
-lines(p_raw ~ date, data = CC5_trend, col = "blue")
+lines(p_raw ~ date, data = CC2_trend, col = "blue")
 
 # EC plots
 EC = dipo_data %>% filter(treatment == "EC") %>% arrange(date)
