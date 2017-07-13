@@ -19,7 +19,7 @@ library(ggplot2)
 source('gam_functions.R')
 source('data_functions.R')
 ```
-## Load and Vizualize Data
+## Load Data
 
 Data is coming straight from the repo. This code is extracting the dipo a
 bundances from the straight controls (CC), and the opened krat (EC) and rodent 
@@ -35,12 +35,21 @@ XC = filtered_data[[3]]
 ```
 ## Control Plots
 
-To assess basic data family, I'm going to use a basic model structure:
+```{r}
+plot(DipoN ~ date, data=CC, col='blue')
+```
 
-$$ DipoN = s(Time) + s(season), DipoN ~ Gaussian$$
+
+As a starting point, we're going to use a basic time model structure:
+
+$$ DipoN = s(Time) + s(season), DipoN  Gaussian$$
 
 This structure has no interaction, no AR. A cc basis is used to account for
-seasonality, but this also **does not fix the knot problem Gavin highlighted**. 
+seasonality. We're starting with a Gaussian - even though it is unlikely to be
+the distribution family we want to use in the final product but it is an easy
+distribution to start implementing. Everything else is more...complicated. But
+our data is discrete count data, so Gaussian is not really appropriate
+.
 I'm starting in gam() because the two other distributions don't work in gamm()
 unless their parameters have already been estimated in gam().
 
@@ -307,9 +316,149 @@ p1 + geom_point(data=CC, aes(x=date,y=DipoN))
 
 ## Kangaroo Rat Exclosures
 
+Ok, here's what the data for the Kangaroo Rat Exclosures looks like:
 
+```{r}
+plot(DipoN ~ date, data=EC, col='green')
+```
+### Basic Model
 
+Here are a bunch of diagnostic plots for the basic model that includes the
+season and time effects as additive and does not include an AR model.
 
+```{r}
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+ec_0 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = EC, knots=knots,
+             method="REML")
+gam.check(ec_0$gam)
+```
 
+```{r}
+rsd <- residuals(ec_0)
+qq.gam(ec_0$gam,rep=100); 
+plot(ec_0$gam,residuals=TRUE,pch=19,cex=.3)
+```
 
-11
+The residuals deviate clearly from Gaussian. We have more zeros than we did 
+before. Clearly a Gaussian would not be anyone's first choice for this data.
+
+### Autoregressive Models
+
+```{r}
+plot(acf(resid(ec_0$lme, type = "normalized")))
+```
+```{r}
+plot(pacf(resid(ec_0$lme, type = "normalized")))
+```
+
+```{r}
+ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
+for (i in 1:8) {
+    ec <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = EC, 
+               control = ctrl, knots=knots, method="REML",
+               correlation = corARMA(form = ~ 1 | Year, p = i))
+    assign(paste0("ec_", i), ec) 
+}
+anova(ec_0$lme, ec_1$lme, ec_2$lme, ec_3$lme, ec_4$lme, ec_5$lme)
+```
+```{r}
+anova(ec_0$lme, ec_3$lme,ec_5$lme)
+```
+I think this is tell me that theres not much difference between these models. 
+
+I suspect that is because of the first half of the time series, the dependence
+of one month on the previous ones is supressed with the exclosures, and becomes
+re-established when they are opened to controls. We'll see what the interactive
+model says.
+
+### Season-Trend Interaction?
+
+AR3 has convergence issues, for reasons I don't understand. Could this be due to the fact that Gaussian is clearly wrong for this data? Or the high number of zeros? But then why to the others run? Here are the models that do run:
+
+```{r}
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+
+ec_X_0 <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),
+               data = EC, method = "REML", control = ctrl, knots = knots)
+
+ec_X_1 <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)), 
+               data = EC, method = "REML", control = ctrl, knots = knots,
+               correlation = corARMA(form = ~ 1 | Year, p = 1))
+ec_X_2 <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),
+               data = EC, method = "REML", control = ctrl, knots = knots,
+               correlation = corARMA(form = ~ 1 | Year, p = 2))
+ec_X_4 <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),
+               data = EC, method = "REML", control = ctrl, knots = knots,
+               correlation = corARMA(form = ~ 1 | Year, p = 4))
+ec_X_5 <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),
+               data = EC, method = "REML", control = ctrl, knots = knots,
+               correlation = corARMA(form = ~ 1 | Year, p = 5))
+
+anova(ec_X_0$lme, ec_X_1$lme, ec_X_2$lme, ec_X_4$lme, ec_X_5$lme)
+```
+```{r}
+anova(ec_X_0$lme, ec_X_5$lme)
+```
+
+Looks like the AR5 interaction model wins. Let's look at it to see if its worth
+assessing whether it is better than a strictly additive model.
+
+```{r}
+summary(ec_X_5$gam)
+```
+
+Huh, the interaction is singificant and the r2 isn't abyssmal.
+
+Let's look at the residual plots:
+
+```{r}
+gam.check(ec_X_5$gam)
+```
+
+Well, none of those look awesome. Clearly variance increases with mean, the
+residual histogram and qqplot is....odd. Gaussian still sucks.
+
+Let's see if the interaction is better than the additive model:
+
+```{r}
+phi <- unname(intervals(ec_X_5$lme, which = "var-cov")$corStruct[, 2])
+ec_X_5_test <- gamm(DipoN ~ s(Time, bs = "cr", k = 10) 
+                    + s(month, bs = "cc",k = 12) 
+                    + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
+                    data = EC, method = "ML", control = ctrl, knots = knots,
+                    correlation = corARMA(value = phi, fixed = TRUE, form = ~ 1 | 
+                                            Year, p = 5))
+ec_5_test <- gamm(DipoN ~ s(Time, bs = "cr", k = 10) 
+                  + s(month, bs = "cc",k = 12), 
+                  data = EC, method = "ML", control = ctrl, knots = knots,
+                  correlation = corARMA(value = phi, fixed = TRUE, 
+                                        form = ~ 1 | Year, p = 5))
+anova(ec_X_5_test$lme, ec_5_test$lme)
+```
+
+Looks like the interaction is a pretty substantive improvement.
+
+### Model Checking
+
+```{r}
+plot(ec_X_5$gam,residuals=T,pch=19, pers = TRUE)
+```
+```{r}
+times = select(EC,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(ec_X_5$gam,  newdata = pdat, se.fit = TRUE)
+pdat <- transform(pdat, fitted=p$fit, se=p$se.fit)
+pdat = pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p1 = ggplot(aes(x = date, y = fitted), data = pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'blue') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("EC_X_5 Season-trend Interaction model") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+p1 + geom_point(data=EC, aes(x=date,y=DipoN))
+```
+
