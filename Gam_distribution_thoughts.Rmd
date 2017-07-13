@@ -1,0 +1,71 @@
+---
+title: "Rodent Flip Analysis PT1"
+output: html_notebook
+---
+
+# Portal Rodent Flip: Data distributions
+
+This notebook is working through the approach to analyzing the rodent flip
+data using GAMS given what Erica and I have learned from Simon Wood's book and
+Gavin Simpson's blog posts
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+source('gam_functions.R')
+source('data_functions.R')
+```
+## Load and Vizualize Data
+
+Data is coming straight from the repo. This code is extracting the dipo abundances from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+dipo_data = make_dipo_data()
+filtered_data = trt_data(dipo_data)
+CC = filtered_data[[1]]
+EC = filtered_data[[2]]
+XC = filtered_data[[3]]
+```
+
+Response variable distributions:
+
+```{r}
+par(mfrow=c(2,2))
+plot(density(CC$DipoN))
+plot(density(EC$DipoN))
+plot(density(XC$DipoN))
+```
+I found at stackoverflow, a discussion about assessing which distribution
+is a reasonable approximation of the data. (https://stats.stackexchange.com/questions/132652/how-to-determine-which-distribution-fits-my-data-best) So I'm going to explore that here.
+
+```{r}
+library(fitdistrplus)
+descdist(CC$DipoN, discrete = TRUE)
+```
+Seems pretty clear that the control data is Poisson. Because the data are 
+discrete, there are only 3 option given.
+
+Let's look at the other treatments:
+
+```{r}
+par(mfrow=c(1,1))
+descdist(EC$DipoN, discrete = TRUE)
+descdist(XC$DipoN, discrete = TRUE)
+```
+Both of these are mixed distributions - a distribution centered non 0
+before the flip and another post flip distribution. We probably want to
+cut the data at the flip data, but for the moment, we'll proceed.
+
+A poisson is not a terrible starting point for all of these. Ethan says we really
+need to use a discrete distribution for the count data because it can mess
+up parameter estimations and quants will call us on it. He said that a negative
+binomial should work for any distribution we have because it is very flexible. I
+thought it wasn't usable in gamm (which is the function we need to use to
+handle AR residuals), but I was apparently wrong. It looks like we can use negbin for the family, but we may need to use nb in gam to estimate the theta parameter first?
+
+Let's start with poisson.
+
+
+
+

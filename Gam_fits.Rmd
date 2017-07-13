@@ -1,0 +1,134 @@
+---
+title: "Rodent Flip Analysis PT2"
+output: html_notebook
+---
+
+# Portal Rodent Flip: Fitting Gams using Poisson
+
+This notebook is working through the approach to analyzing the rodent flip
+data using GAMS given what Erica and I have learned from Simon Wood's book and
+Gavin Simpson's blog posts
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+source('gam_functions.R')
+source('data_functions.R')
+```
+## Load and Vizualize Data
+
+Data is coming straight from the repo. This code is extracting the dipo abundances from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+dipo_data = make_dipo_data()
+filtered_data = trt_data(dipo_data)
+CC = filtered_data[[1]]
+EC = filtered_data[[2]]
+XC = filtered_data[[3]]
+```
+## Control Plots
+
+### Which family distribution seems like the best approximation?
+
+To assess basic data family, I'm going to use a basic model structure:
+
+$$ DipoN = s(Time) + s(season), DipoN ~ Poisson$$
+
+This structure has no interaction, no AR. A cc basis is used to account for
+seasonality, but this also **does not fix the knot problem Gavin highlighted**. 
+I'm starting in gam() because the two other distributions don't work in gamm()
+unless their parameters have already been estimated in gam().
+
+Model names will take structure: 
+treatment_family_AR
+if an interaction is being modelled, and X will be added at the end.
+
+#### Poisson family
+
+```{r}
+cc_p_0 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family= poisson)
+gam.check(cc_0)
+```
+
+The qqplot is off and there might be some patterning in the residuals.
+
+```{r}
+qq.gam(cc_p_0)
+abline(0,1)
+```
+
+
+#### Tweedie?
+
+Wood uses a tweedie in his egg count example in Chapter 7. He suggests 
+using REML for estimating the parameters, which in this case will include the
+extra tweedie parameters. He also suggests setting the select argument to
+TRUE to allow elimination of parameters.
+```{r}
+cc_tw_0 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, 
+               family= tw, method="REML", select = TRUE)
+gam.check(cc_tw_0)
+```
+
+Tweedie does much better, Sadly, like the negative binomial, the easy version does not work
+with gamm(). But we can use gam() to estimate the paratemer we need and then
+give it to gamm() as a given.
+
+#### Negative binomial?
+
+Not many people have heard of a tweedie (I'm not sure I count as one of them).
+Let's see what a neg binomial can do. Wood mentions is as another option in
+his egg count example.
+
+```{r}
+cc_nb_0 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, 
+               family= nb(theta=NULL, link="log"), method="REML", select = TRUE)
+gam.check(cc_nb_0)
+```
+
+Well, the tweedie seems to best approximate the data. Sigh.
+
+#### What is a tweedie?
+
+Well, my best understanding of the web (mainly from here: http://converged.yt/RDistanceBook/dsm-gamcrash.html) is that a Tweedie is a highly 
+flexible super distribution that has a parameter (the power parameter) that can
+be set to give a number of different distributions, including gamma, poisson,
+normal and everything in between. Apparently the phrase "gamma mixtures of
+Poisson random variables". The website I referenced explained it like this:
+Intuitively we can think of our survey (ship or person or plane) travelling to 
+a given segment, at this segment, we either see something or we don’t 
+(gamma distributed) and if we do see something, we see a given count (Poisson distributed).
+
+This also comes from that website:
+
+The power parameter, q, dictates which distribution we get and also tells us what the mean-variance relationship will be. The mean-variance relationship is given by: Var(count) = ϕ𝔼(count)q, where ϕ is a scale parameter (similar to the quasi-Poisson above). Setting q = 1 gives a Poisson distribution, q = 2 gives a gamma distribution and q = 3 gives a normal distribution. Once q gets below 1.2, we see some odd behaviour from the distribution (we get a multimodal distribution, which seems unrealistic for our count data). We are only interested in distributions between 1.2 < q < 2 and really there is not much difference in the distributions if we vary q at below the first decimal place (so we really only need to think about q = 1.2, 1.3, …, 1.9, as shown in Figure XXXX). Luckily, we can estimate q during the fitting of our model4.
+
+So, what are our parameter estimates?
+
+```{r}
+summary(cc_tw_0)
+cc_tw_0
+```
+
+p=1.99.
+
+Let's see if this now works in gamm()
+
+```{r}
+cc_tweed_0 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, 
+                   family = Tweedie(p=1.99, link='log'), method="REML", select = TRUE)
+gam.check(cc_tweed_0$gam)
+```
+
+```{r}
+qq.gam(cc_tweed_0$gam)
+```
+
+Uhh, the deviance residuals are not right for the qq-plot, thought everything
+else looks like the other plots.
+
+
+
+
+

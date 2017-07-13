@@ -1,0 +1,131 @@
+---
+title: "Rodent Flip Analysis PT2"
+output: html_notebook
+---
+
+# Portal Rodent Flip: Fitting Gams using Poisson
+
+This notebook is working through the approach to analyzing the rodent flip
+data using GAMS given what Erica and I have learned from Simon Wood's book and
+Gavin Simpson's blog posts
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+source('gam_functions.R')
+source('data_functions.R')
+```
+## Load and Vizualize Data
+
+Data is coming straight from the repo. This code is extracting the dipo abundances from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+dipo_data = make_dipo_data()
+filtered_data = trt_data(dipo_data)
+CC = filtered_data[[1]]
+EC = filtered_data[[2]]
+XC = filtered_data[[3]]
+```
+## Control Plots
+
+### Which family distribution seems like the best approximation?
+
+To assess basic data family, I'm going to use a basic model structure:
+
+$$ DipoN = s(Time) + s(season), DipoN ~ Poisson$$
+
+This structure has no interaction, no AR. A cc basis is used to account for
+seasonality, but this also **does not fix the knot problem Gavin highlighted**. 
+I'm starting in gam() because the two other distributions don't work in gamm()
+unless their parameters have already been estimated in gam().
+
+Model names will take structure: 
+treatment_family_AR
+if an interaction is being modelled, and X will be added at the end.
+
+#### Basic Model with gam()
+
+```{r}
+cc_p_0 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family= poisson)
+gam.check(cc_p_0)
+```
+
+The qqplot is off and there might be some patterning in the residuals. So,
+poisson is probably not our best distribution, but we're going to run
+with it because the other two contenders are....difficult.
+
+In slides on the web 
+(https://statistique.cuso.ch/fileadmin/statistique/document/part-3.pdf), Simon 
+Wood recommends some additional plots for checking model fit.
+
+```{r}
+rsd <- residuals(cc_p_0)
+qq.gam(cc_p_0,rep=100); 
+plot(cc_p_0,residuals=TRUE,pch=19,cex=.3)
+```
+Yep, the qq-plot is definitely off, even when the distribution is simulated.
+
+For later comparisonwith gamm(), lets look at the summary:
+
+```{r}
+summary(cc_p_0)
+```
+
+
+#### Basic model with gamm()
+
+There are differences between gam() and gamm() in fitting and (I think)
+penalities, so let's do this again but with the function we need to fit
+the AR model to the residuals.
+
+
+```{r}
+
+
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+cc_p_0 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, 
+               family= poisson, knots=knots)
+gam.check(cc_p_0$gam)
+```
+
+looks pretty similar.
+
+Model summary:
+
+```{r}
+summary(cc_p_0$gam)
+```
+
+
+Ok, let's proceed with Gavin's excercise with adding AR to the model.
+
+```{r}
+acf(resid(cc_p_0$lme, type="normalized"), lag.max = 36, main = "ACF")
+```
+
+
+It's a strange autocorrelation structure. In part this may be because the
+model picks up (absorbs) some of the wiggliness introduced by the autocorrelation
+between months. But we still have lag 4 correlations. We'll examine some
+AR structures.
+
+
+```{r}
+ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
+for (i in 1:8) {
+    cc_p <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, 
+               family= poisson, control = ctrl, knots=knots, method="REML",
+               correlation = corARMA(form = ~ 1 | Year, p = i))
+    assign(paste0("cc_p_", i), cc_p) 
+}
+```
+
+```{r}
+
+
+AIC(cc_p_1$gam, cc_p_2$gam, cc_p_2, cc_p_3, cc_p_4, cc_p_5, cc_p_6,   cc_p_7, cc_p_8)
+
+
+```
+
+

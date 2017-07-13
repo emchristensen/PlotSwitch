@@ -1,0 +1,314 @@
+---
+title: "Rodent Flip Analysis PT2"
+output: html_notebook
+---
+
+# Portal Rodent Flip: Fitting Gams using Gaussian Fit as Proof of Concept
+
+This notebook is working through the approach to analyzing the rodent flip
+data using GAMS given what Erica and I have learned from Simon Wood's book and
+Gavin Simpson's blog posts. Even though Gaussian is not the correct family
+to use, it is the easiest and the one all the examples are in, so this is
+a proof of concept on how to approach this question generally and then we will
+explore if its possible to do this with other distributions.
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+source('gam_functions.R')
+source('data_functions.R')
+```
+## Load and Vizualize Data
+
+Data is coming straight from the repo. This code is extracting the dipo a
+bundances from the straight controls (CC), and the opened krat (EC) and rodent 
+(XC) exclosures. This data runs from period 415 (3/13/2013) to present. We
+have not summarized the data by treatment - each plot is represented individually.
+
+```{r}
+dipo_data = make_dipo_data()
+filtered_data = trt_data(dipo_data)
+CC = filtered_data[[1]]
+EC = filtered_data[[2]]
+XC = filtered_data[[3]]
+```
+## Control Plots
+
+To assess basic data family, I'm going to use a basic model structure:
+
+$$ DipoN = s(Time) + s(season), DipoN ~ Gaussian$$
+
+This structure has no interaction, no AR. A cc basis is used to account for
+seasonality, but this also **does not fix the knot problem Gavin highlighted**. 
+I'm starting in gam() because the two other distributions don't work in gamm()
+unless their parameters have already been estimated in gam().
+
+Model names will take structure: 
+treatment_family_AR
+if an interaction is being modelled, and X will be added at the end.
+
+### Basic Model with gam()
+
+```{r}
+
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+cc_0 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, knots=knots)
+gam.check(cc_0)
+```
+
+The qqplot is off and there might be some patterning in the residuals. So,
+poisson is probably not our best distribution, but we're going to run
+with it because the other two contenders are....difficult.
+
+In slides on the web 
+(https://statistique.cuso.ch/fileadmin/statistique/document/part-3.pdf), Simon 
+Wood recommends some additional plots for checking model fit.
+
+```{r}
+rsd <- residuals(cc_0)
+qq.gam(cc_0,rep=100); 
+plot(cc_0,residuals=TRUE,pch=19,cex=.3)
+```
+Yep, the qq-plot is definitely off, even when the distribution is simulated.
+
+```{r}
+plot(cc_0,residuals=TRUE,pch=19,cex=.3)
+```
+
+The residuals around the time smooth also show some systematic deviations. The
+season graph looks like some years are extremely high, relative to the others.
+
+
+For later comparisonwith gamm(), lets look at the summary:
+
+```{r}
+summary(cc_0)
+```
+
+Season and Trend are both significant in this model. 
+
+The next step is to add autocorrelation, but to do that we need to switch to
+gamm()
+
+### Basic control plot model with gamm()
+
+There are differences between gam() and gamm() in fitting and (I think)
+penalities, so let's do this again but with gamm()
+
+
+```{r}
+old.par=par()
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+cc_0 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, 
+               knots=knots, method="REML")
+gam.check(cc_0$gam)
+```
+
+looks pretty similar.
+
+Model summary:
+
+```{r}
+summary(cc_0$gam)
+```
+This fit is slightly lower than the gam() fit. 
+
+### Adding Autrocorrelation to the model
+
+Ok, let's proceed with Gavin's excercise with adding AR to the model. Let's
+look at the autocorrelation pattern.
+
+```{r}
+plot(acf(resid(cc_0$lme, type = "normalized")))
+```
+```{r}
+plot(pacf(resid(cc_0$lme, type = "normalized")))
+```
+
+
+It's a strange autocorrelation structure for Portal rodents. In part this may be 
+because themodel picks up (absorbs) some of the wiggliness introduced by the 
+autocorrelationbetween months. Lag 2 or lag 4 may be important. It's also 
+possible that thispattern suggests a MA not an AR model should be applied to the 
+residuals?
+
+Let' start with AR, using Gavin's code/approach from:[insert webpage]. These are 
+within year autocorrelation structures only. Given the biology of this system, 
+I think that's a good starting point. With El Nino bouncing things around, and 
+the natural between year variability of the desert, most of the autocorrelation 
+is likely to be on the month-to-month scale.
+
+
+```{r}
+ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
+for (i in 1:8) {
+    cc <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, 
+               control = ctrl, knots=knots, method="REML",
+               correlation = corARMA(form = ~ 1 | Year, p = i))
+    assign(paste0("cc_", i), cc) 
+}
+```
+
+```{r}
+
+anova(cc_0$lme, cc_1$lme,cc_2$lme,cc_3$lme,cc_4$lme,cc_5$lme,
+      cc_6$lme,cc_7$lme, cc_8$lme)
+
+```
+
+Looks like AR2 is better than AR1, AR5 is might be better than AR4. The p-value
+for AR5 is slight above .05 and the AIC value is higher. GIven the ACF and PACF
+I'm going to ignore AR5. But is AR2 better than AR4?
+
+```{r}
+anova(cc_2$lme,cc_4$lme)
+```
+
+AR4 it is. Let's look at this model:
+
+```{r}
+gam.check(cc_4$gam)
+```
+
+```{r}
+summary(cc_4$gam)
+```
+
+
+The adj r2 is lower, the trend component is now non-significant. i.e. lots
+of variation in the dipo numbers on the control plots but little of it
+explained by time. This is not surprising. 
+
+```{r}
+summary(cc_4$lme)
+```
+
+What do the ACF/PACF plots look like now?
+
+```{r}
+plot(acf(resid(cc_4$lme, type = "normalized")))
+```
+
+```{r}
+plot(pacf(resid(cc_4$lme, type = "normalized")))
+```
+
+Everything looks good.
+
+ok, then given a gaussian distribution - model cc_4 is our control fit.
+
+```{r}
+plot(cc_4$gam)
+```
+
+This model is telling us that on the controls, the number of kangaroo rats is
+slightly higher in the winters and pretty flat across years.
+
+### Season-Trend interaction?
+
+Ok, first we need to construct a season-trend interaction model. We'll be doing
+the AR fitting again as part of this excercise. it will fit the main and
+interaction effects of the seasonal and trend signals in the control data, using
+the knot structure for the monthly data that Gavin suggests.
+
+```{r}
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+for (i in 1:5) {
+  cc_X <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k = c(10,12)),
+            data = CC, method = "REML", control = ctrl, knots = knots,
+            correlation = corARMA(form = ~ 1 | Year, p = i))
+  assign(paste0("cc_X_", i), cc_X) 
+}
+anova(cc_X_1$lme, cc_X_2$lme, cc_X_3$lme, cc_X_4$lme, cc_X_5$lme)
+```
+
+Looks like CC_X_4 generally does best via AIC measures.
+
+Let's look at the ACF/PACF plots.
+
+```{r}
+plot(acf(resid(cc_X_4$lme, type = "normalized")))
+```
+
+```{r}
+plot(pacf(resid(cc_X_4$lme, type = "normalized")))
+```
+
+Looks good. The summary:
+
+```{r}
+summary(cc_X_4$gam)
+```
+
+Seems like everytime I run a model, the adjR2 gets lower and lower. The
+te() smooth is not significant. Which this plot seems to support:
+
+```{r}
+plot(cc_X_4$gam, pers = TRUE)
+```
+
+There doesn't seem to be much of an interaction effect here. To me, this looks
+like how the number of kangaroo rats on the control plots varies through a year
+is not changing across years.
+
+Do we need the interaction (which seems to make the fit worse overall anyway?).
+I think the answer from this excercise alone is hell no, but we'll follow 
+Gavin for thoroughness
+
+First step is to steal the AR coefficients from the cc_X_4 model:
+
+```{r}
+phi <- unname(intervals(cc_X_4$lme, which = "var-cov")$corStruct[, 2])
+
+```
+
+
+Then we use those in two new models, one with the interaction effect recast
+as a ti() plus two main effect s() and one with just the main effect s().
+
+```{r}
+cc_4_xtest <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, bs="cr", k=10), 
+                   data = CC, control = ctrl, knots=knots, method="ML",
+                   correlation = corARMA(value=phi, fixed=TRUE, form = ~ 1 | Year, p = 4))
+cc_X_4_xtest <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, bs="cr", k=10) +
+                       ti(Time,month, bs=c("cr","cc"), k=c(10,12)), 
+                     data = CC, control = ctrl, knots=knots, method="ML",
+                     correlation = corARMA(value=phi, fixed=TRUE, form = ~ 1 | Year, p = 4))
+anova(cc_4_xtest$lme, cc_X_4_xtest$lme)
+```
+Yep, the interaction model doesn't give you any benefits
+
+So, the final control model is
+
+cc_4!
+
+Let's make the confidence intervals and plot of the model fit:
+
+  
+
+
+```{r}
+  # Make data to plot the trend line on the data
+times = select(CC,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(cc_4$gam,  newdata = pdat, se.fit = TRUE)
+pdat <- transform(pdat, fitted=p$fit, se=p$se.fit)
+  wtransition = as.Date("2015-03-15", format="%Y-%m-%d")
+  ggplot(aes(x=date, y=p_raw), data = pdat) +
+    geom_ribbon(aes(ymin=lower, ymax=upper), fill='gray90') +
+    geom_line(color='blue') +
+    geom_vline(xintercept =  as.numeric(transition)) +
+    ggtitle("CC_4 model") +
+    xlab("Date") + ylab("Dipodomys abundance per plot") +
+    theme_classic()
+```
+
+
+
+
+
+
+11
