@@ -30,7 +30,7 @@ append_dates = function(df) {
 #' Function to tally captures by species, period, and plot
 #' This function was made specifically for working with the 2015 plot switch
 #' 
-#' @param species species desired; either "All" or "Granivore"
+#' @param species species desired; either "All," "Granivore," or "SmGran"
 #' @param start_period first period number of data desired; default is 130 (1989)
 #' @param incomplete T/F, wheter or not to include incomplete censuses
 #' 
@@ -42,6 +42,7 @@ rodent_abundance = function(species='All',start_period=130,incomplete=F) {
 
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
   if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
+  if (species=='SmGran') {targetsp = c('BA','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
   
   # Get trapping history in order to find and remove incomplete censuses
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
