@@ -1,6 +1,32 @@
 library(dplyr)
 
 
+
+#' append dates
+#' 
+#' @description appends date info based on period
+#' 
+#' @param df data frame: must have a "period" column
+#' 
+append_dates = function(df) {
+  # Get trapping history
+  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
+  trapping = read.csv(text=RCurl::getURL(http)) 
+  trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
+  
+  # create data frame with period, date, month, year, time
+  period_dates = aggregate(trapping$date,by=list(Period=trapping$Period),FUN=min)
+  names(period_dates) = c('period','date')
+  period_dates$month = as.numeric(format(period_dates$date, "%m"))
+  period_dates$Year = as.numeric(format(period_dates$date, "%Y"))
+  period_dates$Time = as.numeric(period_dates$date) / 1000
+  
+  # append to data frame
+  df_new = merge(df,period_dates,by='period')
+  return(df_new)
+}
+
+
 #' Function to tally captures by species, period, and plot
 #' This function was made specifically for working with the 2015 plot switch
 #' 
@@ -20,7 +46,6 @@ rodent_abundance = function(species='All',start_period=130,incomplete=F) {
   # Get trapping history in order to find and remove incomplete censuses
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
   trapping = read.csv(text=RCurl::getURL(http)) 
-  trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
   plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
   fullcensus = plotstrapped[plotstrapped$x>=21,] #I'm using 21 instead of 24 because  I know period 457 only trapped 21 plots, but the skipped plots aren't used in this project
   
@@ -36,13 +61,7 @@ rodent_abundance = function(species='All',start_period=130,incomplete=F) {
   byspecies = aggregate(rdat_filtered$species,by=list(period = rdat_filtered$period, plot = rdat_filtered$plot,species = rdat_filtered$species),FUN=length)
   
   # adding sampling date to the dipo table
-  #first_date = trapping %>% select(Period,date) %>% group_by(Period) %>% summarise_each(funs(min), date)
-  first_date = aggregate(trapping$date,by=list(Period=trapping$Period),FUN=min)
-  names(first_date) = c('Period','date')
-  byspecies_date = left_join(byspecies, first_date, by=c('period'='Period'))
-  byspecies_date = byspecies_date %>% mutate(month = as.numeric(format(date, "%m")),
-                                 Year = as.numeric(format(date, "%Y")),
-                                 Time = as.numeric(date) / 1000)
+  byspecies_date = append_dates(byspecies)
   
   return(byspecies_date)
 }
@@ -75,8 +94,7 @@ make_dipo_data = function(){
   # data frame of all plots in all periods
   allplotsperiod = expand.grid(period=unique(dipos$period), plot=unique(dipos$plot))
   #attach date columns according to period
-  dateinfo = unique(dipos[,c('period','date','month','Year','Time')])
-  allplotsperiod = merge(allplotsperiod,dateinfo)
+  allplotsperiod = append_dates(allplotsperiod)
   # attach treatment column according to plot number
   treatment = data.frame(treatment = c('CX','CE','EE','CC',
                                        'XC','EC','XC','CE',
@@ -89,7 +107,7 @@ make_dipo_data = function(){
   dipos = merge(allplotsperiod,dipos,all=T)
   dipos$x[is.na(dipos$x)] = 0
   # change column name
-  dipos_gam =  rename(dipos,DipoN=x)
+  dipos_gam = rename(dipos,DipoN=x)
   # put data in chronological order
   dipos_gam = dipos_gam[order(dipos_gam$period),]
   
@@ -134,7 +152,7 @@ species_rich = function(rdat) {
   }
   
   # make sure there are zeros where plot was trapped but nothing caught; add column for treatment type
-  allplotsperiod = expand.grid(period=unique(sprich$period), plot=unique(sprich$plot))
+  allplotsperiod = expand.grid(period=unique(richness$period), plot=unique(richness$plot))
   treatment = data.frame(treatment = c('CX','CE','EE','CC',
                                        'XC','EC','XC','CE',
                                        'CX','XX','CC','CX',
@@ -147,3 +165,5 @@ species_rich = function(rdat) {
   
   return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,Year,Time))
 }
+
+
