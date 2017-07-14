@@ -129,7 +129,9 @@ trt_data = function(data){
   CC = data %>% filter(treatment == "CC") %>% arrange(date)
   EC = data %>% filter(treatment == "EC") %>% arrange(date)
   XC = data %>% filter(treatment == "XC") %>% arrange(date)
-  return(list(CC,EC,XC))
+  CE = data %>% filter(treatment == "CE") %>% arrange(date)
+  EE = data %>% filter(treatment == "EE") %>% arrange(date)
+  return(list(CC,EC,XC,CE,EE))
 }
 
 
