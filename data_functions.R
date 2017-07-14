@@ -145,7 +145,7 @@ species_rich = function(rdat) {
   
   # count number of species in rodent data
   richness = aggregate(rdat$species,
-                       by=list(period=rdat$period,plot=rdat$plot,date=rdat$date,month=rdat$month,Year=rdat$Year,Time=rdat$Time),
+                       by=list(period=rdat$period,plot=rdat$plot),
                        FUN=unique)
   for (n in 1:length(richness$period)) {
     richness$nsp[n] = length(unlist(richness$x[n]))
@@ -161,7 +161,10 @@ species_rich = function(rdat) {
                                        'EE','CE','XX','XC'),plot=seq(1,24))
   allplotsperiod = merge(allplotsperiod,treatment)
   sprich = merge(allplotsperiod,richness,all=T)
-  sprich$nsp[is.na(sprich$nsp)] = 0
+  sprich$nsp[is.na(sprich$nsp)] <- 0
+  sprich = append_dates(sprich)
+  # put data in chronological order
+  sprich = sprich[order(sprich$period),]
   
   return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,Year,Time))
 }
