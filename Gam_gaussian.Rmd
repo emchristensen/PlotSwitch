@@ -21,8 +21,8 @@ source('data_functions.R')
 ```
 ## Load Data
 
-Data is coming straight from the repo. This code is extracting the dipo a
-bundances from the straight controls (CC), and the opened krat (EC) and rodent 
+Data is coming straight from the repo. This code is extracting the dipo 
+abundances from the straight controls (CC), and the opened krat (EC) and rodent 
 (XC) exclosures. This data runs from period 415 (3/13/2013) to present. We
 have not summarized the data by treatment - each plot is represented individually.
 
@@ -63,7 +63,7 @@ if an interaction is being modelled, and X will be added at the end.
 
 knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
 cc_0 <- gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, knots=knots)
-gam.check(cc_0)
+gam.check(cc_0, rep=100)
 ```
 
 The qqplot is off and there might be some patterning in the residuals. So,
@@ -278,10 +278,10 @@ accepting a model that models mean differences in the residuals among the plots.
 
 ### Model Checking
 
-Basic residual checking was done above. Here are some additional plots:
+Following Simon Wood notes from: https://statistique.cuso.ch/fileadmin/statistique/document/part-3.pdf
 
 ```{r}
-plot(cc_4$gam,residuals=T,pch=19)
+vis.gam(cc_4$gam)
 ```
 There's still some patterning with respect to time that the model is not getting.
 
@@ -298,13 +298,13 @@ control temporal pattern.
   # Make data to plot the trend line on the data
 times = select(CC,date,month,Time) %>% unique()
 want <- seq(1, nrow(times), length.out = 50)
-pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
                                  month = month[want]))
-p  <- predict(cc_4$gam,  newdata = pdat, se.fit = TRUE)
-pdat <- transform(pdat, fitted=p$fit, se=p$se.fit)
-pdat = pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+p  <- predict(cc_4$gam,  newdata = cc_pdat, se.fit = TRUE)
+cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
+cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
 transition = as.Date("2015-03-15", format="%Y-%m-%d")
-p1 = ggplot(aes(x = date, y = fitted), data = pdat) +
+p1 = ggplot(aes(x = date, y = fitted), data = cc_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'blue') +
   geom_vline(xintercept =  as.numeric(transition)) +
@@ -438,6 +438,18 @@ anova(ec_X_5_test$lme, ec_5_test$lme)
 
 Looks like the interaction is a pretty substantive improvement.
 
+
+### Adding plots as random effect
+```{r}
+EC$plot = as.factor(EC$plot)
+ec_X_5_plot <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),
+               data = EC, method = "REML", control = ctrl, knots = knots,
+               correlation = corARMA(form = ~ 1 | Year, p = 5), 
+               random=list(plot= ~1 ))
+anova(ec_X_5$lme, ec_X_5_plot$lme)
+```
+Looks like the simpler model without plots as random effects is fine.
+
 ### Model Checking
 
 ```{r}
@@ -446,13 +458,13 @@ plot(ec_X_5$gam,residuals=T,pch=19, pers = TRUE)
 ```{r}
 times = select(EC,date,month,Time) %>% unique()
 want <- seq(1, nrow(times), length.out = 50)
-pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+ec_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
                                  month = month[want]))
-p  <- predict(ec_X_5$gam,  newdata = pdat, se.fit = TRUE)
-pdat <- transform(pdat, fitted=p$fit, se=p$se.fit)
-pdat = pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+p  <- predict(ec_X_5$gam,  newdata = ec_pdat, se.fit = TRUE)
+ec_pdat <- transform(ec_pdat, fitted=p$fit, se=p$se.fit)
+ec_pdat = ec_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
 transition = as.Date("2015-03-15", format="%Y-%m-%d")
-p1 = ggplot(aes(x = date, y = fitted), data = pdat) +
+p1 = ggplot(aes(x = date, y = fitted), data = ec_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'blue') +
   geom_vline(xintercept =  as.numeric(transition)) +
@@ -460,5 +472,177 @@ p1 = ggplot(aes(x = date, y = fitted), data = pdat) +
   xlab("Date") + ylab("Dipodomys abundance per plot") +
   theme_classic()
 p1 + geom_point(data=EC, aes(x=date,y=DipoN))
+```
+
+## Rodent Exclosures
+
+```{r}
+plot(DipoN ~ date, data=XC, col='red')
+```
+
+```{r}
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+xc_0 <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC, knots=knots,
+             method="REML")
+gam.check(xc_0$gam)
+```
+```{r}
+rsd <- residuals(xc_0)
+qq.gam(xc_0$gam,rep=100); 
+plot(xc_0$gam,residuals=TRUE,pch=19,cex=.3)
+```
+
+In summary, the basic tim model with Gaussian family is performing no worse
+with this data than it did with the other treatment types.
+
+### Autoregressive Residuals
+
+```{r}
+plot(acf(resid(xc_0$lme, type = "normalized")))
+```
+
+```{r}
+plot(pacf(resid(xc_0$lme, type = "normalized")))
+```
+
+Maybe a slight hint of a AR6? But in general, this is pretty good looking - in
+large part no doubt because when we excluded rodents, we were completely
+disrupting the month to month dependency.
+
+```{r}
+ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
+for (i in 1:7) {
+    xc <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = XC, 
+               control = ctrl, knots=knots, method="REML",
+               correlation = corARMA(form = ~ 1 | Year, p = i))
+    assign(paste0("xc_", i), xc) 
+}
+anova(xc_0$lme, xc_1$lme, xc_2$lme, xc_3$lme, xc_4$lme, xc_5$lme, xc_6$lme, xc_7$lme )
+```
+
+```{r}
+anova(xc_0$lme, xc_3$lme, xc_6$lme)
+```
+
+AR6? 
+
+### Season-Trend Interaction?
+
+```{r}
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+xc_X_0 <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = XC, method = "REML", control = ctrl, knots = knots)
+for (i in 1:6) {
+  xc_X <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = XC, method = "REML", control = ctrl, knots = knots, 
+               correlation = corARMA(form = ~ 1 | Year, p = i))
+  assign(paste0("xc_X_", i), xc_X) 
+}
+anova(xc_X_0$lme, xc_X_1$lme, xc_X_2$lme, xc_X_3$lme, xc_X_4$lme, xc_X_5$lme, xc_X_6$lme)
+```
+
+```{r}
+anova(xc_X_1$lme, xc_X_4$lme)
+```
+
+
+AR4 model when the interaction is included. 
+
+```{r}
+# phi <- unname(intervals(xc_X_4$lme, which = "var-cov")$corStruct[, 2])
+# xc_X_4_test <- gamm(DipoN ~ s(Time, bs = "cr", k = 10) 
+#                     + s(month, bs = "cc",k = 12) 
+#                     + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
+#                     data = XC, method = "ML", control = ctrl, knots = knots,
+#                     correlation = corARMA(value = phi, fixed = TRUE, form = ~ 1 | 
+#                                             Year, p = 5))
+# xc_4_test <- gamm(DipoN ~ s(Time, bs = "cr", k = 10) 
+#                   + s(month, bs = "cc",k = 12), 
+#                   data = XC, method = "ML", control = ctrl, knots = knots,
+#                   correlation = corARMA(value = phi, fixed = TRUE, 
+#                                         form = ~ 1 | Year, p = 5))
+# anova(ec_X_5_test$lme, ec_5_test$lme)
+```
+As with the control plot, it is not possible to extract the AR 
+cofficients using Gavin's code. When I googled the error it suggests
+the model is inappropriate for the data - which could be the Gaussian
+issue with discrete data? This makes it impossible for me to test
+whether the interaction model is better than the additive model.
+
+### Plots as random effect
+
+
+To complete the exercise, I'm going to go ahead and look at the interaction model. 
+```{r}
+XC$plot = as.factor(XC$plot)
+xc_X_4_plot <- gamm(DipoN ~ te(Time,month, bs = c("cr","cc"), 
+                               k=c(10,12)),
+               data = XC, method = "REML", control = ctrl, 
+               knots = knots,
+               correlation = corARMA(form = ~ 1 | Year, p = 4), 
+               random=list(plot= ~1 ))
+anova(xc_X_4$lme, xc_X_4_plot$lme)
+```
+No plot effect here either.
+
+#### Model checking
+
+We'll use xc_X_4 for this, but with the understanding that given
+the issues with fitting, it should be viewed even more suspiciously
+than the other models.
+
+```{r}
+summary(xc_X_4$gam)
+```
+
+The ref edf and the edf are exactly the same. I should check Wood about
+whether I need to increase k in the model.
+
+```{r}
+plot(xc_X_4$gam,residuals=T,pch=19, pers = TRUE)
+```
+
+
+The rodent exclosure seems to have a more complex surface.
+
+```{r}
+times = select(XC,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+xc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(xc_X_4$gam,  newdata = xc_pdat, se.fit = TRUE)
+xc_pdat <- transform(pdat, fitted=p$fit, se=p$se.fit)
+xc_pdat = pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p_xc = ggplot(aes(x = date, y = fitted), data = xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'red') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("EC_X_5 Season-trend Interaction model") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+p_xc + geom_point(data=XC, aes(x=date,y=DipoN))
+```
+
+So, what happens if I plot the three lines together?
+
+```{r}
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+plot_all = ggplot(aes(x = date, y = fitted), data = xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'red') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90') +
+  geom_line(color = 'blue', data=ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90') +
+  geom_line(color = 'green', data=cc_pdat) +
+  geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
+  ggtitle("Dipodomys response to plot flip") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+  
+plot_all
+
+
+
 ```
 
