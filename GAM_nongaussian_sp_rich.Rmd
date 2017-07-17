@@ -298,7 +298,7 @@ No significant effect and the edf is low
 ```{r}
 EC_SR$plot = as.factor(EC_SR$plot)
 ec_tw_plot = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = EC_SR, knots=knots)
-summary(ec_tw_X)
+summary(ec_tw_plot)
 ```
 
 plot might be a little bit significant
@@ -326,8 +326,8 @@ p_cc = ggplot(aes(x = date, y = fitted), data = cc_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'green') +
   geom_vline(xintercept =  as.numeric(transition)) +
-  ggtitle("Controls: DipoN ~ s(month) + s(Time) + ti(month,Time), tweedie") +
-  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  ggtitle("Controls: SR ~ te(month,Time), tweedie") +
+  xlab("Date") + ylab(""Species richness"") +
   theme_classic()
 p_cc + geom_point(data=CC_SR, aes(x=date,y=nsp))
 ```
@@ -345,8 +345,8 @@ p_ec = ggplot(aes(x = date, y = fitted), data = ec_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'blue') +
   geom_vline(xintercept =  as.numeric(transition)) +
-  ggtitle("Kangaroo rat exclosures: DipoN ~ s(Time) + s(month) + ti(Time,month), tweedie") +
-  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  ggtitle("Kangaroo rat exclosures: SR ~ te(month,Time), tweedie") +
+  xlab("Date") + ylab("Species richness") +
   theme_classic()
 p_ec + geom_point(data=EC_SR, aes(x=date,y=nsp))
 ```
@@ -364,8 +364,8 @@ p_xc = ggplot(aes(x = date, y = fitted), data = xc_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'red') +
   geom_vline(xintercept =  as.numeric(transition)) +
-  ggtitle("Rodent Exclosures: DipoN ~ s(month) + s(Time), tweedie") +
-  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  ggtitle("Rodent Exclosures: SR ~ te(month,Time), tweedie") +
+  xlab("Date") + ylab("Species Richness") +
   theme_classic()
 p_xc + geom_point(data=XC_SR, aes(x=date,y=nsp))
 ```
@@ -381,8 +381,8 @@ ggplot(aes(x=date, y=fitted), data=xc_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90') +
   geom_line(color = 'green', data=cc_pdat) +
   geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
-  ggtitle("Dipodomys response to plot flip") +
-  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  ggtitle("All treatments: SR ~ te(month, Time), tweedie") +
+  xlab("Date") + ylab("Species Richness") +
   theme_classic()
 ```
 
@@ -422,12 +422,15 @@ summary(diff)
 plot(diff, pers=TRUE)
 ```
 
-So, my read on this is that the difference between the two treatments is high at
-the beginning but decreases through time. 
+This result seems more robust than the Dipo result. Both AIC and ANOVA point in the same direction, that modelling the difference between the krat and exclosure surfaces
+improves the model. The surface model of diff suggests that the difference is
+high at first (under the old treatments), and then they converge and diverge. One thing to think about with this type of approach is that the differences before the flip might 
+create the significant diff effect. This analysis may be better conducted
+on just the dat since the flip.
 
-The diff component if significant, but the AIC suggests that it is not a better
-fit given the number of parameters. But then these two treatments may not really
-differ in a simple way like Wood described for the use of this technique. 
+
+
+ 
 ```{r}
 
 ```
