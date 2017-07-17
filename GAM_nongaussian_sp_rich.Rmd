@@ -1,0 +1,433 @@
+---
+title: "GAM_nongaussian_sp_rich"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+
+source('gam_functions.R')
+source('data_functions.R')
+```
+
+# Portal Plot Flip using gam() -- species richness
+
+Here we are repeating the process we went through with the dipo abundance data to model species richness.  Again, we're using gam() instead of gamm() so we can compare models using different distributions.
+
+Here we go:
+
+## Load Data
+
+Data is coming straight from the repo. This code is extracting the number of species caught from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+sprich = rodent_abundance(species='All',start_period=415,incomplete=F) %>% species_rich() %>% trt_data()
+CC_SR = sprich[[1]]
+EC_SR = sprich[[2]]
+XC_SR = sprich[[3]]
+```
+
+## Checking different distributions
+If you don't want to go through all the distribution checking, tweedie seems
+to work reasonably for all the treatments. Poisson does not work for the
+exclosures. Negative binomial is probably fine but things look slight better
+fit with tweedies. So, if you want, you can skip down to the section on
+**checking plot effects**
+
+### Control Plots
+#### Gaussian
+We'll start where we left off for a baseline of comparison: Gaussian 
+
+```{r}
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+cc_g <- gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), data = CC_SR, knots=knots)
+gam.check(cc_g, rep=100)
+```
+
+```{r}
+summary(cc_g)
+```
+```{r}
+plot(cc_g, residuals = TRUE)
+```
+I'll be honest, the Gaussian doesn't look too terrible. 
+
+#### Poisson
+
+```{r}
+cc_p = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = CC_SR, knots=knots)
+gam.check(cc_p, rep=100)
+```
+
+```{r}
+plot(cc_g, residuals = TRUE, cex=5)
+```
+Honestly the diagnostic plots don't look much different to me, though the qqplot
+is worse.
+
+```{r}
+summary(cc_p)
+```
+The poisson model explains less of the variance in the data. Month is no longer a significant predictor, as it was with the gaussian model.
+
+#### Negative Binomial
+
+```{r}
+cc_nb = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = CC_SR, knots=knots)
+gam.check(cc_nb, rep=100)
+```
+
+```{r}
+plot(cc_nb, residuals = TRUE, cex=5)
+```
+
+```{r}
+summary(cc_nb)
+```
+
+The r2 and deviance explained are about the same as poisson
+
+#### Tweedie
+```{r}
+cc_tw = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = CC_SR, knots=knots)
+gam.check(cc_tw, rep=100)
+```
+```{r}
+plot(cc_tw, residuals = TRUE, cex=5)
+```
+Improved qq from neg binomial and poisson
+
+```{r}
+summary(cc_tw)
+```
+
+Slightly better rsq from nb and poisson -- month is again significant
+
+### Kangaroo rat exclosures
+#### Poisson
+To speed this up, I'm jumping straight to the Poisson.
+
+```{r}
+ec_p = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = EC_SR, knots=knots)
+gam.check(ec_p, rep=100)
+```
+
+Not terrible
+
+```{r}
+plot(ec_p, residuals = TRUE, cex=5)
+```
+```{r}
+summary(ec_p)
+```
+
+Seasonal signal not significant?
+
+```{r}
+ec_nb = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = EC_SR, knots=knots)
+gam.check(ec_nb, rep=100)
+```
+I'd call this equally mediocre compared to poisson
+
+#### Negative Binomial
+```{r}
+plot(ec_nb, residuals = TRUE, cex=5)
+```
+
+```{r}
+summary(ec_nb)
+```
+A smidge more deviance explained
+
+#### Tweedie
+
+```{r}
+ec_tw = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = EC_SR, knots=knots)
+gam.check(ec_tw, rep=100)
+```
+this looks good to me
+```{r}
+plot(ec_tw, residuals = TRUE, cex=5)
+```
+```{r}
+summary(ec_tw)
+```
+
+Tweedie looks best.  Month is even almost significant
+
+### Rodent Exclosure
+
+Last but not least
+
+#### Poisson
+
+```{r}
+xc_p = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = XC_SR, knots=knots)
+gam.check(xc_p, rep=100)
+```
+
+```{r}
+plot(xc_p, residuals = TRUE, cex=5)
+```
+
+```{r}
+summary(xc_p)
+```
+
+#### Negative Binomial
+
+```{r}
+xc_nb = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = XC_SR, knots=knots)
+gam.check(xc_nb, rep=100)
+
+```
+```{r}
+plot(xc_nb, residuals = TRUE, cex=5)
+
+```
+```{r}
+summary(xc_nb)
+```
+
+#### Tweedie
+
+```{r}
+xc_tw = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = XC_SR, knots=knots)
+gam.check(xc_tw, rep=100)
+```
+
+```{r}
+plot(xc_tw, residuals = TRUE, cex=5)
+```
+```{r}
+summary(xc_tw)
+```
+
+I feel like Tweedie looks the best for all three treatments.  Now let's add season-trend interactions... this could be either interesting or not, since seasonal signal was only marginally significant at best for species richness.
+
+
+## Season-Trend interactions
+Control plots:
+
+```{r}
+cc_tw_X = gam(nsp ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = CC_SR, family=tw, method = "REML", knots = knots)
+summary(cc_tw_X)
+```
+```{r}
+plot(cc_tw_X, pers=TRUE)
+```
+Kangaroo rat exclosures:
+```{r}
+ec_tw_X = gam(nsp ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = EC_SR, family=tw, method = "REML", knots = knots)
+summary(ec_tw_X)
+```
+```{r}
+plot(ec_tw_X, pers=TRUE)
+```
+Rodent exclosures:
+
+```{r}
+xc_tw_X = gam(nsp ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = XC_SR, family=tw, method = "REML", knots = knots)
+summary(xc_tw_X)
+```
+```{r}
+plot(xc_tw_X, pers=TRUE)
+```
+Testing each of the models to see if its better than additive
+
+```{r}
+cc_tw_X_test <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+                     + s(month, bs = "cc",k = 12) 
+                     + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
+                     data = CC_SR, method = "ML", knots = knots,family=tw)
+cc_tw_test <- gam(nsp ~ s(Time, bs = "cr", k = 10) + 
+                    s(month, bs = "cc",k = 12), data = CC_SR, 
+                  method = "ML", knots = knots, family = tw)
+AIC(cc_tw_X_test, cc_tw_test)
+```
+Looks like the interaction is significant
+
+Kangaroo rat exclosures?
+
+```{r}
+ec_tw_X_test <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+                     + s(month, bs = "cc",k = 12) 
+                     + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
+                     data = EC_SR, method = "ML", knots = knots, family = tw)
+ec_tw_test <- gam(nsp ~ s(Time, bs = "cr", k = 10) + 
+                    s(month, bs = "cc",k = 12), data = EC_SR, 
+                  method = "ML", knots = knots, family = tw)
+AIC(ec_tw_X_test, ec_tw_test)
+anova(ec_tw_test,ec_tw_X_test)
+```
+```{r}
+xc_tw_X_test <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+                     + s(month, bs = "cc",k = 12)
+                     + ti(Time, month, bs = c("cr","cc") , k = c(10, 12)), 
+                     data = XC_SR, method = "ML", knots = knots, family = tw)
+xc_tw_test <- gam(nsp ~ s(Time, bs = "cr", k = 10) + 
+                    s(month, bs = "cc",k = 12) , data = XC_SR, 
+                  method = "ML", knots = knots, family = tw)
+AIC(xc_tw_X_test, xc_tw_test)
+anova(xc_tw_test,xc_tw_X_test)
+```
+
+It looks like season-trend interaction is significant for controls and krat exclosures but not total exclosures.
+
+
+## Checking Plot effects
+
+Whatever the best model was coming out of the  The
+random effect for plot is added as s(plot, bs="re") and that term is checked for
+significance.
+
+# Control Plots
+```{r}
+CC_SR$plot = as.factor(CC_SR$plot)
+cc_tw_plot = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot, bs="re"), family=tw, data = CC_SR, knots=knots)
+summary(cc_tw_plot)
+```
+
+No significant effect and the edf is low
+
+```{r}
+EC_SR$plot = as.factor(EC_SR$plot)
+ec_tw_plot = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = EC_SR, knots=knots)
+summary(ec_tw_X)
+```
+
+plot might be a little bit significant
+
+```{r}
+XC_SR$plot = as.factor(XC_SR$plot)
+xc_tw_plot = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = XC_SR, knots=knots)
+summary(xc_tw_plot)
+```
+Don't need the plot random effect for any of the controls - though it is kinda
+marginal for the kangaroo rat exclosures.
+
+## PLOTS!
+Control with data: I chose the gam with tweedie distribution, with month-time interaction, no plot effect
+```{r}
+times = select(CC_SR,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(cc_tw_X_test,  newdata = cc_pdat, type="response",se.fit = TRUE)
+cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
+cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p_cc = ggplot(aes(x = date, y = fitted), data = cc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'green') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Controls: DipoN ~ s(month) + s(Time) + ti(month,Time), tweedie") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+p_cc + geom_point(data=CC_SR, aes(x=date,y=nsp))
+```
+Kangaroo rat exclosures with data: gam with tweedie, with interaction term, no plot term
+```{r}
+times = select(EC_SR,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+ec_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(ec_tw_X_test,  newdata = ec_pdat, type="response",se.fit = TRUE)
+ec_pdat <- transform(ec_pdat, fitted=p$fit, se=p$se.fit)
+ec_pdat = ec_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p_ec = ggplot(aes(x = date, y = fitted), data = ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'blue') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Kangaroo rat exclosures: DipoN ~ s(Time) + s(month) + ti(Time,month), tweedie") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+p_ec + geom_point(data=EC_SR, aes(x=date,y=nsp))
+```
+total exclosures: gam with tweedie, no interaction term, no plot term
+```{r}
+times = select(XC_SR,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+xc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(xc_tw,  newdata = xc_pdat, type="response",se.fit = TRUE)
+xc_pdat <- transform(xc_pdat, fitted=p$fit, se=p$se.fit)
+xc_pdat = xc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p_xc = ggplot(aes(x = date, y = fitted), data = xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'red') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Rodent Exclosures: DipoN ~ s(month) + s(Time), tweedie") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+p_xc + geom_point(data=XC_SR, aes(x=date,y=nsp))
+```
+
+
+```{r}
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+ggplot(aes(x=date, y=fitted), data=xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') + 
+  geom_line(color = 'red') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90') +
+  geom_line(color = 'blue', data=ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90') +
+  geom_line(color = 'green', data=cc_pdat) +
+  geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
+  ggtitle("Dipodomys response to plot flip") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+```
+
+
+### Comparing two surfaces:
+
+I'm trying to do this following Wood (Section 7.2.5 in his book). 
+
+I'm going to combine the XC and EC datasets into 1 data frame and add some
+dummy variables to identify which treatment each comes from.
+
+```{r}
+EC_XC=c()
+EC_XC = rbind(XC_SR, EC_SR)
+EC_XC$XC = c(rep(1,nrow(XC_SR)), rep(0,nrow(XC_SR)))
+EC_XC$EC = 1- EC_XC$XC
+```
+
+Ok, now here's his approach of fitting a common surface and difference
+surface:
+
+```{r}
+same = gam(nsp ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = EC_XC, family=tw, method = "REML", knots = knots)
+diff = gam(nsp ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)) +
+             te(Time,month, by=XC, bs = c("cr","cc"), k =c(10,12)),            
+               data = EC_XC, family=tw, method = "REML", knots = knots)
+AIC(same,diff)
+```
+```{r}
+anova(diff)
+```
+```{r}
+summary(diff)
+```
+```{r}
+plot(diff, pers=TRUE)
+```
+
+So, my read on this is that the difference between the two treatments is high at
+the beginning but decreases through time. 
+
+The diff component if significant, but the AIC suggests that it is not a better
+fit given the number of parameters. But then these two treatments may not really
+differ in a simple way like Wood described for the use of this technique. 
+```{r}
+
+```
