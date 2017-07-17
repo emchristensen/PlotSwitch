@@ -246,10 +246,10 @@ Testing each of the models to see if its better than additive
 cc_tw_X_test <- gam(DipoN ~ s(Time, bs = "cr", k = 10) 
                      + s(month, bs = "cc",k = 12) 
                      + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
-                     data = CC, method = "ML", knots = knots)
+                     data = CC, method = "ML", knots = knots, family = tw)
 cc_tw_test <- gam(DipoN ~ s(Time, bs = "cr", k = 10) + 
                     s(month, bs = "cc",k = 12), data = CC, 
-                  method = "ML", knots = knots)
+                  method = "ML", knots = knots, family = tw)
 AIC(cc_tw_X_test, cc_tw_test)
 ```
 Look like there is nothing gained with the interaction for control plots
@@ -260,10 +260,10 @@ Kangaroo rat exclosures?
 ec_tw_X_test <- gam(DipoN ~ s(Time, bs = "cr", k = 10) 
                      + s(month, bs = "cc",k = 12) 
                      + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
-                     data = EC, method = "ML", knots = knots)
+                     data = EC, method = "ML", knots = knots, family=tw)
 ec_tw_test <- gam(DipoN ~ s(Time, bs = "cr", k = 10) + 
                     s(month, bs = "cc",k = 12), data = EC, 
-                  method = "ML", knots = knots)
+                  method = "ML", knots = knots, family = tw)
 AIC(ec_tw_X_test, ec_tw_test)
 anova(ec_tw_test,ec_tw_X_test)
 ```
@@ -271,10 +271,10 @@ anova(ec_tw_test,ec_tw_X_test)
 xc_tw_X_test <- gam(DipoN ~ s(Time, bs = "cr", k = 10) 
                      + s(month, bs = "cc",k = 12)
                      + ti(Time, month, bs = c("cr","cc") , k = c(10, 12)), 
-                     data = XC, method = "ML", knots = knots)
+                     data = XC, method = "ML", knots = knots, family=tw)
 xc_tw_test <- gam(DipoN ~ s(Time, bs = "cr", k = 10) + 
                     s(month, bs = "cc",k = 12) , data = XC, 
-                  method = "ML", knots = knots)
+                  method = "ML", knots = knots, family=tw)
 AIC(xc_tw_X_test, xc_tw_test)
 anova(xc_tw_test,xc_tw_X_test)
 ```
