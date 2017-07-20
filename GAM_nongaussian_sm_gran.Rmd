@@ -1,0 +1,467 @@
+---
+title: "GAM_nongaussian_sm_gran"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+
+source('gam_functions.R')
+source('data_functions.R')
+```
+
+# Portal Plot Flip using gam() -- small granivore abundance
+
+Here we are repeating the process we went through with the dipo abundance data to model small granivore abundance.  These species should be negatively affected by the presence of competitively-dominant krats.
+
+Here we go:
+
+## Load Data
+
+Data is coming straight from the repo. This code is extracting the number of small granivores from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present. Species are: BA, PB, PE, PF, PH, PI, PL, PM, PP, RF ,RM, RO
+
+```{r}
+dat = rodent_abundance(species='SmGran',start_period=415,incomplete=F)
+totalsg = aggregate(dat$x,by=list(period=dat$period,plot=dat$plot,date=dat$date,month=dat$month,Year=dat$Year,Time=dat$Time),FUN=sum)
+# attach treatment column according to plot number
+treatment = data.frame(treatment = c('CX','CE','EE','CC',
+                                     'XC','EC','XC','CE',
+                                     'CX','XX','CC','CX',
+                                     'EC','CC','EE','XX',
+                                     'CC','EC','EE','EE',
+                                     'EE','CE','XX','XC'),plot=seq(1,24))
+totalsg= merge(totalsg,treatment)
+filtered_data = trt_data(totalsg)
+CC_small = filtered_data[[1]]
+EC_small = filtered_data[[2]]
+XC_small = filtered_data[[3]]
+CE_small = filtered_data[[4]]
+EE_small = filtered_data[[5]]
+```
+
+## Just some plots to check out the data
+```{r}
+# average across plots for each treatment
+avgcc = aggregate(CC_small$x,by=list(date=CC_small$date),FUN=mean)
+avgec = aggregate(EC_small$x,by=list(date=EC_small$date),FUN=mean)
+avgxc = aggregate(XC_small$x,by=list(date=XC_small$date),FUN=mean)
+
+alldat = rbind(CC_small,EC_small,XC_small)
+
+ccplot = ggplot(aes(x=date,y=x),data=CC_small) +
+  geom_point(aes(x=date,y=x,colour=treatment),data=alldat) +
+  geom_line(aes(x=date,y=x),data=avgcc,col='red') +
+  geom_line(aes(x=date,y=x),data=avgec,col='green') +
+  geom_line(aes(x=date,y=x),data=avgxc,col='blue') +
+  geom_vline(xintercept=as.numeric(as.Date('2015-03-15'))) +
+  labs(x='',y='sm gran abund')
+ccplot
+
+
+
+```
+in all three cases, small granivores were doing well until 2016.  highly seasonal
+
+
+```{r}
+# just for comparison, check out the krat excl -> krat excl and control -> krat excl plots
+avgee = aggregate(EE_small$x,by=list(date=EE_small$date),FUN=mean)
+avgce = aggregate(CE_small$x,by=list(date=CE_small$date),FUN=mean)
+
+moredat = rbind(EE_small,CE_small)
+
+exclplot = ggplot(aes(x=date,y=x),data=CC_small) +
+  geom_point(aes(x=date,y=x,colour=treatment),data=moredat) +
+  geom_line(aes(x=date,y=x),data=avgce,col='red') +
+  #geom_line(aes(x=date,y=x),data=avgec,col='green') +
+  geom_line(aes(x=date,y=x),data=avgee,col='blue') +
+  geom_vline(xintercept=as.numeric(as.Date('2015-03-15'))) +
+  labs(x='',y='sm gran abund')
+exclplot
+
+
+```
+These species took less of a hit in 2016 on the krat exclosure plots.  There doesn't appear to be much of a difference between these two treatment types even before the switch
+
+## Checking different distributions
+If you don't want to go through all the distribution checking, tweedie seems
+to work reasonably for all the treatments. Poisson does not work for the
+exclosures. Negative binomial is probably fine but things look slight better
+fit with tweedies. So, if you want, you can skip down to the section on
+**checking plot effects**
+
+### Control Plots
+#### Gaussian
+We'll start where we left off for a baseline of comparison: Gaussian 
+
+```{r}
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+cc_g <- gam(x ~ s(month, bs = "cc", k = 12) + s(Time), data = CC_small, knots=knots)
+gam.check(cc_g, rep=100)
+```
+
+```{r}
+summary(cc_g)
+```
+```{r}
+plot(cc_g, residuals = TRUE)
+```
+I'll be honest, the Gaussian doesn't look too terrible. 
+
+#### Poisson
+
+```{r}
+cc_p = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = CC_small, knots=knots)
+gam.check(cc_p, rep=100)
+```
+
+```{r}
+plot(cc_p, residuals = TRUE, cex=5)
+```
+Honestly the diagnostic plots don't look much different to me.
+
+```{r}
+summary(cc_p)
+```
+The poisson model actually explains more of the deviance than the gaussian.  This data is highly seasonal, which gives the models more of a fighting chance.
+
+#### Negative Binomial
+
+```{r}
+cc_nb = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = CC_small, knots=knots)
+gam.check(cc_nb, rep=100)
+```
+
+```{r}
+plot(cc_nb, residuals = TRUE, cex=5)
+```
+
+```{r}
+summary(cc_nb)
+```
+
+The r2 and deviance explained are about the same as gaussian
+
+#### Tweedie
+```{r}
+cc_tw = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = CC_small, knots=knots)
+gam.check(cc_tw, rep=100)
+```
+```{r}
+plot(cc_tw, residuals = TRUE, cex=5)
+```
+Improved qq from neg binomial and poisson
+
+```{r}
+summary(cc_tw)
+```
+
+Slightly worse rsq.  I actually like either neg binomial or tweedie, even though they don't have the highest rsq, because the seasonal pattern looks more reasonable.  In the gaussian and poisson models, the time component still has a lot of what look like seasonal wiggles, which seems wrong.
+
+### Kangaroo rat exclosures
+### gaussian
+```{r}
+ec_g <- gam(x ~ s(month, bs = "cc", k = 12) + s(Time), data = EC_small, knots=knots)
+gam.check(ec_g, rep=100)
+```
+
+#### Poisson
+
+```{r}
+ec_p = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = EC_small, knots=knots)
+gam.check(ec_p, rep=100)
+```
+
+Not terrible. residuals are a bit odd
+
+```{r}
+plot(ec_p, residuals = TRUE, cex=5)
+```
+```{r}
+summary(ec_p)
+```
+
+
+```{r}
+ec_nb = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = EC_small, knots=knots)
+gam.check(ec_nb, rep=100)
+```
+The qq and residuals look funky
+
+#### Negative Binomial
+```{r}
+plot(ec_nb, residuals = TRUE, cex=5)
+```
+
+```{r}
+summary(ec_nb)
+```
+A smidge more deviance explained
+
+#### Tweedie
+
+```{r}
+ec_tw = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = EC_small, knots=knots)
+gam.check(ec_tw, rep=100)
+```
+this looks less bad than nb
+```{r}
+plot(ec_tw, residuals = TRUE, cex=5)
+```
+```{r}
+summary(ec_tw)
+```
+
+
+### Rodent Exclosure
+
+Last but not least
+
+#### Gaussian
+```{r}
+xc_g <- gam(x ~ s(month, bs = "cc", k = 12) + s(Time), data = XC_small, knots=knots)
+gam.check(xc_g, rep=100)
+```
+There are some big residuals.  Might be a red flag
+```{r}
+plot(xc_g, residuals = TRUE, cex=5)
+```
+```{r}
+summary(xc_g)
+```
+
+#### Poisson
+
+```{r}
+xc_p = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = XC_small, knots=knots)
+gam.check(xc_p, rep=100)
+```
+something is up with that qq plot
+```{r}
+plot(xc_p, residuals = TRUE, cex=5)
+```
+
+```{r}
+summary(xc_p)
+```
+
+#### Negative Binomial
+
+```{r}
+xc_nb = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = XC_small, knots=knots)
+gam.check(xc_nb, rep=100)
+
+```
+```{r}
+plot(xc_nb, residuals = TRUE, cex=5)
+
+```
+```{r}
+summary(xc_nb)
+```
+
+#### Tweedie
+
+```{r}
+xc_tw = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = XC_small, knots=knots)
+gam.check(xc_tw, rep=100)
+```
+I like this one best
+```{r}
+plot(xc_tw, residuals = TRUE, cex=5)
+```
+```{r}
+summary(xc_tw)
+```
+
+I like tweedie best for all three treatment types, although some of the other distributions weren't terrible
+
+
+## Season-Trend interactions
+Control plots:
+
+```{r}
+cc_tw_X = gam(x ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = CC_small, family=tw, method = "REML", knots = knots)
+summary(cc_tw_X)
+```
+```{r}
+plot(cc_tw_X, pers=TRUE)
+```
+Kangaroo rat exclosures:
+```{r}
+ec_tw_X = gam(x ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = EC_small, family=tw, method = "REML", knots = knots)
+summary(ec_tw_X)
+```
+```{r}
+plot(ec_tw_X, pers=TRUE)
+```
+Rodent exclosures:
+
+```{r}
+xc_tw_X = gam(x ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+               data = XC_small, family=tw, method = "REML", knots = knots)
+summary(xc_tw_X)
+```
+```{r}
+plot(xc_tw_X, pers=TRUE)
+```
+Testing each of the models to see if its better than additive
+
+```{r}
+cc_tw_X_test <- gam(x ~ s(Time, bs = "cr") 
+                     + s(month, bs = "cc",k = 12) 
+                     + ti(Time, month, bs = c("cr","cc"), k=c(10,12)), 
+                     data = CC_small,  knots = knots,family=tw)
+cc_tw_test <- gam(x ~ s(Time, bs = "cr", k=10) + 
+                    s(month, bs = "cc",k = 12), data = CC_small, 
+                   knots = knots, family = tw)
+AIC(cc_tw_X_test, cc_tw_test)
+anova(cc_tw_test,cc_tw_X_test)
+```
+The cc_tw_X_test throws an error: fitting terminated with step failure -- I had to take out the argument method='ML'
+
+The interaction term does appear to be significant
+
+Kangaroo rat exclosures?
+
+```{r}
+ec_tw_X_test <- gam(x ~ s(Time, bs = "cr", k = 10) 
+                     + s(month, bs = "cc",k = 12) 
+                     + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
+                     data = EC_small, method = "ML", knots = knots, family = tw)
+ec_tw_test <- gam(x ~ s(Time, bs = "cr") + 
+                    s(month, bs = "cc",k = 12), data = EC_small, knots = knots, family = tw)
+AIC(ec_tw_X_test, ec_tw_test)
+anova(ec_tw_test,ec_tw_X_test)
+```
+interaction term not significant
+
+```{r}
+xc_tw_X_test <- gam(x ~ s(Time, bs = "cr", k = 10) 
+                     + s(month, bs = "cc",k = 12)
+                     + ti(Time, month, bs = c("cr","cc") , k = c(10, 12)), 
+                     data = XC_small,  knots = knots, family = tw)
+xc_tw_test <- gam(x ~ s(Time, bs = "cr", k = 10) + 
+                    s(month, bs = "cc",k = 12) , data = XC_small, 
+                    knots = knots, family = tw)
+AIC(xc_tw_X_test, xc_tw_test)
+anova(xc_tw_test,xc_tw_X_test)
+```
+
+It looks like season-trend interaction is significant for controls and total exclosures but not krat exclosures.
+
+
+## Checking Plot effects
+
+Whatever the best model was coming out of the  The
+random effect for plot is added as s(plot, bs="re") and that term is checked for
+significance.
+
+# Control Plots
+```{r}
+CC_small$plot = as.factor(CC_small$plot)
+cc_tw_plot = gam(x ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot, bs="re"), family=tw, data = CC_small, knots=knots)
+summary(cc_tw_plot)
+```
+
+Plot does seem to be significant
+
+```{r}
+EC_small$plot = as.factor(EC_small$plot)
+ec_tw_plot = gam(x ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = EC_small, knots=knots)
+summary(ec_tw_plot)
+```
+
+plot not significant
+
+```{r}
+XC_small$plot = as.factor(XC_small$plot)
+xc_tw_plot = gam(x ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = XC_small, knots=knots)
+summary(xc_tw_plot)
+```
+Plot again not significant
+
+## PLOTS!
+Control with data: I chose the gam with tweedie distribution, with month-time interaction, with plot effect.  However I can't figure out how to get plot effect into this code -- I'll work on that later.
+```{r}
+cc_tw_X_plot <- gam(x ~ s(Time) + s(month, bs = "cc",k = 12) + ti(Time, month, bs = c("cr","cc") , k = c(10, 12)) + s(plot,bs='re'),
+                     data = CC_small,  knots = knots,family=tw)
+
+
+times = select(CC_small,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+
+p  <- predict(cc_tw_X_test,  newdata = cc_pdat, type="response",se.fit = TRUE)
+cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
+cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p_cc = ggplot(aes(x = date, y = fitted), data = cc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'green') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Controls: small gran ~ te(month,Time), tweedie") +
+  xlab("Date") + ylab("Small granivore abundance") +
+  theme_classic()
+p_cc + geom_point(data=CC_small, aes(x=date,y=x))
+```
+Kangaroo rat exclosures with data: gam with tweedie, no interaction term, no plot term
+```{r}
+times = select(EC_small,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+ec_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(ec_tw,  newdata = ec_pdat, type="response",se.fit = TRUE)
+ec_pdat <- transform(ec_pdat, fitted=p$fit, se=p$se.fit)
+ec_pdat = ec_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p_ec = ggplot(aes(x = date, y = fitted), data = ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'blue') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Kangaroo rat exclosures: sm gran ~ s(month) + s(Time), tweedie") +
+  xlab("Date") + ylab("Small granivore abundance") +
+  theme_classic()
+p_ec + geom_point(data=EC_small, aes(x=date,y=x))
+```
+total exclosures: gam with tweedie, with interaction term, no plot term
+```{r}
+times = select(XC_small,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+xc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(xc_tw_X_test,  newdata = xc_pdat, type="response",se.fit = TRUE)
+xc_pdat <- transform(xc_pdat, fitted=p$fit, se=p$se.fit)
+xc_pdat = xc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+p_xc = ggplot(aes(x = date, y = fitted), data = xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
+  geom_line(color = 'red') +
+  geom_vline(xintercept =  as.numeric(transition)) +
+  ggtitle("Rodent Exclosures: Small gran ~ te(month,Time), tweedie") +
+  xlab("Date") + ylab("Small granivore abundance") +
+  theme_classic()
+p_xc + geom_point(data=XC_small, aes(x=date,y=x))
+```
+
+
+```{r}
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+ggplot(aes(x=date, y=fitted), data=xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') + 
+  geom_line(color = 'red') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90') +
+  geom_line(color = 'blue', data=ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90') +
+  geom_line(color = 'green', data=cc_pdat) +
+  geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
+  ggtitle("All treatments: small gran ~ te(month, Time), tweedie") +
+  xlab("Date") + ylab("Small granivore abundance") +
+  theme_classic()
+```
+
