@@ -45,8 +45,9 @@ rodent_abundance = function(species='All',start_period=130,incomplete=F) {
   plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
   fullcensus = plotstrapped[plotstrapped$x>=21,] #I'm using 21 instead of 24 because  I know period 457 only trapped 21 plots, but the skipped plots aren't used in this project
   
-  # filter data; remove early trapping periods
-  rdat_filtered = dplyr::filter(rdat, period >= start_period)
+  # filter data; remove early trapping periods, nontarget species
+  targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')
+  rdat_filtered = dplyr::filter(rdat, period >= start_period, species %in% targetsp)
   
   # if desired, remove incompete trapping periods
   if (incomplete==F) {
