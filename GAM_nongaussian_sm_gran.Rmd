@@ -23,22 +23,13 @@ Here we go:
 Data is coming straight from the repo. This code is extracting the number of small granivores from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present. Species are: BA, PB, PE, PF, PH, PI, PL, PM, PP, RF ,RM, RO
 
 ```{r}
-dat = rodent_abundance(species='SmGran',start_period=415,incomplete=F)
-totalsg = aggregate(dat$x,by=list(period=dat$period,plot=dat$plot,date=dat$date,month=dat$month,Year=dat$Year,Time=dat$Time),FUN=sum)
-# attach treatment column according to plot number
-treatment = data.frame(treatment = c('CX','CE','EE','CC',
-                                     'XC','EC','XC','CE',
-                                     'CX','XX','CC','CX',
-                                     'EC','CC','EE','XX',
-                                     'CC','EC','EE','EE',
-                                     'EE','CE','XX','XC'),plot=seq(1,24))
-totalsg= merge(totalsg,treatment)
-filtered_data = trt_data(totalsg)
-CC_small = filtered_data[[1]]
-EC_small = filtered_data[[2]]
-XC_small = filtered_data[[3]]
-CE_small = filtered_data[[4]]
-EE_small = filtered_data[[5]]
+smgran = make_data('SmGran') %>% trt_data()
+
+CC_small = smgran[[1]]
+EC_small = smgran[[2]]
+XC_small = smgran[[3]]
+CE_small = smgran[[4]]
+EE_small = smgran[[5]]
 ```
 
 ## Just some plots to check out the data
