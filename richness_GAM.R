@@ -5,7 +5,7 @@ source('gam_functions.R')
 source('data_functions.R')
 
 # get species richness data
-sprich = rodent_abundance(species='All',start_period=400,incomplete=F) %>% species_rich() %>% trt_data()
+sprich = rodent_abundance(start_period=400,incomplete=F) %>% species_rich() %>% trt_data()
 CC_SR = sprich[[1]]
 EC_SR = sprich[[2]]
 XC_SR = sprich[[3]]

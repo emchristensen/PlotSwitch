@@ -23,7 +23,7 @@ Here we go:
 Data is coming straight from the repo. This code is extracting the number of species caught from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present
 
 ```{r}
-sprich = rodent_abundance(species='All',start_period=415,incomplete=F) %>% species_rich() %>% trt_data()
+sprich = rodent_abundance(start_period=415,incomplete=F) %>% species_rich() %>% trt_data()
 CC_SR = sprich[[1]]
 EC_SR = sprich[[2]]
 XC_SR = sprich[[3]]
@@ -327,7 +327,7 @@ p_cc = ggplot(aes(x = date, y = fitted), data = cc_pdat) +
   geom_line(color = 'green') +
   geom_vline(xintercept =  as.numeric(transition)) +
   ggtitle("Controls: SR ~ te(month,Time), tweedie") +
-  xlab("Date") + ylab(""Species richness"") +
+  xlab("Date") + ylab("Species richness") +
   theme_classic()
 p_cc + geom_point(data=CC_SR, aes(x=date,y=nsp))
 ```
