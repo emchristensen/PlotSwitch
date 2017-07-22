@@ -36,6 +36,27 @@ append_dates = function(df) {
 #' @return data frame with columns 'plot', 'period', 'species', 'x' (abundance), 'date','month','Year','Time'
 
 rodent_abundance = function(start_period=130,incomplete=F) {
+  # filter data: target species, remove early periods, remove incomplete censuses
+  rdat_filtered = filter_data(start_period,incomplete)
+  
+  # aggregate by species, plot, period
+  byspecies = aggregate(rdat_filtered$species,by=list(period = rdat_filtered$period, plot = rdat_filtered$plot,species = rdat_filtered$species),FUN=length)
+  
+  # adding sampling date to the dipo table
+  byspecies_date = append_dates(byspecies)
+  
+  return(byspecies_date)
+}
+
+
+#' @title filter data
+#' 
+#' @description preliminary step to load and filter data before creating other rodent data metrics
+#' 
+#' @param
+#' 
+filter_data = function(start_period,incomplete=F) {
+  # load rodent data from repo
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
   rdat = read.csv(text=RCurl::getURL(http),as.is=T,na.strings = '')
   
@@ -43,7 +64,7 @@ rodent_abundance = function(start_period=130,incomplete=F) {
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
   trapping = read.csv(text=RCurl::getURL(http)) 
   plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
-  fullcensus = plotstrapped[plotstrapped$x>=21,] #I'm using 21 instead of 24 because  I know period 457 only trapped 21 plots, but the skipped plots aren't used in this project
+  fullcensus = plotstrapped[plotstrapped$x>=21,] # warning: this may not be ok for other projects, period 457 only trapped 21 plots but the skipped ones aren't relevant to this project
   
   # filter data; remove early trapping periods, nontarget species
   targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')
@@ -53,14 +74,7 @@ rodent_abundance = function(start_period=130,incomplete=F) {
   if (incomplete==F) {
     rdat_filtered = filter(rdat_filtered, period %in% fullcensus$period)
   }
-  
-  # aggregate by species, plot, period
-  byspecies = aggregate(rdat_filtered$species,by=list(period = rdat_filtered$period, plot = rdat_filtered$plot,species = rdat_filtered$species),FUN=length)
-  
-  # adding sampling date to the dipo table
-  byspecies_date = append_dates(byspecies)
-  
-  return(byspecies_date)
+  return(rdat_filtered)
 }
 
 
@@ -234,12 +248,8 @@ species_rich = function(rdat) {
 #'
 #'
 get_mass = function(start_period=130, avg, metE) {
-  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
-  rdat = read.csv(text=RCurl::getURL(http),as.is=T,na.strings = '')
-  
-  # filter data; remove early trapping periods, nontarget species
-  targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')
-  rdat_filtered = dplyr::filter(rdat, period >= start_period, species %in% targetsp) %>% select('period','plot','species','wgt')
+  # load rodent data
+  rdat_filtered = filter_data(start_period,incomplete=F) %>% select('period','plot','species','wgt')
   
   # fill in unweighed rodents with avg mass for that species
   avgmass = aggregate(rdat_filtered$wgt, by = list(species = rdat_filtered$species),FUN=mean,na.rm=T)
@@ -283,4 +293,46 @@ get_mass = function(start_period=130, avg, metE) {
   # put data in chronological order
   mass_data = mass_data[order(mass_data$period),]
   return(mass_data)
+}
+
+#' @title get species evenness
+#' 
+#' @description calculate species evenness per plot/period
+#' 
+#' @param start_period first period number of data desired
+#' 
+get_evenness = function(start_period=415) {
+  # load rodent data
+  rdat_filtered = filter_data(start_period,incomplete=F) %>% select('period','plot','species')
+  
+  # put data in tabular form
+  rdat_filtered$periodplot = paste(rdat_filtered$period,rdat_filtered$plot)
+  plt_table = table(rdat_filtered$periodplot,rdat_filtered$species)
+
+  # calculate Shannon diversity and evenness
+  H = vegan::diversity(plt_table)
+  even = H/log(vegan::specnumber(plt_table))
+  
+  evenness = data.frame(periodplot = names(even), n = unname(even))
+  evenness$periodplot = as.character(evenness$periodplot)
+  evenness$period = rep(NA)
+  evenness$plot = rep(NA)
+  for (ind in seq(length(evenness$periodplot))) {
+    evenness$period[ind] = strsplit(evenness$periodplot,' ')[[ind]][1]
+    evenness$plot[ind] = strsplit(evenness$periodplot,' ')[[ind]][2]
+  }
+  # append date columns
+  evenness_dat = evenness %>% select(-periodplot) %>% append_dates()
+  # attach treatment column according to plot number
+  treatment = data.frame(treatment = c('CX','CE','EE','CC',
+                                       'XC','EC','XC','CE',
+                                       'CX','XX','CC','CX',
+                                       'EC','CC','EE','XX',
+                                       'CC','EC','EE','EE',
+                                       'EE','CE','XX','XC'),plot=seq(1,24))
+  evenness_dat = merge(evenness_dat,treatment)
+  # put rows in chronological order
+  evenness_dat = evenness_dat[order(evenness_dat$period),]
+  
+  return(evenness_dat)
 }

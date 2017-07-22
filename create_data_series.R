@@ -1,7 +1,5 @@
 library(dplyr)
 library(mgcv)
-library(ggplot2)
-source('gam_functions.R')
 source('data_functions.R')
 
 # Here is some code to use the data_functions.R file to create timeseries of various rodent metrics.
@@ -38,3 +36,11 @@ avg_mass = get_mass(start_period = 415,avg=T,metE=F) %>% trt_data()
 # total rodent metabolic energy per plot/period
 metE_tot = get_mass(start_period = 415,avg=F,metE=T) %>% trt_data()
 
+# species evenness
+even_dat = get_evenness(start_period = 415) %>% trt_data()
+
+
+
+# test plots
+dat = sm_hets[[1]]
+plot(dat$date,dat$n)
