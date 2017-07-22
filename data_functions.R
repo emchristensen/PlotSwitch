@@ -228,11 +228,12 @@ species_rich = function(rdat) {
 #'
 #' @param start_period first period number of data desired; default is 130 (1989)
 #' @param avg T/F: if true, computes average wgt per plot, if F computes total wgt
+#' @param metE T/F: if T converts mass to metabolic energy, if F returns mass data
 #' 
 #' @example avg_mass = get_mass(start_period = 415,avg=T)
 #'
 #'
-get_mass = function(start_period=130, avg) {
+get_mass = function(start_period=130, avg, metE) {
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
   rdat = read.csv(text=RCurl::getURL(http),as.is=T,na.strings = '')
   
@@ -249,16 +250,20 @@ get_mass = function(start_period=130, avg) {
     }
   }
   
+  # convert mass to metabolic energy if desired
+  if (metE == T) {
+    rdat_filtered$wgt = 5.69 * rdat_filtered$wgt^0.75
+  }
+  
   # get either total or average mass per plot and period
   if (avg == T) {
     mass = aggregate(rdat_filtered$wgt,by=list(period=rdat_filtered$period,plot=rdat_filtered$plot),FUN=mean)
-  }
-  else {
+  } else {
     mass = aggregate(rdat_filtered$wgt,by=list(period=rdat_filtered$period,plot=rdat_filtered$plot),FUN=sum)
   }
   
   # change column name
-  mass = rename(mass,wgt=x)
+  mass = rename(mass,n=x)
   
   # data frame of all plots in all periods
   allplotsperiod = expand.grid(period=unique(rdat_filtered$period), plot=unique(rdat_filtered$plot))
@@ -274,7 +279,7 @@ get_mass = function(start_period=130, avg) {
   allplotsperiod = merge(allplotsperiod,treatment)
   # merge capture data with data frame of all plots and all periods, and fill in empty data with zeros
   mass_data = merge(allplotsperiod,mass,all=T)
-  mass_data$wgt[is.na(mass_data$wgt)] = 0
+  mass_data$n[is.na(mass_data$n)] = 0
   # put data in chronological order
   mass_data = mass_data[order(mass_data$period),]
   return(mass_data)
