@@ -35,7 +35,7 @@ append_dates = function(df) {
 #' 
 #' @return data frame with columns 'plot', 'period', 'species', 'x' (abundance), 'date','month','Year','Time'
 
-rodent_abundance = function(species='All',start_period=130,incomplete=F) {
+rodent_abundance = function(start_period=130,incomplete=F) {
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
   rdat = read.csv(text=RCurl::getURL(http),as.is=T,na.strings = '')
   
@@ -116,6 +116,7 @@ make_dipo_data = function(){
 #' @description make a data frame for running GAM models
 #' 
 #' @param species species desired; either "All," "Granivore," "Dipos," "SmGran," "SmH" (small heteromyid), or "SmM" (small murid)
+#' @param start_period first period number of data desired; default is 415 (2013)
 #' 
 #' @return data frame with columns:
 #'            plot
@@ -127,9 +128,9 @@ make_dipo_data = function(){
 #'            Year
 #'            Time
 
-make_data= function(species='All') {
+make_data= function(species='All',start_period=415) {
   # Create species abundances by plot by period
-  dat = rodent_abundance(start_period=415,incomplete=F)
+  dat = rodent_abundance(start_period=start_period,incomplete=F)
   # select species of interest
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
   if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
@@ -141,13 +142,7 @@ make_data= function(species='All') {
   target_dat = filter(dat,species %in% targetsp)
   total = aggregate(target_dat$x,by=list(period=target_dat$period,plot=target_dat$plot,date=target_dat$date,month=target_dat$month,
                                          Year=target_dat$Year,Time=target_dat$Time),FUN=sum)
-  # attach treatment column according to plot number
-  treatment = data.frame(treatment = c('CX','CE','EE','CC',
-                                       'XC','EC','XC','CE',
-                                       'CX','XX','CC','CX',
-                                       'EC','CC','EE','XX',
-                                       'CC','EC','EE','EE',
-                                       'EE','CE','XX','XC'),plot=seq(1,24))
+
   # data frame of all plots in all periods
   allplotsperiod = expand.grid(period=unique(dat$period), plot=unique(dat$plot))
   #attach date columns according to period
@@ -227,4 +222,60 @@ species_rich = function(rdat) {
   return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,Year,Time))
 }
 
-
+#' @title get mass data
+#' 
+#' @description get total or average rodent mass by period and plot
+#'
+#' @param start_period first period number of data desired; default is 130 (1989)
+#' @param avg T/F: if true, computes average wgt per plot, if F computes total wgt
+#' 
+#' @example avg_mass = get_mass(start_period = 415,avg=T)
+#'
+#'
+get_mass = function(start_period=130, avg) {
+  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
+  rdat = read.csv(text=RCurl::getURL(http),as.is=T,na.strings = '')
+  
+  # filter data; remove early trapping periods, nontarget species
+  targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')
+  rdat_filtered = dplyr::filter(rdat, period >= start_period, species %in% targetsp) %>% select('period','plot','species','wgt')
+  
+  # fill in unweighed rodents with avg mass for that species
+  avgmass = aggregate(rdat_filtered$wgt, by = list(species = rdat_filtered$species),FUN=mean,na.rm=T)
+  rdat_filtered = merge(rdat_filtered,avgmass)
+  for (n in seq(length(rdat_filtered$species))) {
+    if (is.na(rdat_filtered$wgt[n])) {
+      rdat_filtered$wgt[n] = rdat_filtered$x[n]
+    }
+  }
+  
+  # get either total or average mass per plot and period
+  if (avg == T) {
+    mass = aggregate(rdat_filtered$wgt,by=list(period=rdat_filtered$period,plot=rdat_filtered$plot),FUN=mean)
+  }
+  else {
+    mass = aggregate(rdat_filtered$wgt,by=list(period=rdat_filtered$period,plot=rdat_filtered$plot),FUN=sum)
+  }
+  
+  # change column name
+  mass = rename(mass,wgt=x)
+  
+  # data frame of all plots in all periods
+  allplotsperiod = expand.grid(period=unique(rdat_filtered$period), plot=unique(rdat_filtered$plot))
+  #attach date columns according to period
+  allplotsperiod = append_dates(allplotsperiod)
+  # attach treatment column according to plot number
+  treatment = data.frame(treatment = c('CX','CE','EE','CC',
+                                       'XC','EC','XC','CE',
+                                       'CX','XX','CC','CX',
+                                       'EC','CC','EE','XX',
+                                       'CC','EC','EE','EE',
+                                       'EE','CE','XX','XC'),plot=seq(1,24))
+  allplotsperiod = merge(allplotsperiod,treatment)
+  # merge capture data with data frame of all plots and all periods, and fill in empty data with zeros
+  mass_data = merge(allplotsperiod,mass,all=T)
+  mass_data$wgt[is.na(mass_data$wgt)] = 0
+  # put data in chronological order
+  mass_data = mass_data[order(mass_data$period),]
+  return(mass_data)
+}
