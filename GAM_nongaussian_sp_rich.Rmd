@@ -29,6 +29,27 @@ EC_SR = sprich[[2]]
 XC_SR = sprich[[3]]
 ```
 
+## Plot data
+```{r}
+plt = plot(CC_SR$date,CC_SR$nsp,xlab='',ylab='n species')
+avgcc = aggregate(CC_SR$n,by=list(date=CC_SR$date),FUN=mean)
+lines(avgcc,lwd=2)
+abline(v=as.Date('2015-03-15'))
+```
+```{r}
+plt = plot(EC_SR$date,EC_SR$nsp,xlab='',ylab='n species')
+avgec = aggregate(EC_SR$n,by=list(date=EC_SR$date),FUN=mean)
+lines(avgec,lwd=2)
+abline(v=as.Date('2015-03-15'))
+```
+
+```{r}
+plt = plot(XC_SR$date,XC_SR$nsp,xlab='',ylab='n species')
+avgxc = aggregate(XC_SR$n,by=list(date=XC_SR$date),FUN=mean)
+lines(avgxc,lwd=2)
+abline(v=as.Date('2015-03-15'))
+```
+
 ## Checking different distributions
 If you don't want to go through all the distribution checking, tweedie seems
 to work reasonably for all the treatments. Poisson does not work for the
@@ -114,7 +135,6 @@ ec_p = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = E
 gam.check(ec_p, rep=100)
 ```
 
-Not terrible
 
 ```{r}
 plot(ec_p, residuals = TRUE, cex=5)
@@ -290,14 +310,23 @@ significance.
 ```{r}
 CC_SR$plot = as.factor(CC_SR$plot)
 cc_tw_plot = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot, bs="re"), family=tw, data = CC_SR, knots=knots)
+cc_tw_plot <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+                     + s(month, bs = "cc",k = 12) 
+                     + ti(Time, month, bs = c("cr","cc")  , k = c(10, 12))
+                     + s(plot,bs='re'), 
+                     data = CC_SR, knots = knots,family=tw)
 summary(cc_tw_plot)
 ```
 
-No significant effect and the edf is low
+No significant effect of plot
 
 ```{r}
 EC_SR$plot = as.factor(EC_SR$plot)
-ec_tw_plot = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = EC_SR, knots=knots)
+ec_tw_plot <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+                     + s(month, bs = "cc",k = 12) 
+                     + ti(Time, month, bs = c("cr","cc"), k = c(10, 12))
+                     + s(plot,bs='re'),
+                  data = EC_SR, method = "ML", knots = knots, family = tw)
 summary(ec_tw_plot)
 ```
 
@@ -308,8 +337,7 @@ XC_SR$plot = as.factor(XC_SR$plot)
 xc_tw_plot = gam(nsp ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = XC_SR, knots=knots)
 summary(xc_tw_plot)
 ```
-Don't need the plot random effect for any of the controls - though it is kinda
-marginal for the kangaroo rat exclosures.
+Plot not significant
 
 ## PLOTS!
 Control with data: I chose the gam with tweedie distribution, with month-time interaction, no plot effect
@@ -318,6 +346,7 @@ times = select(CC_SR,date,month,Time) %>% unique()
 want <- seq(1, nrow(times), length.out = 50)
 cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
                                  month = month[want]))
+
 p  <- predict(cc_tw_X_test,  newdata = cc_pdat, type="response",se.fit = TRUE)
 cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
 cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
@@ -326,7 +355,7 @@ p_cc = ggplot(aes(x = date, y = fitted), data = cc_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'green') +
   geom_vline(xintercept =  as.numeric(transition)) +
-  ggtitle("Controls: SR ~ te(month,Time), tweedie") +
+  ggtitle("Controls: SR ~ s(Time) + s(month) + ti(Time,month), tweedie") +
   xlab("Date") + ylab("Species richness") +
   theme_classic()
 p_cc + geom_point(data=CC_SR, aes(x=date,y=nsp))
@@ -345,7 +374,7 @@ p_ec = ggplot(aes(x = date, y = fitted), data = ec_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'blue') +
   geom_vline(xintercept =  as.numeric(transition)) +
-  ggtitle("Kangaroo rat exclosures: SR ~ te(month,Time), tweedie") +
+  ggtitle("Kangaroo rat exclosures: SR ~ s(month) + s(Time) + ti(Time,month), tweedie") +
   xlab("Date") + ylab("Species richness") +
   theme_classic()
 p_ec + geom_point(data=EC_SR, aes(x=date,y=nsp))
@@ -364,7 +393,7 @@ p_xc = ggplot(aes(x = date, y = fitted), data = xc_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') +
   geom_line(color = 'red') +
   geom_vline(xintercept =  as.numeric(transition)) +
-  ggtitle("Rodent Exclosures: SR ~ te(month,Time), tweedie") +
+  ggtitle("Rodent Exclosures: SR ~ s(month) + s(Time), tweedie") +
   xlab("Date") + ylab("Species Richness") +
   theme_classic()
 p_xc + geom_point(data=XC_SR, aes(x=date,y=nsp))
@@ -374,11 +403,11 @@ p_xc + geom_point(data=XC_SR, aes(x=date,y=nsp))
 ```{r}
 transition = as.Date("2015-03-15", format="%Y-%m-%d")
 ggplot(aes(x=date, y=fitted), data=xc_pdat) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') + 
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90',alpha=.6) + 
   geom_line(color = 'red') +
-  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90',alpha=.6) +
   geom_line(color = 'blue', data=ec_pdat) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90',alpha=.6) +
   geom_line(color = 'green', data=cc_pdat) +
   geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
   ggtitle("All treatments: SR ~ te(month, Time), tweedie") +
