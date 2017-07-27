@@ -1,0 +1,76 @@
+---
+title: "GAM_figures"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+
+source('gam_functions.R')
+source('data_functions.R')
+```
+
+## Dipos
+
+## Species richness
+```{r}
+# load data
+sprich = rodent_abundance(start_period=415,incomplete=F) %>% species_rich() %>% trt_data()
+CC_SR = sprich[[1]]
+EC_SR = sprich[[2]]
+XC_SR = sprich[[3]]
+
+# run models (for model selection see GAM_nongaussian_sp_rich.Rmd)
+cc_gam <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+              + s(month, bs = "cc",k = 12) 
+              + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
+              data = CC_SR, method = "ML", knots = knots,family=tw)
+ec_gam <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+              + s(month, bs = "cc",k = 12) 
+              + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
+                     data = EC_SR, method = "ML", knots = knots, family = tw)
+xc_gam = gam(nsp ~ s(month, bs = "cc", k = 12) 
+            + s(Time), family=tw, data = XC_SR, knots=knots)
+
+# generate predictions based on models
+times = select(CC_SR,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+
+p  <- predict(cc_gam,  newdata = cc_pdat, type="response",se.fit = TRUE)
+cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
+cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+times = select(EC_SR,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+ec_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(ec_gam,  newdata = ec_pdat, type="response",se.fit = TRUE)
+ec_pdat <- transform(ec_pdat, fitted=p$fit, se=p$se.fit)
+ec_pdat = ec_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+times = select(XC_SR,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+xc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(xc_gam,  newdata = xc_pdat, type="response",se.fit = TRUE)
+xc_pdat <- transform(xc_pdat, fitted=p$fit, se=p$se.fit)
+xc_pdat = xc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+# plot
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+ggplot(aes(x=date, y=fitted), data=xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90',alpha=.6) + 
+  geom_line(color = 'red') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90',alpha=.6) +
+  geom_line(color = 'blue', data=ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90',alpha=.6) +
+  geom_line(color = 'green', data=cc_pdat) +
+  geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
+  ggtitle("All treatments: SR ~ te(month, Time), tweedie") +
+  xlab("Date") + ylab("Species Richness") +
+  theme_classic()
+```
