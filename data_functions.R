@@ -249,7 +249,7 @@ species_rich = function(rdat) {
 #'
 get_mass = function(start_period=130, avg, metE) {
   # load rodent data
-  rdat_filtered = filter_data(start_period,incomplete=F) %>% select('period','plot','species','wgt')
+  rdat_filtered = filter_data(start_period,incomplete=F) %>% select(period,plot,species,wgt)
   
   # fill in unweighed rodents with avg mass for that species
   avgmass = aggregate(rdat_filtered$wgt, by = list(species = rdat_filtered$species),FUN=mean,na.rm=T)
