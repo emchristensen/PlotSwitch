@@ -35,14 +35,14 @@ EE_small = smgran[[5]]
 ## Just some plots to check out the data
 ```{r}
 # average across plots for each treatment
-avgcc = aggregate(CC_small$x,by=list(date=CC_small$date),FUN=mean)
-avgec = aggregate(EC_small$x,by=list(date=EC_small$date),FUN=mean)
-avgxc = aggregate(XC_small$x,by=list(date=XC_small$date),FUN=mean)
+avgcc = aggregate(CC_small$n,by=list(date=CC_small$date),FUN=mean)
+avgec = aggregate(EC_small$n,by=list(date=EC_small$date),FUN=mean)
+avgxc = aggregate(XC_small$n,by=list(date=XC_small$date),FUN=mean)
 
 alldat = rbind(CC_small,EC_small,XC_small)
 
-ccplot = ggplot(aes(x=date,y=x),data=CC_small) +
-  geom_point(aes(x=date,y=x,colour=treatment),data=alldat) +
+ccplot = ggplot(aes(x=date,y=n),data=alldat) +
+  geom_point(aes(x=date,y=n,colour=treatment),data=alldat) +
   geom_line(aes(x=date,y=x),data=avgcc,col='red') +
   geom_line(aes(x=date,y=x),data=avgec,col='green') +
   geom_line(aes(x=date,y=x),data=avgxc,col='blue') +
@@ -58,13 +58,13 @@ in all three cases, small granivores were doing well until 2016.  highly seasona
 
 ```{r}
 # just for comparison, check out the krat excl -> krat excl and control -> krat excl plots
-avgee = aggregate(EE_small$x,by=list(date=EE_small$date),FUN=mean)
-avgce = aggregate(CE_small$x,by=list(date=CE_small$date),FUN=mean)
+avgee = aggregate(EE_small$n,by=list(date=EE_small$date),FUN=mean)
+avgce = aggregate(CE_small$n,by=list(date=CE_small$date),FUN=mean)
 
 moredat = rbind(EE_small,CE_small)
 
-exclplot = ggplot(aes(x=date,y=x),data=CC_small) +
-  geom_point(aes(x=date,y=x,colour=treatment),data=moredat) +
+exclplot = ggplot(aes(x=date,y=n),data=CC_small) +
+  geom_point(aes(x=date,y=n,colour=treatment),data=moredat) +
   geom_line(aes(x=date,y=x),data=avgce,col='red') +
   #geom_line(aes(x=date,y=x),data=avgec,col='green') +
   geom_line(aes(x=date,y=x),data=avgee,col='blue') +
@@ -89,7 +89,7 @@ We'll start where we left off for a baseline of comparison: Gaussian
 
 ```{r}
 knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
-cc_g <- gam(x ~ s(month, bs = "cc", k = 12) + s(Time), data = CC_small, knots=knots)
+cc_g <- gam(n ~ s(month, bs = "cc", k = 12) + s(Time), data = CC_small, knots=knots)
 gam.check(cc_g, rep=100)
 ```
 
@@ -104,7 +104,7 @@ I'll be honest, the Gaussian doesn't look too terrible.
 #### Poisson
 
 ```{r}
-cc_p = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = CC_small, knots=knots)
+cc_p = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = CC_small, knots=knots)
 gam.check(cc_p, rep=100)
 ```
 
@@ -121,7 +121,7 @@ The poisson model actually explains more of the deviance than the gaussian.  Thi
 #### Negative Binomial
 
 ```{r}
-cc_nb = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = CC_small, knots=knots)
+cc_nb = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = CC_small, knots=knots)
 gam.check(cc_nb, rep=100)
 ```
 
@@ -137,7 +137,7 @@ The r2 and deviance explained are about the same as gaussian
 
 #### Tweedie
 ```{r}
-cc_tw = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = CC_small, knots=knots)
+cc_tw = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = CC_small, knots=knots)
 gam.check(cc_tw, rep=100)
 ```
 ```{r}
@@ -154,14 +154,14 @@ Slightly worse rsq.  I actually like either neg binomial or tweedie, even though
 ### Kangaroo rat exclosures
 ### gaussian
 ```{r}
-ec_g <- gam(x ~ s(month, bs = "cc", k = 12) + s(Time), data = EC_small, knots=knots)
+ec_g <- gam(n ~ s(month, bs = "cc", k = 12) + s(Time), data = EC_small, knots=knots)
 gam.check(ec_g, rep=100)
 ```
 
 #### Poisson
 
 ```{r}
-ec_p = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = EC_small, knots=knots)
+ec_p = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = EC_small, knots=knots)
 gam.check(ec_p, rep=100)
 ```
 
@@ -176,7 +176,7 @@ summary(ec_p)
 
 
 ```{r}
-ec_nb = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = EC_small, knots=knots)
+ec_nb = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = EC_small, knots=knots)
 gam.check(ec_nb, rep=100)
 ```
 The qq and residuals look funky
@@ -194,7 +194,7 @@ A smidge more deviance explained
 #### Tweedie
 
 ```{r}
-ec_tw = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = EC_small, knots=knots)
+ec_tw = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = EC_small, knots=knots)
 gam.check(ec_tw, rep=100)
 ```
 this looks less bad than nb
@@ -212,7 +212,7 @@ Last but not least
 
 #### Gaussian
 ```{r}
-xc_g <- gam(x ~ s(month, bs = "cc", k = 12) + s(Time), data = XC_small, knots=knots)
+xc_g <- gam(n ~ s(month, bs = "cc", k = 12) + s(Time), data = XC_small, knots=knots)
 gam.check(xc_g, rep=100)
 ```
 There are some big residuals.  Might be a red flag
@@ -226,7 +226,7 @@ summary(xc_g)
 #### Poisson
 
 ```{r}
-xc_p = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = XC_small, knots=knots)
+xc_p = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=poisson, data = XC_small, knots=knots)
 gam.check(xc_p, rep=100)
 ```
 something is up with that qq plot
@@ -241,7 +241,7 @@ summary(xc_p)
 #### Negative Binomial
 
 ```{r}
-xc_nb = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = XC_small, knots=knots)
+xc_nb = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=nb, data = XC_small, knots=knots)
 gam.check(xc_nb, rep=100)
 
 ```
@@ -256,7 +256,7 @@ summary(xc_nb)
 #### Tweedie
 
 ```{r}
-xc_tw = gam(x ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = XC_small, knots=knots)
+xc_tw = gam(n ~ s(month, bs = "cc", k = 12) + s(Time), family=tw, data = XC_small, knots=knots)
 gam.check(xc_tw, rep=100)
 ```
 I like this one best
@@ -274,7 +274,7 @@ I like tweedie best for all three treatment types, although some of the other di
 Control plots:
 
 ```{r}
-cc_tw_X = gam(x ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+cc_tw_X = gam(n ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
                data = CC_small, family=tw, method = "REML", knots = knots)
 summary(cc_tw_X)
 ```
@@ -283,7 +283,7 @@ plot(cc_tw_X, pers=TRUE)
 ```
 Kangaroo rat exclosures:
 ```{r}
-ec_tw_X = gam(x ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+ec_tw_X = gam(n ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
                data = EC_small, family=tw, method = "REML", knots = knots)
 summary(ec_tw_X)
 ```
@@ -293,7 +293,7 @@ plot(ec_tw_X, pers=TRUE)
 Rodent exclosures:
 
 ```{r}
-xc_tw_X = gam(x ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
+xc_tw_X = gam(n ~ te(Time,month, bs = c("cr","cc"), k =c(10,12)),            
                data = XC_small, family=tw, method = "REML", knots = knots)
 summary(xc_tw_X)
 ```
@@ -303,14 +303,14 @@ plot(xc_tw_X, pers=TRUE)
 Testing each of the models to see if its better than additive
 
 ```{r}
-cc_tw_X_test <- gam(x ~ s(Time, bs = "cr") 
+cc_tw_X_test <- gam(n ~ s(Time, bs = "cr") 
                      + s(month, bs = "cc",k = 12) 
                      + ti(Time, month, bs = c("cr","cc"), k=c(10,12)), 
-                     data = CC_small,  knots = knots,family=tw)
-cc_tw_test <- gam(x ~ s(Time, bs = "cr", k=10) + 
+                     data = CC_small, method='ML', knots = knots,family=tw)
+cc_tw_test <- gam(n ~ s(Time, bs = "cr", k=10) + 
                     s(month, bs = "cc",k = 12), data = CC_small, 
                    knots = knots, family = tw)
-AIC(cc_tw_X_test, cc_tw_test)
+AIC(cc_tw_X_test, cc_tw_test, cc_tw)
 anova(cc_tw_test,cc_tw_X_test)
 ```
 The cc_tw_X_test throws an error: fitting terminated with step failure -- I had to take out the argument method='ML'
@@ -320,30 +320,30 @@ The interaction term does appear to be significant
 Kangaroo rat exclosures?
 
 ```{r}
-ec_tw_X_test <- gam(x ~ s(Time, bs = "cr", k = 10) 
+ec_tw_X_test <- gam(n ~ s(Time, bs = "cr", k = 10) 
                      + s(month, bs = "cc",k = 12) 
                      + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
                      data = EC_small, method = "ML", knots = knots, family = tw)
-ec_tw_test <- gam(x ~ s(Time, bs = "cr") + 
+ec_tw_test <- gam(n ~ s(Time, bs = "cr") + 
                     s(month, bs = "cc",k = 12), data = EC_small, knots = knots, family = tw)
-AIC(ec_tw_X_test, ec_tw_test)
+AIC(ec_tw_X_test, ec_tw_test, ec_tw,ec_tw_X)
 anova(ec_tw_test,ec_tw_X_test)
 ```
 interaction term not significant
 
 ```{r}
-xc_tw_X_test <- gam(x ~ s(Time, bs = "cr", k = 10) 
+xc_tw_X_test <- gam(n ~ s(Time, bs = "cr", k = 10) 
                      + s(month, bs = "cc",k = 12)
                      + ti(Time, month, bs = c("cr","cc") , k = c(10, 12)), 
                      data = XC_small,  knots = knots, family = tw)
-xc_tw_test <- gam(x ~ s(Time, bs = "cr", k = 10) + 
+xc_tw_test <- gam(n ~ s(Time, bs = "cr", k = 10) + 
                     s(month, bs = "cc",k = 12) , data = XC_small, 
                     knots = knots, family = tw)
-AIC(xc_tw_X_test, xc_tw_test)
+AIC(xc_tw_X_test, xc_tw_test, xc_tw, xc_tw_X)
 anova(xc_tw_test,xc_tw_X_test)
 ```
 
-It looks like season-trend interaction is significant for controls and total exclosures but not krat exclosures.
+It looks like season-trend interaction is significant for controls but not total exclosures and krat exclosures.
 
 
 ## Checking Plot effects
@@ -355,7 +355,7 @@ significance.
 # Control Plots
 ```{r}
 CC_small$plot = as.factor(CC_small$plot)
-cc_tw_plot = gam(x ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot, bs="re"), family=tw, data = CC_small, knots=knots)
+cc_tw_plot = gam(n ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot, bs="re"), family=tw, data = CC_small, knots=knots)
 summary(cc_tw_plot)
 ```
 
@@ -363,7 +363,7 @@ Plot does seem to be significant
 
 ```{r}
 EC_small$plot = as.factor(EC_small$plot)
-ec_tw_plot = gam(x ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = EC_small, knots=knots)
+ec_tw_plot = gam(n ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = EC_small, knots=knots)
 summary(ec_tw_plot)
 ```
 
@@ -371,7 +371,7 @@ plot not significant
 
 ```{r}
 XC_small$plot = as.factor(XC_small$plot)
-xc_tw_plot = gam(x ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = XC_small, knots=knots)
+xc_tw_plot = gam(n ~ s(month, bs = "cc", k = 12) + s(Time) + s(plot,bs="re"), family=tw, data = XC_small, knots=knots)
 summary(xc_tw_plot)
 ```
 Plot again not significant
@@ -379,7 +379,7 @@ Plot again not significant
 ## PLOTS!
 Control with data: I chose the gam with tweedie distribution, with month-time interaction, with plot effect.  However I can't figure out how to get plot effect into this code -- I'll work on that later.
 ```{r}
-cc_tw_X_plot <- gam(x ~ s(Time) + s(month, bs = "cc",k = 12) + ti(Time, month, bs = c("cr","cc") , k = c(10, 12)) + s(plot,bs='re'),
+cc_tw_X_plot <- gam(n ~ s(Time, bs="cr") + s(month, bs = "cc",k = 12) + ti(Time, month, bs = c("cr","cc") , k = c(10, 12)) + s(plot,bs='re'),
                      data = CC_small,  knots = knots,family=tw)
 
 
@@ -399,7 +399,7 @@ p_cc = ggplot(aes(x = date, y = fitted), data = cc_pdat) +
   ggtitle("Controls: small gran ~ te(month,Time), tweedie") +
   xlab("Date") + ylab("Small granivore abundance") +
   theme_classic()
-p_cc + geom_point(data=CC_small, aes(x=date,y=x))
+p_cc + geom_point(data=CC_small, aes(x=date,y=n))
 ```
 Kangaroo rat exclosures with data: gam with tweedie, no interaction term, no plot term
 ```{r}
@@ -418,15 +418,15 @@ p_ec = ggplot(aes(x = date, y = fitted), data = ec_pdat) +
   ggtitle("Kangaroo rat exclosures: sm gran ~ s(month) + s(Time), tweedie") +
   xlab("Date") + ylab("Small granivore abundance") +
   theme_classic()
-p_ec + geom_point(data=EC_small, aes(x=date,y=x))
+p_ec + geom_point(data=EC_small, aes(x=date,y=n))
 ```
-total exclosures: gam with tweedie, with interaction term, no plot term
+total exclosures: gam with tweedie, no interaction term, no plot term
 ```{r}
 times = select(XC_small,date,month,Time) %>% unique()
 want <- seq(1, nrow(times), length.out = 50)
 xc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
                                  month = month[want]))
-p  <- predict(xc_tw_X_test,  newdata = xc_pdat, type="response",se.fit = TRUE)
+p  <- predict(xc_tw,  newdata = xc_pdat, type="response",se.fit = TRUE)
 xc_pdat <- transform(xc_pdat, fitted=p$fit, se=p$se.fit)
 xc_pdat = xc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
 transition = as.Date("2015-03-15", format="%Y-%m-%d")
@@ -437,7 +437,7 @@ p_xc = ggplot(aes(x = date, y = fitted), data = xc_pdat) +
   ggtitle("Rodent Exclosures: Small gran ~ te(month,Time), tweedie") +
   xlab("Date") + ylab("Small granivore abundance") +
   theme_classic()
-p_xc + geom_point(data=XC_small, aes(x=date,y=x))
+p_xc + geom_point(data=XC_small, aes(x=date,y=n))
 ```
 
 
