@@ -13,6 +13,63 @@ source('data_functions.R')
 ```
 
 ## Dipos
+```{r}
+dipo_data = make_dipo_data()
+filtered_data = trt_data(dipo_data)
+CC = filtered_data[[1]]
+EC = filtered_data[[2]]
+XC = filtered_data[[3]]
+
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+
+# run models
+cc_tw = gam(DipoN ~ s(month, bs = "cc", k = 12) + 
+              s(Time), family=tw, data = CC, knots=knots)
+ec_tw = gam(DipoN ~ s(month, bs = "cc", k = 12) + 
+              s(Time), family=tw, data = EC, knots=knots)
+xc_tw = gam(DipoN ~ s(month, bs = "cc", k = 12) + 
+              s(Time), family=tw, data = XC, knots=knots)
+
+# generate predictions based on models
+times = select(CC,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(cc_tw,  newdata = cc_pdat, type="response",se.fit = TRUE)
+cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
+cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+times = select(EC,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+ec_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(ec_tw,  newdata = ec_pdat, type="response",se.fit = TRUE)
+ec_pdat <- transform(ec_pdat, fitted=p$fit, se=p$se.fit)
+ec_pdat = ec_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+times = select(XC,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+xc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(xc_tw,  newdata = xc_pdat, type="response",se.fit = TRUE)
+xc_pdat <- transform(xc_pdat, fitted=p$fit, se=p$se.fit)
+xc_pdat = xc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+
+# plot
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+ggplot(aes(x=date, y=fitted), data=xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') + 
+  geom_line(color = 'red') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90') +
+  geom_line(color = 'blue', data=ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90') +
+  geom_line(color = 'green', data=cc_pdat) +
+  geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
+  ggtitle("Dipodomys response to plot flip") +
+  xlab("Date") + ylab("Dipodomys abundance per plot") +
+  theme_classic()
+```
 
 ## Species richness
 ```{r}
@@ -70,7 +127,7 @@ ggplot(aes(x=date, y=fitted), data=xc_pdat) +
   geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90',alpha=.6) +
   geom_line(color = 'green', data=cc_pdat) +
   geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
-  ggtitle("All treatments: SR ~ te(month, Time), tweedie") +
+  ggtitle("") +
   xlab("Date") + ylab("Species Richness") +
   theme_classic()
 ```
