@@ -131,3 +131,70 @@ ggplot(aes(x=date, y=fitted), data=xc_pdat) +
   xlab("Date") + ylab("Species Richness") +
   theme_classic()
 ```
+## Small Granivores
+```{r}
+smgran = make_data('SmGran') %>% trt_data()
+
+CC_small = smgran[[1]]
+EC_small = smgran[[2]]
+XC_small = smgran[[3]]
+
+# models
+
+# control: time + month + (time*month interaction) + (random effect of plot)
+cc_tw_X_plot <- gam(n ~ s(Time, bs="cr") + 
+                      s(month, bs = "cc",k = 12) + 
+                      ti(Time, month, bs = c("cr","cc") , k = c(10, 12)) + 
+                      s(plot,bs='re'),
+                    family=tw, data=CC_small, knots=knots)
+# krat exlc: time + month
+ec_tw = gam(n ~ s(Time, bs="cr") +
+              s(month, bs = "cc", k = 12), 
+            family=tw, data=EC_small, knots=knots)
+
+# total excl: time + month
+xc_tw = gam(n ~ s(Time, bs="cr") +
+              s(month, bs = "cc", k = 12),
+            family=tw, data=XC_small, knots=knots)
+
+# predictions based on modesl
+times = select(CC_small,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+
+p  <- predict(cc_tw_X_test,  newdata = cc_pdat, type="response",se.fit = TRUE)
+cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
+cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+times = select(EC_small,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+ec_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(ec_tw,  newdata = ec_pdat, type="response",se.fit = TRUE)
+ec_pdat <- transform(ec_pdat, fitted=p$fit, se=p$se.fit)
+ec_pdat = ec_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+times = select(XC_small,date,month,Time) %>% unique()
+want <- seq(1, nrow(times), length.out = 50)
+xc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
+                                 month = month[want]))
+p  <- predict(xc_tw,  newdata = xc_pdat, type="response",se.fit = TRUE)
+xc_pdat <- transform(xc_pdat, fitted=p$fit, se=p$se.fit)
+xc_pdat = xc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+# plot
+transition = as.Date("2015-03-15", format="%Y-%m-%d")
+ggplot(aes(x=date, y=fitted), data=xc_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90',alpha=.6) + 
+  geom_line(color = 'red') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90',alpha=.6) +
+  geom_line(color = 'blue', data=ec_pdat) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90',alpha=.6) +
+  geom_line(color = 'green', data=cc_pdat) +
+  geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
+  ggtitle("Small Granivore abundances") +
+  xlab("Date") + ylab("Small granivore abundance") +
+  theme_classic()
+```
+
