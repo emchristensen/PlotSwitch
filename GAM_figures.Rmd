@@ -10,6 +10,8 @@ library(ggplot2)
 
 source('gam_functions.R')
 source('data_functions.R')
+
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
 ```
 
 ## Dipos
@@ -20,15 +22,18 @@ CC = filtered_data[[1]]
 EC = filtered_data[[2]]
 XC = filtered_data[[3]]
 
-knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+
 
 # run models
 cc_tw = gam(DipoN ~ s(month, bs = "cc", k = 12) + 
-              s(Time), family=tw, data = CC, knots=knots)
+              s(Time), 
+            family=tw, data = CC, knots=knots)
 ec_tw = gam(DipoN ~ s(month, bs = "cc", k = 12) + 
-              s(Time), family=tw, data = EC, knots=knots)
+              s(Time), 
+            family=tw, data = EC, knots=knots)
 xc_tw = gam(DipoN ~ s(month, bs = "cc", k = 12) + 
-              s(Time), family=tw, data = XC, knots=knots)
+              s(Time), 
+            family=tw, data = XC, knots=knots)
 
 # generate predictions based on models
 times = select(CC,date,month,Time) %>% unique()
@@ -59,11 +64,11 @@ xc_pdat = xc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
 # plot
 transition = as.Date("2015-03-15", format="%Y-%m-%d")
 ggplot(aes(x=date, y=fitted), data=xc_pdat) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90') + 
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = 'gray90',alpha=.6) + 
   geom_line(color = 'red') +
-  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = ec_pdat, fill = 'gray90',alpha=.6) +
   geom_line(color = 'blue', data=ec_pdat) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90') +
+  geom_ribbon(aes(ymin = lower, ymax = upper), data = cc_pdat, fill = 'gray90',alpha=.6) +
   geom_line(color = 'green', data=cc_pdat) +
   geom_vline(xintercept =  as.numeric(as.Date('2015-03-20'))) +
   ggtitle("Dipodomys response to plot flip") +
@@ -80,16 +85,17 @@ EC_SR = sprich[[2]]
 XC_SR = sprich[[3]]
 
 # run models (for model selection see GAM_nongaussian_sp_rich.Rmd)
-cc_gam <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
+cc_gam <- gam(nsp ~ s(Time, bs = "cr") 
               + s(month, bs = "cc",k = 12) 
               + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
-              data = CC_SR, method = "ML", knots = knots,family=tw)
+              data=CC_SR, knots=knots, method="ML", family=tw)
 ec_gam <- gam(nsp ~ s(Time, bs = "cr", k = 10) 
               + s(month, bs = "cc",k = 12) 
               + ti(Time, month, bs = c("cr","cc"), k = c(10, 12)), 
-                     data = EC_SR, method = "ML", knots = knots, family = tw)
-xc_gam = gam(nsp ~ s(month, bs = "cc", k = 12) 
-            + s(Time), family=tw, data = XC_SR, knots=knots)
+              data=EC_SR, knots=knots, method="ML", family=tw)
+xc_gam = gam(nsp ~ s(Time, bs="cr") +
+               s(month, bs = "cc", k = 12), 
+            data=XC_SR, knots=knots, method="ML", family=tw)
 
 # generate predictions based on models
 times = select(CC_SR,date,month,Time) %>% unique()
@@ -158,12 +164,12 @@ xc_tw = gam(n ~ s(Time, bs="cr") +
             family=tw, data=XC_small, knots=knots)
 
 # predictions based on modesl
-times = select(CC_small,date,month,Time) %>% unique()
+times = select(CC_small,date,month,Time,plot) %>% unique()
 want <- seq(1, nrow(times), length.out = 50)
 cc_pdat <- with(times, data.frame(Time = Time[want], date = date[want], 
-                                 month = month[want]))
+                                 month = month[want], plot = plot[want]))
 
-p  <- predict(cc_tw_X_test,  newdata = cc_pdat, type="response",se.fit = TRUE)
+p  <- predict(cc_tw_X_plot,  newdata = cc_pdat, type="response",se.fit = TRUE)
 cc_pdat <- transform(cc_pdat, fitted=p$fit, se=p$se.fit)
 cc_pdat = cc_pdat %>% mutate(lower = fitted - 1.96*se, upper = fitted + 1.96*se)
 
