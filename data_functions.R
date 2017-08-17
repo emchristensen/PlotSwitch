@@ -101,7 +101,7 @@ make_dipo_data = function(){
   # number of dipos per plot
   d = byspecies %>% 
     filter(period>414, species %in% c('DM','DO','DS'))
-  dipos = aggregate(d$x, by=list(period=d$period, plot=d$plot, date=d$date, month=d$month, Year=d$Year, Time=d$Time), FUN=sum)
+  dipos = aggregate(d$x, by=list(period=d$period, plot=d$plot, date=d$date, month=d$month, year=d$year, time=d$time), FUN=sum)
   # data frame of all plots in all periods
   allplotsperiod = expand.grid(period=unique(dipos$period), plot=unique(dipos$plot))
   #attach date columns according to period
@@ -233,7 +233,7 @@ species_rich = function(rdat) {
   # put data in chronological order
   sprich = sprich[order(sprich$period),]
   
-  return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,Year,Time))
+  return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,year,time))
 }
 
 #' @title get mass data
