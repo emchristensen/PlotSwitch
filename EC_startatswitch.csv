@@ -1,4 +1,4 @@
-plot,period,treatment,DipoN,date,month,Year,Time
+plot,period,treatment,DipoN,date,month,year,Time
 6,436,EC,0,3/26/2015,3,2015,16.52
 13,436,EC,0,3/26/2015,3,2015,16.52
 18,436,EC,0,3/26/2015,3,2015,16.52
