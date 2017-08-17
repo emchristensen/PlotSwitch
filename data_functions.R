@@ -12,14 +12,14 @@ append_dates = function(df) {
   # Get trapping history
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
   trapping = read.csv(text=RCurl::getURL(http)) 
-  trapping$date = as.Date(paste(trapping$Year,trapping$Month,trapping$Day,sep='-'))
+  trapping$date = as.Date(paste(trapping$year,trapping$month,trapping$day,sep='-'))
   
   # create data frame with period, date, month, year, time
-  period_dates = aggregate(trapping$date,by=list(Period=trapping$Period),FUN=min)
+  period_dates = aggregate(trapping$date,by=list(period=trapping$period),FUN=min)
   names(period_dates) = c('period','date')
   period_dates$month = as.numeric(format(period_dates$date, "%m"))
-  period_dates$Year = as.numeric(format(period_dates$date, "%Y"))
-  period_dates$Time = as.numeric(period_dates$date) / 1000
+  period_dates$year = as.numeric(format(period_dates$date, "%Y"))
+  period_dates$time = as.numeric(period_dates$date) / 1000
   
   # append to data frame
   df_new = merge(df,period_dates,by='period')
@@ -63,7 +63,7 @@ filter_data = function(start_period,incomplete=F) {
   # Get trapping history in order to find and remove incomplete censuses
   http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
   trapping = read.csv(text=RCurl::getURL(http)) 
-  plotstrapped = aggregate(trapping$Sampled,by=list(period=trapping$Period),FUN=sum)
+  plotstrapped = aggregate(trapping$sampled,by=list(period=trapping$period),FUN=sum)
   fullcensus = plotstrapped[plotstrapped$x>=21,] # warning: this may not be ok for other projects, period 457 only trapped 21 plots but the skipped ones aren't relevant to this project
   
   # filter data; remove early trapping periods, nontarget species
@@ -155,7 +155,7 @@ make_data= function(species='All',start_period=415) {
   
   target_dat = filter(dat,species %in% targetsp)
   total = aggregate(target_dat$x,by=list(period=target_dat$period,plot=target_dat$plot,date=target_dat$date,month=target_dat$month,
-                                         Year=target_dat$Year,Time=target_dat$Time),FUN=sum)
+                                         year=target_dat$year,time=target_dat$time),FUN=sum)
 
   # data frame of all plots in all periods
   allplotsperiod = expand.grid(period=unique(dat$period), plot=unique(dat$plot))
