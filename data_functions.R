@@ -19,7 +19,7 @@ append_dates = function(df) {
   names(period_dates) = c('period','date')
   period_dates$month = as.numeric(format(period_dates$date, "%m"))
   period_dates$year = as.numeric(format(period_dates$date, "%Y"))
-  period_dates$time = as.numeric(period_dates$date) / 1000
+  period_dates$Time = as.numeric(period_dates$date) / 1000
   
   # append to data frame
   df_new = merge(df,period_dates,by='period')
@@ -33,7 +33,7 @@ append_dates = function(df) {
 #' @param start_period first period number of data desired; default is 130 (1989)
 #' @param incomplete T/F, wheter or not to include incomplete censuses
 #' 
-#' @return data frame with columns 'plot', 'period', 'species', 'x' (abundance), 'date','month','Year','Time'
+#' @return data frame with columns 'plot', 'period', 'species', 'x' (abundance), 'date','month','year','Time'
 
 rodent_abundance = function(start_period=130,incomplete=F) {
   # filter data: target species, remove early periods, remove incomplete censuses
@@ -101,7 +101,7 @@ make_dipo_data = function(){
   # number of dipos per plot
   d = byspecies %>% 
     filter(period>414, species %in% c('DM','DO','DS'))
-  dipos = aggregate(d$x, by=list(period=d$period, plot=d$plot, date=d$date, month=d$month, year=d$year, time=d$time), FUN=sum)
+  dipos = aggregate(d$x, by=list(period=d$period, plot=d$plot, date=d$date, month=d$month, year=d$year, Time=d$Time), FUN=sum)
   # data frame of all plots in all periods
   allplotsperiod = expand.grid(period=unique(dipos$period), plot=unique(dipos$plot))
   #attach date columns according to period
@@ -155,7 +155,7 @@ make_data= function(species='All',start_period=415) {
   
   target_dat = filter(dat,species %in% targetsp)
   total = aggregate(target_dat$x,by=list(period=target_dat$period,plot=target_dat$plot,date=target_dat$date,month=target_dat$month,
-                                         year=target_dat$year,time=target_dat$time),FUN=sum)
+                                         year=target_dat$year,Time=target_dat$Time),FUN=sum)
 
   # data frame of all plots in all periods
   allplotsperiod = expand.grid(period=unique(dat$period), plot=unique(dat$plot))
@@ -233,7 +233,7 @@ species_rich = function(rdat) {
   # put data in chronological order
   sprich = sprich[order(sprich$period),]
   
-  return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,year,time))
+  return(dplyr::select(sprich,period,plot,nsp,treatment,date,month,year,Time))
 }
 
 #' @title get mass data

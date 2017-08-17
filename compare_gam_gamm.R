@@ -5,7 +5,9 @@ library(dplyr)
 library(RCurl)
 library(mgcv)
 library(ggplot2)
+source('gamm_functions.R')
 source('gam_functions.R')
+source('data_functions.R')
 
 ##### Data for all Dipo analyses
 dipo_data = make_dipo_data()
@@ -32,12 +34,12 @@ plot_singleGAM(CC_trend, GAM_type, Ylab, "CC")
 
 # with AR1
 m1_CC <- gamm(DipoN ~ s(month, bs = "cc", k = 12) + s(Time, k=20),
-              data = CC, correlation = corARMA(form = ~ 1|Year, p = 1), family = fam)
+              data = CC, correlation = corARMA(form = ~ 1|year, p = 1), family = fam)
 gamm_diagnostics(m1_CC,"CC AR1")
 
 ###### CC Plots -- GAM
 m3 = gam(DipoN ~ s(month, bs = "cc", k = 12) + s(Time), data = CC, family=fam, link=identity)
-CC_gamtrend = make_prediction_gam(CC,m3)
+CC_gamtrend = make_prediction_gam(CC,m3,colname='DipoN')
 plot_singleGAM(CC_gamtrend, GAM_type, Ylab, "CC")
 gam_diagnostics(m3,'')
 gam.check(m3)
