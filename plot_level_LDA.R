@@ -18,7 +18,7 @@ rodents = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PL','PI','PH
 
 # read in trapping data and find censuses where all control plots were trapped
 trapdat = read.csv('C:/Users/EC/Desktop/git/PortalData/Rodents/Portal_rodent_trapping.csv')
-allplots = aggregate(trapdat$Sampled,by=list(period=trapdat$Period),FUN=sum) %>% filter(x>22)
+allplots = aggregate(trapdat$sampled,by=list(period=trapdat$period),FUN=sum) %>% filter(x>22)
 
 # create table of species abundances: 1989 - 2015 so we can use more k-rat removal plots
 absabund = rdat %>% filter(period>380, period< 437, period %in% allplots$period, species %in% rodents, plot %in% c(2,4,8,11,12,14,17,22,3,6,13,15,18,19,20,21)) %>% 
