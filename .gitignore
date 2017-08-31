@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+GAM_nongaussian.nb.html
+GAM_nongaussian_sm_gran.nb.html
+GAM_nongaussian_sp_even.nb.html
+GAM_nongaussian_sp_rich.nb.html
+PlotSwitch.Rproj
