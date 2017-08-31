@@ -1,0 +1,318 @@
+---
+title: "Seasonal GAMs with Portal"
+author: "Morgan Ernest"
+output: html_notebook
+---
+This is my attempt to implement Gavin Simpson's GAM tutorial with timeseries
+data with Portal Rodent Abundance.
+
+## Season and Trend - non interactive
+
+First step: Load and process the data. For the seasonal analyses, Gavin used
+a continuous time variable for the trend component. He did this by taking the 
+data object and converting it to its numeric basis and then dividing by 1000
+to make it manageable. Season is with within year Julian Day.
+
+the notation 'cet' is just a holdover from Gavin's code because I was lazy.
+
+Don't forget to set your working directory!
+```{r Load Data}
+require("mgcv")
+data = read.csv("raw_abundance.csv")
+data$date = as.Date(data$date, format="%m/%d/%Y")
+cet <- transform(data, Time = as.numeric(date) / 1000)
+cet = transform(cet, Season = as.numeric(format(date, "%j")))
+```
+
+What does a seasonal GAM even look like? This model is fitting a rodent abundance
+as a function of a smooth of Season and a smooth of Time independently. The
+season smooth is set to a cyclic spline so that January and December are similar.
+12 knots are specified for the 12 months. In a later tutorial, he decides that
+for seasonal fits, we're better off fixing the locations of the knots so that
+January and December aren't just assumed to be the same. Turns out that because season is implementd continuously, its a little more complicated in this model to do that, but we will do it for the interaction stuff later.
+
+The response distribution is just the default, Gaussian (?), but is probably incorrect since this is count data not temperature data like Gavin was using. 
+But let's not complicate things more than they already are at the moment.
+
+```{r gam fit}
+m <- gamm(abundance ~ s(Season, bs = "cc", k = 12) + s(Time), data = cet)
+summary(m$gam)
+```
+Both season and trend are significant. An r2 of .363 is pretty damn good for
+Portal, to be honest. 
+
+```{r gam plots}
+layout(matrix(1:2, ncol = 2))
+plot(m$gam, scale = 0)
+layout(1)
+```
+
+Looks like a model distribution of abundance, highest at midyear and a generally
+increasing trend in abundance, with lots of wiggles.
+
+```{r autocorrelation plots}
+layout(matrix(1:2, ncol = 2))
+acf(resid(m$lme), lag.max = 36, main = "ACF")
+pacf(resid(m$lme), lag.max = 36, main = "pACF")
+layout(1)
+```
+
+Ah, autocorrelation. Not suprising. Looks like there is significant autocorrelation upto about lab 7 or 8. pacf suggests that could be echos from the first lag(?).
+
+Let's add within year autocorrelation! Here is Gavin's code for fitting a bunch
+of AR models in an automated fashion. Since there were signals up to 8, we'll
+look up to p=8.
+
+```{r add AR residuals}
+ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
+for (i in 1:8) {
+  m <- gamm(abundance ~ s(Season, bs = "cc", k = 12) + s(Time),
+            data = cet, method = "REML", control = ctrl,
+            correlation = corARMA(form = ~ 1 | yr, p = i))
+  assign(paste0("m", i), m) 
+}
+anova(m$lme, m1$lme, m2$lme, m3$lme, m4$lme, m5$lme, m6$lme, m7$lme, m8$lme)
+```
+
+We might be able to argue that we don't need an AR process modelled, but
+given the ACF results, I think its safer to go with the AR(2) model. Let's
+look at that:
+
+```{r}
+layout(matrix(1:2, ncol = 2))
+plot(m2$gam, scale = 0)
+layout(1)
+```
+Our seasonal response is more bimodal and our trend is now linear.
+
+```{r}
+layout(matrix(1:2, ncol = 2))
+res <- resid(m2$lme, type = "normalized")
+acf(res, lag.max = 36, main = "ACF - AR(2) errors")
+pacf(res, lag.max = 36, main = "pACF- AR(2) errors")
+layout(1)
+```
+We have some indication of between year autocorrelation, at about lag 12, but
+I'm going to pull a Simon Wood here and say "Let's not worry about that now"
+
+I'd have to go back to Gavin's post to see what this graph is really about, but
+I suspect its showing how the AR() impacts your trend estimates to demonstrate
+why this is potentially important.
+```{r}
+want <- seq(1, nrow(cet), length.out = 39)
+pdat <- with(cet, data.frame(Time = Time[want], date = date[want], 
+                             Season = Season[want]))
+
+## predict trend contributions
+p  <- predict(m$gam,  newdata = pdat, type = "terms", se.fit = TRUE)
+p1 <- predict(m1$gam, newdata = pdat, type = "terms", se.fit = TRUE)
+p2 <- predict(m2$gam, newdata = pdat, type = "terms", se.fit = TRUE)
+p3 <- predict(m3$gam, newdata = pdat, type = "terms", se.fit = TRUE)
+
+pdat <- transform(pdat, p  = p$fit[,2],  se  = p$se.fit[,2], p1 = p1$fit[,2], se1 = p1$se.fit[,2],
+                  p2 = p2$fit[,2], se2 = p2$se.fit[,2], p3 = p3$fit[,2], se3 = p3$se.fit[,2])
+
+op <- par(mar = c(5,4,2,2) + 0.1)
+ylim <- with(pdat, range(p, p1, p2, p3))
+ylim[1] <- floor(ylim[1])
+ylim[2] <- ceiling(ylim[2])
+ylab <- expression(Abundance ~ (Individuals/ha ~ centred))
+plot(abundance - mean(abundance) ~ date, data = cet, type = "n", 
+     ylab = ylab, ylim = ylim)
+lines(p  ~ date, data = pdat, col = "black")
+lines(p1 ~ date, data = pdat, col = "red")
+lines(p2 ~ date, data = pdat, col = "blue")
+lines(p3 ~ date, data = pdat, col = "forestgreen", lwd = 1)
+legend("topleft", legend = c("Uncorrelated Errors", paste0("AR(", 1:3, ") Errors")),
+       bty = "n", col = c("black","red","blue","forestgreen"), lty = 1, lwd = c(1,1,1))
+par(op)
+```
+
+Back to the seasonal model: Like the other modelling examples (when I worked 
+through earlier tutorials in this series) this one also says that the increase 
+in Abundance is linear across years. It does seem to pick up a bimodal seasonal dynamic in abundance. Is this true or a signal of shifting seasonal changes?
+I think our next tutorial will clarify this.
+
+## Interacting Season and Trend
+
+So, does the seasonal signal change through time at Portal? Here's the
+attempt to use Gavin's blog post on the Portal data. Again, the response
+distribution is the default which is probably not correct.
+
+This time instead of continuous time, Gavin has reverted to Year and Month. I
+have done the same. As I experienced earlier when I tried to implement the
+new knot placement for season in the previous model, it is easier to do with
+month as a discrete value.
+
+I'm keeping Gavin's knot structure specified for the yr term. I suspect this
+helps with model comparison later?
+
+
+```{r}
+knots <- list(mo = c(0.5, seq(1, 12, length = 10), 12.5))
+m0 <- gamm(abundance ~ te(yr, mo, bs = c("cr","cc"), k = c(10,12)),
+           data = cet, method = "REML", knots = knots)
+```
+The first model is without any AR term for the residuals.
+
+```{r}
+plot(acf(resid(m0$lme, type = "normalized")))
+```
+
+This shows a similar autocorrelation pattern as earlier. We'll do the same
+search for the best AR order.
+
+```{r}
+ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
+
+for (i in 1:8) {
+  m <- gamm(abundance ~ te(yr, mo, bs = c("cr","cc"), k = c(10,12)),
+            data = cet, method = "REML", control = ctrl, knots = knots,
+            correlation = corARMA(form = ~ 1 | yr, p = i))
+  assign(paste0("m", i), m) 
+}
+anova(m1$lme, m2$lme, m3$lme, m4$lme, m5$lme, m6$lme, m7$lme, m8$lme)
+```
+
+Like last time, the AR2 model seems to be best.
+
+```{r}
+plot(acf(resid(m2$lme, type = "normalized")))
+
+```
+This looks really good! So what does the surface of the interaction look like?
+```{r}
+plot(m2$gam, pers = TRUE)
+```
+Does seem to be a strong change in seasonality with time!
+
+Let's do what Gavin did and see how the seasonal abundance estimates differ
+in 1978 and 2014.
+
+```{r}
+pdat <- with(cet, data.frame(yr = rep(c(1978, 2014), 
+                                        each = 100),
+                             mo = rep(seq(1, 12, 
+                                              length = 100),
+                                          times = 2)))
+
+pred <- predict(m2$gam, newdata = pdat, se.fit = TRUE)
+crit <- qt(0.975, df = df.residual(m$gam)) # ~95% interval critical t
+pdat <- transform(pdat, fitted = pred$fit, se = pred$se.fit, fYear = as.factor(yr))
+pdat <- transform(pdat,
+                  upper = fitted + (crit * se),
+                  lower = fitted - (crit * se))
+
+library(ggplot2)
+
+p1 <- ggplot(pdat, aes(x = mo, y = fitted, group = fYear)) +
+  geom_ribbon(mapping = aes(ymin = lower, ymax = upper,
+                            fill = fYear), alpha = 0.2) + # confidence band
+  geom_line(aes(colour = fYear)) +    # predicted temperatures
+  theme_bw() +                        # minimal theme
+  theme(legend.position = "top") +    # push legend to the top
+  labs(y = expression(abundance), x = NULL) +
+  scale_fill_discrete(name = "Year") + # correct legend name
+  scale_colour_discrete(name = "Year") +
+  scale_x_continuous(breaks = 1:12,   # tweak where the x-axis ticks are
+                     labels = month.abb, # & with what labels
+                     minor_breaks = NULL)
+p1
+```
+
+Our model suggests that there was little seasonality in the data early on, and
+whatever seasonality there was was in caused by higher abundance in winter. Now,
+we have a different pattern, strong increased abundance in summer.
+
+We can plot month trends:
+
+```{r}
+pdat2 <- with(cet,
+              data.frame(yr = rep(1978:2014, each = 12),
+                         mo = rep(1:12, times = 37)))
+
+pred2 <- predict(m$gam, newdata = pdat2, se.fit = TRUE)
+
+pdat2 <- transform(pdat2,
+                   fitted = pred2$fit,  # predicted values
+                   se = pred2$se.fit,   # standard errors
+                   fMonth = factor(month.abb[mo], # month as a factor
+                                   levels = month.abb))
+pdat2 <- transform(pdat2,
+                   upper = fitted + (crit * se), # upper and...
+                   lower = fitted - (crit * se)) # lower confidence bounds
+
+
+p2 <- ggplot(pdat2, aes(x = yr, y = fitted, group = fMonth)) +
+  geom_line(aes(colour = fMonth)) +   # draw trend lines
+  theme_bw() +                        # minimal theme
+  theme(legend.position = "none") +   # no legend
+  labs(y = expression(Abundance), x = NULL) +
+  facet_wrap(~ fMonth, ncol = 6) +    # facet on month
+  scale_y_continuous(breaks = seq(0, 100, by = 10),
+                     minor_breaks = NULL) # nicer ticks
+p2
+```
+
+Every month has seen an increase in abundance, but the strongest increases are
+in the summer.
+
+We can group things by season, because why not?
+
+```{r}
+pdat2$Quarter <- NA
+pdat2$Quarter[pdat2$mo %in% c(12,1,2)] <- "Winter"
+pdat2$Quarter[pdat2$mo %in% 3:5] <- "Spring"
+pdat2$Quarter[pdat2$mo %in% 6:8] <- "Summer"
+pdat2$Quarter[pdat2$mo %in% 9:11] <- "Autumn"
+pdat2 <- transform(pdat2,
+                   Quarter = factor(Quarter,
+                                    levels = c("Spring","Summer","Autumn","Winter")))
+
+p3 <- ggplot(pdat2, aes(x = yr, y = fitted, group = fMonth)) +
+  geom_line(aes(colour = fMonth)) +   # draw trend lines
+  theme_bw() +                        # minimal theme
+  theme(legend.position = "top") +    # legend on top
+  scale_fill_discrete(name = "Month") + # nicer legend title
+  scale_colour_discrete(name = "Month") +
+  labs(y = expression(abundance), x = NULL) +
+  facet_grid(Quarter ~ ., scales = "free_y") # facet by Quarter
+p3
+```
+
+So, is the interaction actually a better fit than the non-interactive model?
+
+Here I try to implement Gavin's approach with the Portal data. To compare
+the interactive with the non-interactive model, we need to rewrite them
+so that one is a nested versionof the other: 
+
+y ~ s(x1) + s(x2)
+y ~ s(x1) + s(x2) + ti(x1, x2)
+
+Where season and trend are fit separately in both version and with the only
+difference being the addition of an interaction. To make sure that the model
+are otherwise identical, we have to pull the AR fit from the interaction
+model and force it to be used by both models.
+
+```{r}
+phi <- unname(intervals(m2$lme, which = "var-cov")$corStruct[, 2])
+m1 <- gamm(abundance ~ s(yr, bs = "cr", k = 10) + s(mo, bs = "cc", k = 12) +
+               ti(yr, mo, bs = c("cr","cc"), k = c(10, 12)),
+           data = cet, method = "ML", control = ctrl, knots = knots,
+           correlation = corARMA(value = phi, fixed = TRUE, form = ~ 1 | yr, p = 2))
+m0 <- gamm(abundance ~ s(yr, bs = "cr", k = 10) + s(mo, bs = "cc", k = 12),
+           data = cet, method = "ML", control = ctrl, knots = knots,
+           correlation = corARMA(value = phi, fixed = TRUE, form = ~ 1 | yr, p = 2))
+anova(m0$lme, m1$lme)
+
+```
+
+Strong season x year interaction! Now to figure out a) if the response distribution is valid and how to implement with a different data model.
+
+```{r}
+summary(m1$gam)
+```
+```{r}
+summary(m1$lme)
+```
+
