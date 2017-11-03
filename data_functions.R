@@ -1,81 +1,61 @@
 library(dplyr)
+library(portalr)
 
-
-
-#' append dates
+#' @title Get Rodent Data
 #' 
-#' @description appends date info based on period
-#' 
-#' @param df data frame: must have a "period" column
-#' 
-append_dates = function(df) {
-  # Get trapping history
-  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
-  trapping = read.csv(text=RCurl::getURL(http)) 
-  trapping$date = as.Date(paste(trapping$year,trapping$month,trapping$day,sep='-'))
-  
-  # create data frame with period, date, month, year, time
-  period_dates = aggregate(trapping$date,by=list(period=trapping$period),FUN=min)
-  names(period_dates) = c('period','date')
-  period_dates$month = as.numeric(format(period_dates$date, "%m"))
-  period_dates$year = as.numeric(format(period_dates$date, "%Y"))
-  period_dates$Time = as.numeric(period_dates$date) / 1000
-  
-  # append to data frame
-  df_new = merge(df,period_dates,by='period')
-  return(df_new)
-}
-
-
-#' Function to tally captures by species, period, and plot
-#' This function was made specifically for working with the 2015 plot switch
-#' 
-#' @param start_period first period number of data desired; default is 130 (1989)
-#' @param incomplete T/F, wheter or not to include incomplete censuses
-#' 
-#' @return data frame with columns 'plot', 'period', 'species', 'x' (abundance), 'date','month','year','Time'
-
-rodent_abundance = function(start_period=130,incomplete=F) {
-  # filter data: target species, remove early periods, remove incomplete censuses
-  rdat_filtered = filter_data(start_period,incomplete)
-  
-  # aggregate by species, plot, period
-  byspecies = aggregate(rdat_filtered$species,by=list(period = rdat_filtered$period, plot = rdat_filtered$plot,species = rdat_filtered$species),FUN=length)
-  
-  # adding sampling date to the dipo table
-  byspecies_date = append_dates(byspecies)
-  
-  return(byspecies_date)
-}
-
-
-#' @title filter data
-#' 
-#' @description preliminary step to load and filter data before creating other rodent data metrics
+#' @description make a data frame for running GAM models
 #' 
 #' @param
 #' 
-filter_data = function(start_period,incomplete=F) {
-  # load rodent data from repo
-  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent.csv"
-  rdat = read.csv(text=RCurl::getURL(http),as.is=T,na.strings = '')
-  
-  # Get trapping history in order to find and remove incomplete censuses
-  http = "https://raw.githubusercontent.com/weecology/PortalData/master/Rodents/Portal_rodent_trapping.csv"
-  trapping = read.csv(text=RCurl::getURL(http)) 
-  plotstrapped = aggregate(trapping$sampled,by=list(period=trapping$period),FUN=sum)
-  fullcensus = plotstrapped[plotstrapped$x>=21,] # warning: this may not be ok for other projects, period 457 only trapped 21 plots but the skipped ones aren't relevant to this project
-  
-  # filter data; remove early trapping periods, nontarget species
-  targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')
-  rdat_filtered = dplyr::filter(rdat, period >= start_period, species %in% targetsp)
-  
-  # if desired, remove incompete trapping periods
-  if (incomplete==F) {
-    rdat_filtered = filter(rdat_filtered, period %in% fullcensus$period)
-  }
-  return(rdat_filtered)
+#' @return data frame with columns:
+#'            plot
+#'            censusdate
+#'            species
+#'            abundance
+#'            numericdate
+#'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
+
+
+get_data = function(){
+  start_date = "2013-03-11"
+  data = portalr::abundance(path='repo', level = 'Plot', type='Granivores',
+                            length="All", unknowns=TRUE, incomplete=FALSE,
+                            shape="flat", time='date')
+  data$numericdate = as.numeric(data$censusdate) / 1000
+  rdat_filtered = dplyr::filter(data, censusdate >= start_date)
+  rdat_filtered = add_treatment(rdat_filtered)
 }
+
+#' @title Add treatment codes
+#' 
+#' @description adds treatment codes for each plot in the rodent dataframe
+#' 
+#' @param data dataframe must have a column named 'plot'
+#' 
+#' @return dataframe with columns:
+#'            plot
+#'            censusdate
+#'            species
+#'            abundance
+#'            numericdate
+#'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
+add_treatment = function(data){
+  treatment = data.frame(treatment = c('CX','CE','EE','CC',
+                                       'XC','EC','XC','CE',
+                                       'CX','XX','CC','CX',
+                                       'EC','CC','EE','XX',
+                                       'CC','EC','EE','EE',
+                                       'EE','CE','XX','XC'),plot=seq(1,24))
+  data = merge(data,treatment)
+  data = data %>% dplyr::filter(treatment %in% c('CC','XC','EC'))
+  return(data)
+}
+
+#Things done in the old code that are not currently implemented below this line:
+
+fullcensus = plotstrapped[plotstrapped$x>=21,] # warning: this may not be ok for other projects, period 457 only trapped 21 plots but the skipped ones aren't relevant to this project
+  
+
 
 
 #' @title Make Dipo Data
