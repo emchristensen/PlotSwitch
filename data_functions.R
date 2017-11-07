@@ -106,26 +106,9 @@ make_N_data= function(species='All', dat) {
   total_gam = rename(total,n=x)
   # put data in chronological order
   total_gam = total_gam[order(total_gam$Time),]
-  trt_files = trt_data(total_gam)
-  
-  return(trt_files)
+  return(total_gam)
 }
 
-#' @title Separate Treatment Data
-#' 
-#' @description takes data with muyltiple treatment and separates into distinct files for analysis
-#' 
-#' @param data dataframe output from make_data
-#' 
-#' @return a list containing three data frames, containing dipo data from 3 treatment types
-
-trt_data = function(data){
-  data$plot = as.factor(data$plot)
-  CC = dplyr::filter(data, treatment == "CC") %>% dplyr::arrange(Time)
-  EC = dplyr::filter(data, treatment == "EC") %>% dplyr::arrange(Time)
-  XC = dplyr::filter(data, treatment == "XC") %>% dplyr::arrange(Time)
-  return(list(CC,EC,XC))
-}
 
 #' @title Count positive values
 #' 
