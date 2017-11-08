@@ -1,0 +1,84 @@
+---
+title: "GAM_nongaussian"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+
+source('gam_functions.R')
+source('data_functions.R')
+```
+
+# Portal Plot Flip using gam()
+
+We have to use gamm() if we are modelling the AR in the data, but it is also a more advanced tool that is easier to use incorrectly. We only currently knopw how to use it with a Gaussian family distribution and even the experts on the stats sites seem to advice trying something other than non-gaussian with AR in gamm().
+
+The Gaussian family is a terrible fit to the data - which you would expect from count data. So here we're ditching the AR structure in favor of using a more justifiable distribution.
+
+Here we go:
+
+## Load Data
+
+Data is coming straight from the repo. This code is extracting the dipo abundances from the straight controls (CC), and the opened krat (EC) and rodent (XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+data = get_data()
+dipoN = make_N_data(species = 'Dipos', data)
+dipoN$month = as.numeric(format.Date(dipoN$censusdate, "%m"))
+dipoN$plot = as.factor(dipoN$plot)
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+```
+
+## Basic Season-trend model with factors
+
+```{r}
+ggplot(dipoN, aes(x = censusdate, y = n, colour = treatment)) +
+    geom_point() +
+    geom_smooth(method = 'loess', se = FALSE) +
+    scale_colour_brewer(type = 'qual', palette = 'Dark2') +
+    theme(legend.position = 'top')
+```
+
+## Season-Trend interactions
+Control plots:
+
+```{r}
+dipoN_tw = gam(n ~ te(Time,month, bs = c("cr","cc"), k =c(10,12), by=treatment) + s(plot, bs='re'),            
+               data = dipoN, family=tw, method = "REML", knots = knots)
+summary(dipoN_tw)
+```
+```{r}
+plot(dipoN_tw, pers=TRUE)
+```
+
+```{r}
+gam.check(dipoN_tw)
+```
+
+
+Next! See if you can implement the difference part of Gavin's tutorial
+## Making the prediction matrix
+Making the prediction matrix will be tricky. I need continuous time and a month
+that matches the time. I also need treatments and plots associated with
+those treatments. What I currently have creates a sequence of times and
+then repreats that sequence for each plot. BNext I need code to add
+columns by converting the time and plots to months and treatments.
+```{r}
+plot_nums = unique(dipoN$plot)
+min_time = min(dipoN$Time)
+max_time = max(dipoN$Time)
+pdat = expand.grid(Time = seq(min_time, max_time, length=100), 
+                   plot = plot_nums)
+pdat_temp = as.Date.numeric(pdat$Time *1000, origin=min('1970-01-01'))
+pdat$month = as.numeric(format.Date(pdat_temp, "%m"))
+pdat = add_treatment(pdat)
+xp = predict(dipoN_tw, newdata=pdat, type='lpmatrix')
+```
+
+
+
+
+```
