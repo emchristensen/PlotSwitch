@@ -170,22 +170,21 @@ ggplot(comp, aes(x = as.Date.numeric(date *1000, origin=min('1970-01-01')), y = 
     coord_cartesian(ylim = c(-10,10)) +
     geom_vline(xintercept=as.Date("2014-03-11")) +
     geom_hline(yintercept=0) +
-    labs(x = NULL, y = 'Difference in dipoN')
+    labs(x = NULL, y = 'Difference in dipoN trajectory')
 
 ```
-This is where is seems like something has gone wrong or I really don't 
-understand what is going on. If the y-axis is really difference in dipoN
-then I understand why it is positive before the flip (higher dipos on
-controls is what we expect), but after the flip, the number is still higher on 
-the controls (see 1st graph at beginning of notebook). This seems to be 
-indicating that EC have higher dipo numbers after the flip? Why does the CC-XC
-comparison has a similar intrpretation issue and why is the standard error
-so tight? I have no idea. Ideas: something is wrong with how I pulled out the
-treatments from the Xp matrix. Could XC-EC be CC-EC and CC-EC be CC-XC? Do I
-misunderstand what the 0 on the y-axis indicate? Is te() smooth causing
-issues with Gavin's approach?
+So mybest understanding of this is that this does not take into account
+differences among treatments in the magnitude, just the "trend" which in this
+case is a season-trend interaction.So, it is telling us the the dynamics of
+the trajectory are different for the different treatments. I think it is saying
+there was a lot of difference (and variance) in the pre-flip part of the
+dynamics, but after the flip the models become more similar to the treatment
+but have not yet converged to the control dynamics? Also the the two flips
+have not converged in their trends either? It does not tell us
+(I think) if the magnitudes are the same. Why the CC-XC model has such small
+intervals errors I have no idea.
 
-SO, this suggests we sould look at the model fits to the data. Here Iattempt to
+SO, this suggests we should look at the model fits to the data. Here Iattempt to
 do this:
 
 ```{r}
