@@ -1,0 +1,206 @@
+---
+title: "GAM_nongaussian"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+
+source('gam_functions.R')
+source('data_functions.R')
+```
+
+# Portal Plot Flip using gam()
+
+This notebook tries to apply factor-smooth approach outlined by Gavin 
+Simpson in his [blog post](https://www.fromthebottomoftheheap.net/2017/10/10/difference-splines-i/)
+and combine it with the trend-season appraoch outlined in his other series of
+posts: [modelling seasonal data with GAMS](https://www.fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/),
+[are some seasons warming more than others?](https://www.fromthebottomoftheheap.net/2015/11/23/are-some-seasons-warming-more-than-others/)
+
+Here we go:
+
+## Load Data
+
+Data is coming straight from the repo. This code is extracting the dipo 
+abundances from the straight controls (CC), and the opened krat (EC) and rodent 
+(XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+data = get_data()
+dipoN = make_N_data(species = 'Dipos', data)
+dipoN$month = as.numeric(format.Date(dipoN$censusdate, "%m"))
+knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+```
+
+## Basic Season-trend model with factors
+
+Here's a grap hof the basic patterns in the data by treatment type. We see
+the pure control plots (green) are relative stable through time (dip in most 
+recent months) and the increase of the kangaroo rats on the two opened plots, 
+with the number of kangaroo rats appearing higher on the opened rodent 
+exclosures (blue) than the kangaroo rat exclosures (red)
+
+
+```{r}
+ggplot(dipoN, aes(x = censusdate, y = n, colour = treatment)) +
+    geom_point() +
+    geom_smooth(method = 'loess', se = FALSE) +
+    scale_colour_brewer(type = 'qual', palette = 'Dark2') +
+    theme(legend.position = 'top')
+```
+
+## GAM model
+
+Currently, this model allow for a trend-season interaction (changes in the
+seasonal signal through time). This may be overkill. We use a tweedie because
+when we were fitting the treatment separately, the tweedie was generally
+providing the best fit to the data. Treatment is used as a parametric term.
+According to Gavin, when we use the by-variance smooths, these smooths are
+centered around zero (or something effectively similar to that), which means
+that we lose information about any mean differences between the treatments.
+
+Before I understood this, I was putting the plots in as random effects, but
+when you looked at the diagnostic plots, it looked like the random effects
+were basically just treatment effects - which now makes sense. I think the
+random effect was basically picking up the mean differences in the treatments.
+
+When we plot these models way down below, I think the plots are telling us that
+this model overfits (is overly wiggly), so once we get everything working,
+I think it will be worth seeing if we can simplify this model by eliminating
+the season-trend interaction. If I understand Gavin's post correctly, however,
+I *think* this will make the later steps even more complicated because it
+will be harder to find everything we need in the Lp matrix.
+
+```{r}
+dipoN_tw = gam(n ~ treatment + te(Time,month, bs = c("cr","cc"), k =c(10,12), by=treatment),
+               data = dipoN, family=tw, method = "REML", knots = knots)
+summary(dipoN_tw)
+```
+
+If I'm interpreting the model summary correctly, on average, the kagnaroo rat 
+exclosures (EC) have lower dipo numbers than the rodent exclosures, which are 
+lower than the controls on average. The different trend-season fits seem to be really wiggly for the
+control plots (CC) and the rodent exclosures (XC).
+
+The plots below emphasize to me the overly qiggly nature of the control 
+and rodent exclosure fits.
+```{r}
+plot(dipoN_tw, pers=TRUE)
+```
+If we check the gam fit results, that look ok, but not great. It seems worth trying a
+different data model for the fit to see if we get any improvement.
+```{r}
+gam.check(dipoN_tw)
+```
+
+Next! See if you can implement the difference part of Gavin's tutorial
+
+## Making the data for the prediction matrix
+
+To both compare the treatments and plot the overall models, we need to 
+generate the predicted data. This section just generates the data needed
+for the model
+
+```{r}
+min_time = min(dipoN$Time)
+max_time = max(dipoN$Time)
+Time = seq(min_time, max_time, length=1000)
+pdat = expand.grid(Time = Time, treatment = as.factor(c("CC","XC","EC")))
+pdat_temp = as.Date.numeric(pdat$Time *1000, origin=min('1970-01-01'))
+pdat$month = as.numeric(format.Date(pdat_temp, "%m"))
+```
+
+The following is Gavin's function to generate the differences between
+the treatments. It is lifted from his [blog post](https://www.fromthebottomoftheheap.net/2017/10/10/difference-splines-i/).
+It uses the predicted data dataframe to generate a linear predictions matrix (Xp).
+The Xp matrix is different from the fittedvalues matrix we use to plot the GAM
+model. It contains info about the evaluation of the various basis functions for
+the prediction data. Gavins function extracts this info for for each of the 
+treatments so they can be compared to each other. 
+
+```{r}
+smooth_diff <- function(model, newdata, f1, f2, var, alpha = 0.05,
+                        unconditional = FALSE) {
+    ## make predicted data
+    xp <- predict(model, newdata = newdata, type = 'lpmatrix')
+    ## find columns and rows for treatment pair to be compared
+    c1 <- grepl(f1, colnames(xp))
+    c2 <- grepl(f2, colnames(xp))
+    r1 <- newdata[[var]] == f1
+    r2 <- newdata[[var]] == f2
+    ## difference rows of xp for data from comparison
+    X <- xp[r1, ] - xp[r2, ]
+    ## zero out cols of X related to splines for other lochs
+    X[, ! (c1 | c2)] <- 0
+    ## zero out the parametric cols
+    X[, !grepl('^te\\(', colnames(xp))] <- 0
+    ## Make difference matrix
+    dif <- X %*% coef(model)
+    # Compute uncertainty in the estimated difference
+    se <- rowSums((X %*% vcov(model, unconditional = unconditional)) * X)
+    crit <- qt(alpha/2, df.residual(model), lower.tail = FALSE)
+    upr <- dif + (crit * se)
+    lwr <- dif - (crit * se)
+    data.frame(pair = paste(f1, f2, sep = '-'),
+               diff = dif,
+               se = se,
+               upper = upr,
+               lower = lwr)
+}
+
+```
+
+Now we use that function in conjunction with the prediction data to generate
+underlying fit information and then plot the difference between the model
+fits for the different treatments
+```{r}
+CC_EC <- smooth_diff(dipoN_tw, pdat, 'CC', 'EC', 'treatment')
+CC_XC <- smooth_diff(dipoN_tw, pdat, 'CC', 'XC', 'treatment')
+XC_EC <- smooth_diff(dipoN_tw, pdat, 'XC', 'EC', 'treatment')
+comp <- cbind(date = Time, rbind(CC_EC, CC_XC, XC_EC))
+
+
+ggplot(comp, aes(x = as.Date.numeric(date *1000, origin=min('1970-01-01')), y = diff, group = pair)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+    geom_line() +
+    facet_wrap(~ pair, ncol = 2) +
+    coord_cartesian(ylim = c(-10,10)) +
+    geom_vline(xintercept=as.Date("2014-03-11")) +
+    geom_hline(yintercept=0) +
+    labs(x = NULL, y = 'Difference in dipoN trajectory')
+
+```
+So mybest understanding of this is that this does not take into account
+differences among treatments in the magnitude, just the "trend" which in this
+case is a season-trend interaction.So, it is telling us the the dynamics of
+the trajectory are different for the different treatments. I think it is saying
+there was a lot of difference (and variance) in the pre-flip part of the
+dynamics, but after the flip the models become more similar to the treatment
+but have not yet converged to the control dynamics? Also the the two flips
+have not converged in their trends either? It does not tell us
+(I think) if the magnitudes are the same. Why the CC-XC model has such small
+intervals errors I have no idea.
+
+SO, this suggests we should look at the model fits to the data. Here Iattempt to
+do this:
+
+```{r}
+p  <- predict(dipoN_tw,  newdata = pdat, type="response",se.fit = TRUE)
+plotdata <- transform(pdat, fitted=p$fit, se=p$se.fit)
+plotdata = dplyr::mutate(plotdata, lower = fitted - 1.96*se, upper = fitted + 1.96*se)
+
+p = ggplot(aes(x=as.Date.numeric(Time *1000, origin=min('1970-01-01')), y=fitted, colour=treatment), data=plotdata) +
+    geom_line() +
+    geom_point(aes(x=censusdate, y=n, colour=treatment), data=dipoN)
+p + geom_ribbon(aes(ymin = lower, ymax = upper), fill='gray90',alpha=.6)
+
+```
+
+To me the overlap jagged nature of the fits (both the predicted values and the
+error) suggests overfitting for the controls and rodent exclosures. The 
+treatments seem to be in relatively the correct places, so if there is an error
+with the treatments for the difference plots then it is coming out in how
+I'm pulling the treatments out of the Xp matrix.
