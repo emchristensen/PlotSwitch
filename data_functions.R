@@ -3,15 +3,7 @@ library(portalr)
 
 #################################################
 # TO DO:
-# 1) In the original code for creating GAM data, period 457 was added back into the
-#    data. It is an incomplete census, but all the plots needed for this analysis
-#    were sampled. In refactoring the code to work with portalr, SKME did not
-#    add back in 457 only because doing so would be a pain. Adding 457 still 
-#    needs to be done. Below is the orginal line of code on this issue. It won't
-#    work not because of the way portalr is being used:
-#    fullcensus = plotstrapped[plotstrapped$x>=21,] 
-#    warning: this may not be ok for other projects, period 457 only trapped 21 
-#    plots but the skipped ones aren't relevant to this project
+
 
 # test code: 
 # dat = get_data(startdate = "2013-03-11")
@@ -36,11 +28,20 @@ library(portalr)
 
 get_data = function(startdate = "2013-03-11"){
   data = portalr::abundance(path='repo', level = 'Plot', type='Granivores',
-                            length="All", unknowns=TRUE, incomplete=FALSE,
+                            length="All", unknowns=TRUE, incomplete=TRUE,
                             shape="flat", time='date')
+  data_tables = portalr::loadData('repo')
+  trapping = data_tables[[3]]
+  incomplete = portalr::find_incomplete_censuses(trapping)
+  # remove period 457 from this list of incomplete censuses: not all 24 plots were trapped, but all plots relevant to this project were
+  incomplete = incomplete[!incomplete==457]
+  newmoons = data_tables[[4]]
+  incomplete_censuses = filter(newmoons,period %in% incomplete)
+  incomplete_censuses$censusdate = as.Date(incomplete_censuses$censusdate)
+  
   data$species = as.character(data$species)
   data$numericdate = as.numeric(data$censusdate) / 1000
-  rdat_filtered = dplyr::filter(data, censusdate >= startdate)
+  rdat_filtered = dplyr::filter(data, censusdate >= startdate, !(censusdate %in% incomplete_censuses$censusdate))
   rdat_filtered = add_treatment(rdat_filtered)
   return(rdat_filtered)
 }
