@@ -75,8 +75,9 @@ I *think* this will make the later steps even more complicated because it
 will be harder to find everything we need in the Lp matrix.
 
 ```{r}
-dipoN_tw = gam(n ~ treatment + te(Time,month, bs = c("cr","cc"), k =c(10,12), by=treatment),
-               data = dipoN, family=tw, method = "REML", knots = knots)
+#dipoN_tw = gam(n ~ treatment + te(Time,month, bs = c("cr","cc"), k =c(10,12), by=treatment),
+#               data = dipoN, family=tw, method = "REML", knots = knots)
+dipoN_tw = gam(n ~ treatment + s(Time,by=treatment),data=dipoN, family=tw)
 summary(dipoN_tw)
 ```
 
@@ -107,7 +108,7 @@ for the model
 ```{r}
 min_time = min(dipoN$Time)
 max_time = max(dipoN$Time)
-Time = seq(min_time, max_time, length=1000)
+Time = seq(min_time, max_time, length=400)
 pdat = expand.grid(Time = Time, treatment = as.factor(c("CC","XC","EC")))
 pdat_temp = as.Date.numeric(pdat$Time *1000, origin=min('1970-01-01'))
 pdat$month = as.numeric(format.Date(pdat_temp, "%m"))
@@ -136,7 +137,7 @@ smooth_diff <- function(model, newdata, f1, f2, var, alpha = 0.05,
     ## zero out cols of X related to splines for other lochs
     X[, ! (c1 | c2)] <- 0
     ## zero out the parametric cols
-    X[, !grepl('^te\\(', colnames(xp))] <- 0
+    #X[, !grepl('^te\\(', colnames(xp))] <- 0
     ## Make difference matrix
     dif <- X %*% coef(model)
     # Compute uncertainty in the estimated difference
@@ -157,9 +158,9 @@ Now we use that function in conjunction with the prediction data to generate
 underlying fit information and then plot the difference between the model
 fits for the different treatments
 ```{r}
-CC_EC <- smooth_diff(dipoN_tw, pdat, 'CC', 'EC', 'treatment')
-CC_XC <- smooth_diff(dipoN_tw, pdat, 'CC', 'XC', 'treatment')
-XC_EC <- smooth_diff(dipoN_tw, pdat, 'XC', 'EC', 'treatment')
+CC_EC <- smooth_diff(dipoN_tw, pdat, 'CC', 'EC', 'treatment',unconditional=T)
+CC_XC <- smooth_diff(dipoN_tw, pdat, 'CC', 'XC', 'treatment',unconditional=T)
+XC_EC <- smooth_diff(dipoN_tw, pdat, 'XC', 'EC', 'treatment',unconditional=T)
 comp <- cbind(date = Time, rbind(CC_EC, CC_XC, XC_EC))
 
 
