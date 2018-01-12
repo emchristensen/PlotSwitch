@@ -1,0 +1,135 @@
+---
+title: "GAM_nongaussian"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+
+source('gam_functions.R')
+source('data_functions.R')
+```
+
+# Portal Plot Flip using gam()
+
+This notebook tries to apply factor-smooth approach outlined by Gavin 
+Simpson in his [blog post](https://www.fromthebottomoftheheap.net/2017/10/10/difference-splines-i/)
+and combine it with the trend-season appraoch outlined in his other series of
+posts: [modelling seasonal data with GAMS](https://www.fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/),
+[are some seasons warming more than others?](https://www.fromthebottomoftheheap.net/2015/11/23/are-some-seasons-warming-more-than-others/)
+
+Here we go:
+
+## Load Data
+
+Data is coming straight from the repo. This code is extracting the dipo 
+abundances from the straight controls (CC), and the opened krat (EC) and rodent 
+(XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+fulldata = get_data()
+# get average value by treatment
+data = aggregate(fulldata$abundance, by=list(censusdate = fulldata$censusdate, 
+                                             species = fulldata$species,
+                                             treatment = fulldata$treatment,
+                                             numericdate = fulldata$numericdate),FUN=mean)
+
+dipos = dplyr::filter(data,species %in% c('DO','DM','DS'))
+dipoN = aggregate(dipos$x,by=list(censusdate=dipos$censusdate,
+                                          treatment=dipos$treatment,
+                                          numericdate=dipos$numericdate),FUN=sum)
+dipoN=plyr::rename(dipoN,c('x'='abundance'))
+dipoN$month = as.numeric(format.Date(dipoN$censusdate, "%m"))
+
+write.csv(dipoN,'Dipo_abundance_by_treatment.csv',row.names = F)
+
+dipoN = read.csv('Dipo_abundance_by_treatment.csv')
+dipoN$censusdate = as.Date(dipoN$censusdate)
+dipoN
+#knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+```
+
+
+## Basic Season-trend model with factors
+
+Here's a grap hof the basic patterns in the data by treatment type. We see
+the pure control plots (green) are relative stable through time (dip in most 
+recent months) and the increase of the kangaroo rats on the two opened plots, 
+with the number of kangaroo rats appearing higher on the opened rodent 
+exclosures (blue) than the kangaroo rat exclosures (red)
+
+
+```{r}
+ggplot(dipoN, aes(x = censusdate, y = abundance, colour = treatment)) +
+    geom_point() +
+    geom_smooth(method = 'loess', se = FALSE) +
+    scale_colour_brewer(type = 'qual', palette = 'Dark2') +
+    theme(legend.position = 'top')
+```
+
+## GAM model
+
+This is strictly following Gavin's post
+
+```{r pressure, echo=FALSE}
+# add site code to the model as a factor
+m <- gam(abundance ~ treatment + s(numericdate, by = treatment), data = dipoN)
+summary(m)
+plot(m, shade = TRUE, pages = 1, scale = 0)
+```
+
+
+ This model has fit a smooth to each of the lakes (sitecode) independently.  We want to compare them. 
+ To compare the smooths pair-wise we need to get the xp matrix, used for "prediction"
+ 
+```{r pressure, echo=FALSE}
+# add site code to the model as a factor
+tmin = min(dipoN$numericdate)
+tmax = max(dipoN$numericdate)
+pdat <- expand.grid(numericdate = seq(tmin, tmax, length = 200),
+                    treatment = c('CC', 'EC', 'XC'))
+xp <- predict(m, newdata = pdat, type = 'lpmatrix')
+
+# function to compare treatments pair-wise
+smooth_diff <- function(model, newdata, f1, f2, var, alpha = 0.05,
+                        unconditional = FALSE) {
+    xp <- predict(model, newdata = newdata, type = 'lpmatrix')
+    c1 <- grepl(f1, colnames(xp))
+    c2 <- grepl(f2, colnames(xp))
+    r1 <- newdata[[var]] == f1
+    r2 <- newdata[[var]] == f2
+    ## difference rows of xp for data from comparison
+    X <- xp[r1, ] - xp[r2, ]
+    ## zero out cols of X related to splines for other lochs
+    X[, ! (c1 | c2)] <- 0
+    ## zero out the parametric cols
+    X[, !grepl('^s\\(', colnames(xp))] <- 0
+    dif <- X %*% coef(model)
+    se <- sqrt(rowSums((X %*% vcov(model, unconditional = unconditional)) * X))
+    crit <- qt(alpha/2, df.residual(model), lower.tail = FALSE)
+    upr <- dif + (crit * se)
+    lwr <- dif - (crit * se)
+    data.frame(pair = paste(f1, f2, sep = '-'),
+               diff = dif,
+               se = se,
+               upper = upr,
+               lower = lwr)
+}
+```
+
+```{r, echo=False}
+# use the function to compare all pairs of treatments
+comp1 <- smooth_diff(m, pdat, 'CC', 'EC', 'treatment')
+comp2 <- smooth_diff(m, pdat, 'CC', 'XC', 'treatment')
+comp3 <- smooth_diff(m, pdat, 'EC', 'XC', 'treatment')
+comp <- cbind(date = seq(tmin, tmax, length = 200),
+              rbind(comp1, comp2, comp3))
+ggplot(comp, aes(x = date, y = diff, group = pair)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+    geom_line() +
+    facet_wrap(~ pair, ncol = 2) +
+    coord_cartesian(ylim = c(-8,8)) +
+    labs(x = NULL, y = 'Difference in # of dipos')
+```
