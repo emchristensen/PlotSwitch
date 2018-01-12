@@ -5,10 +5,7 @@ library(portalr)
 # TO DO:
 
 
-# test code: 
-# dat = get_data(startdate = "2013-03-11")
-# dat = make_N_data(species="SmM")
-# rich = make_speciesrich_data(dat)
+
 #################################################
 
 #' @title Get Rodent Data
@@ -142,20 +139,20 @@ count_integers = function(x){
 #' 
 #' @description get species richness at period and plot level
 #' 
-#' @param rdat rodent data; column period, plot, species
+#' @param rdat rodent data; column abundance, numericdate, plot, censusdate, treatment
 #' 
-#' @return data frame with period, plot, nsp (number of species)
+#' @return data frame with numericdate, plot, censusdate, treatment, n
 
 make_speciesrich_data = function(dat) {
   
   # count number of species in rodent data
   richness = aggregate(dat$abundance,
-                       by=list(Time=dat$numericdate,plot=dat$plot, 
+                       by=list(numericdate=dat$numericdate,plot=dat$plot, 
                                censusdate=dat$censusdate, treatment=dat$treatment),
                        FUN=count_integers)
-    # put data in chronological order
-  richness = richness[order(richness$Time),]
-  
+  # put data in chronological order
+  richness = richness[order(richness$numericdate),]
+  richness = dplyr::rename(richness,n=x)
   return(richness)
 }
 
