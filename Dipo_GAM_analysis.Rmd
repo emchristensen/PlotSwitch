@@ -1,0 +1,81 @@
+---
+title: "Dipo_GAM_analysis"
+author: EMC 1/2018
+output: html_notebook
+---
+To do:
+  - add seasonal model?
+  - find way to plot resulting models with vertical line for plot switch, and horizontal line at 0 (showing no difference between treatment and control)
+
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(mgcv)
+library(ggplot2)
+
+source('gam_functions.R')
+source('data_functions.R')
+```
+
+# Portal Plot Flip using gam()
+
+
+## Load Data
+
+Data is coming straight from the repo. This code is extracting the dipo 
+abundances from the straight controls (CC), and the opened krat (EC) and rodent 
+(XC) exclosures. This data runs from period 415 (3/13/2013) to present
+
+```{r}
+# load data. I saved the data series to csv because it takes a few minutes to create them from scratch from create_data_series.R
+dipoN_avg = read.csv('Dipo_abundance_by_treatment.csv')
+
+dipoN_avg$censusdate = as.Date(dipoN_avg$censusdate)
+dipoN_avg
+#knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+```
+
+
+## Basic Season-trend model with factors
+
+Here's a graph of the basic patterns in the data by treatment type. We see
+the pure control plots (green) are relative stable through time (dip in most 
+recent months) and the increase of the kangaroo rats on the two opened plots, 
+with the number of kangaroo rats appearing higher on the opened rodent 
+exclosures (blue) than the kangaroo rat exclosures (red)
+
+
+```{r}
+ggplot(dipoN_avg, aes(x = censusdate, y =n, colour = treatment)) +
+    geom_point() +
+    geom_smooth(method = 'loess', se = FALSE) +
+    scale_colour_brewer(type = 'qual', palette = 'Dark2') +
+    theme(legend.position = 'top') +
+  geom_vline(xintercept=as.Date('2015-04-10'))
+```
+
+## GAM model - ordered factor for treatment type
+
+This is strictly following Gavin's post-- the second one on ordered factors
+
+```{r pressure, echo=FALSE}
+# create ordered factor
+dipoN_avg = mutate(dipoN_avg, oTreatment = ordered(treatment, levels = c('CC','EC','XC')))
+
+# add site code to the model as a factor
+m <- gam(n ~ treatment + s(numericdate) + s(numericdate, by = oTreatment), data = dipoN_avg)
+
+plot(m, shade = TRUE, pages = 1, scale = 0, seWithMean = T)
+summary(m)
+```
+
+
+
+ 
+```{r pressure, echo=FALSE}
+# add seasonality
+dipoN_avg$month = as.numeric(format.Date(dipoN_avg$censusdate, "%m"))
+
+
+```
+
