@@ -98,7 +98,7 @@ make_N_data= function(species='All', dat) {
   target_dat = dplyr::filter(dat,species %in% targetsp)
   total = aggregate(target_dat$abundance,
                     by=list(plot=target_dat$plot,censusdate=target_dat$censusdate,
-                            Time=target_dat$numericdate, 
+                            numericdate=target_dat$numericdate, 
                             treatment=target_dat$treatment),
                     FUN=sum)
   
@@ -106,7 +106,7 @@ make_N_data= function(species='All', dat) {
   # change column name
   total_gam = rename(total,n=x)
   # put data in chronological order
-  total_gam = total_gam[order(total_gam$Time),]
+  total_gam = total_gam[order(total_gam$numericdate),]
   return(total_gam)
 }
 
