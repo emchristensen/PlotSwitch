@@ -111,6 +111,21 @@ make_N_data= function(species='All', dat) {
 }
 
 
+#' @title Average by treatment
+#' 
+#' @description Takes plot-level data and returns treatment-level
+#' 
+#' @param df data frame containing columns for censusdate, numericdate, treatment, n
+#' 
+avg_by_trt = function(df) {
+  df_average = aggregate(df$n, by=list(censusdate = df$censusdate,
+                                       numericdate = df$numericdate,
+                                       treatment = df$treatment),FUN=mean)
+  df_average = dplyr::rename(df_average,n=x)
+  return(df_average)
+}
+
+
 #' @title Count positive values
 #' 
 #' @description Counts the number of non-zero integers in a vector
