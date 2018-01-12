@@ -7,7 +7,13 @@ library(dplyr)
 # =============================================================================================
 # Functions
 
-plot_nmds = function(treatments,nmds_out) {
+
+#' @param treatments data frame with plot and treatment type, for grouping
+#' @param nmds_out output of metaMDS
+#' @param plt_title string title for the plot, if wanted
+#' 
+#' 
+plot_nmds = function(treatments,nmds_out,plt_title='') {
   # treatment info
   treat=treatments$treatment
   
@@ -15,7 +21,7 @@ plot_nmds = function(treatments,nmds_out) {
   treatmentcolors = merge(treatments,treatmentcolors)
   treatmentcolors = treatmentcolors[order(treatmentcolors$plot),]
   
-  ordiplot(nmds_out,type="n",xlim=c(-.5,.5),ylim=c(-.5,.5))
+  ordiplot(nmds_out,type="n",xlim=c(-.5,.5),ylim=c(-.5,.5),main=plt_title)
   orditorp(nmds_out,display="sites",col=as.character(treatmentcolors$colour),air=0.01,cex=1.25)
   legend(-.55,.5, c("C","E","X"), cex=0.8, 
          col=c("green","blue","red"), pch=15:15)
@@ -30,8 +36,8 @@ plot_nmds = function(treatments,nmds_out) {
 #' @param plantdat data frame of plant quadrat data: Portal_plant_quadrats.csv
 #' @param plantsp data frame of plant species data: Portal_plant_species.csv
 #' @param plant_duration Annual, Perennial, or blank
-#' @param year year of interest
-#' @param season winter or summer
+#' @param yr year of interest
+#' @param seas winter or summer
 #'
 #'
 get_plant_data = function(plantdat, plantsp, yr, seas, plant_duration=c('Annual','Perennial')) {
@@ -76,7 +82,7 @@ treatments_combined = data.frame(treatment = c('CX','CE','EE','CC','XC','EC',
                                                'EE','EE','EE','CE','XX','XC'),
                                  plot=seq(24))
 
-plant_table = get_plant_data(plantdat,plantsp,2008,'winter','Annual')
+plant_table = get_plant_data(plantdat,plantsp,2015,'winter','Annual')
 
 # distance -- I took this stuff from code Baiser gave me, I think...
 plantdist = vegdist(plant_table[-1],'bray')
