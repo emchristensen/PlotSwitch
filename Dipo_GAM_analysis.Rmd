@@ -3,8 +3,7 @@ title: "Dipo_GAM_analysis"
 author: EMC 1/2018
 output: html_notebook
 ---
-To do:
-  - find way to plot resulting models with vertical line for plot switch, and horizontal line at 0 (showing no difference between treatment and control)
+
 
 
 ```{r setup, include=FALSE}
@@ -12,18 +11,54 @@ library(dplyr)
 library(mgcv)
 library(ggplot2)
 
-source('gam_functions.R')
-source('data_functions.R')
+
 ```
 
 # Portal Plot Flip using gam()
 
+This project is exploring the effect of a resident (animal) community on the 
+ability of an additional species to colonize a patch. Things like priority effects 
+imply that it should be difficult for a new species to move in to an occupied patch, 
+but coexistence theories generally predict that the ability of a community of species 
+to coexist and the dominance heirarchy of that community should be independent of who 
+got there first.
+
+Main question: does the presence of an established community on a patch slow or prevent 
+the "invasion" of a species that should be dominant in the area?
+
+At the Portal Project we have the perfect experimental setup to test this. Kangaroo rats
+(genus Dipodomys, of which we have 3 species at Portal) are the clear dominant members of
+the rodent community. The Portal Project consists of 24 fenced plots divided into 3 
+treatment types: controls (large gates in fences, all rodents have access), kangaroo 
+rat exclosures (small gates in fences, kangaroo rats are excluded but all other species 
+have access), and total removals (no gates in fences, no rodents have access). 
+
+In March 2015 we changed the treatment on a subset of the plots, cutting new gates or 
+enlarging existing gates on restricted plots to allow access to all rodents (including 
+kangaroo rats). For this project we're comparing plots that used to be k-rat exclosures 
+and became controls (I label these treatment 'EC'), plots that used to be total rodent 
+removals and became controls ('XC'), and plots that were always controls and remained 
+controls ('CC'). So k-rats are invading an established community in the 'EC' treatment, 
+they (along with the other species) are invading an empty patch in the 'XC' treatment, 
+and the "background" control community is represented in the 'CC' treatment. 
+
+We're using GAMs to ask whether the density of kangaroo rats on these three treatments 
+remains different over time or whether they all converve to the 'CC' eventually. We 
+combined all 3 species of dipodomys in this calculation, because all 3 species were 
+excluded from the k-rat exclosure plots.
+
+There are a few replicates of each of the three treatment types (3-4 plots per treatment), 
+but we decided to take the average of the plots by treatment for each time step rather 
+than using plot as a random factor (some of our early model attempts indicated that 
+including plot as a factor did not improve models). Also, converting to k-rats/area instead 
+of using raw integer counts made the modeling easier (we felt we could use a Gaussian 
+family in the GAM). 
 
 ## Load Data
+Data contains columns for censusdate, numericdate (so we don't have to worry about date 
+formatting), treatment, and dipos (units are k-rats per .25 hectare-- we'll probably convert 
+this to hectares for the final paper). 
 
-Data is coming straight from the repo. This code is extracting the dipo 
-abundances from the straight controls (CC), and the opened krat (EC) and rodent 
-(XC) exclosures. This data runs from period 415 (3/13/2013) to present
 
 ```{r}
 # load data. I saved the data series to csv because it takes a few minutes to create them from scratch from create_data_series.R
@@ -31,21 +66,24 @@ dipoN_avg = read.csv('Dipo_abundance_by_treatment.csv')
 
 dipoN_avg$censusdate = as.Date(dipoN_avg$censusdate)
 dipoN_avg
-#knots <- list(month = c(0.5, seq(1, 12, length = 10), 12.5))
+
 ```
 
 
-## Basic Season-trend model with factors
+## Basic plot of data
 
-Here's a graph of the basic patterns in the data by treatment type. We see
-the pure control plots (green) are relative stable through time (dip in most 
-recent months) and the increase of the kangaroo rats on the two opened plots, 
-with the number of kangaroo rats appearing higher on the opened rodent 
-exclosures (blue) than the kangaroo rat exclosures (red)
+Here's a graph of the data by treatment type. We see the long-term control plots 
+(CC, green) are relatively stable through time (dip in most recent months) and the 
+increase of the kangaroo rats on the two opened plots after the treatment change, 
+with the number of kangaroo rats appearing higher on the opened rodent exclosures 
+(XC, purple) than the kangaroo rat exclosures (EC, red). Vertical line is when we 
+did the treatment change. (before the treatment change, both EC and XC treatments 
+should have zero k-rats. A few show up in the data because sometimes they make it 
+into the fences anyway, but they are promptly removed.)
 
 
 ```{r}
-ggplot(dipoN_avg, aes(x = censusdate, y =abundance, colour = treatment)) +
+ggplot(dipoN_avg, aes(x = censusdate, y =dipos, colour = treatment)) +
     geom_point() +
     geom_smooth(method = 'loess', se = TRUE) +
     scale_colour_brewer(type = 'qual', palette = 'Dark2') +
@@ -55,20 +93,23 @@ ggplot(dipoN_avg, aes(x = censusdate, y =abundance, colour = treatment)) +
 
 ## GAM model - ordered factor for treatment type
 
-This is strictly following Gavin's post-- the second one on ordered factors
+This is strictly following Gavin's post-- the one on ordered factors
+https://www.fromthebottomoftheheap.net/2017/12/14/difference-splines-ii/
 
 ```{r pressure, echo=FALSE}
 # create ordered factor
 dipoN_avg = mutate(dipoN_avg, oTreatment = ordered(treatment, levels = c('CC','EC','XC')))
 
-# add site code to the model as a factor
-m <- gam(abundance ~ treatment + s(numericdate) + s(numericdate, by = oTreatment), data = dipoN_avg, method='REML')
+
+m <- gam(dipos ~ treatment + s(numericdate) + s(numericdate, by = oTreatment), data = dipoN_avg, method='REML')
 
 plot(m, shade = TRUE, pages = 1,  scale=0,seWithMean = T)
 
 ```
 
-This looks weird to me. That down-turn on the control plots at the end is ruining everything.
+This looks weird to me. It looks like the EC treatment is increasing steadily over time, 
+but that is not what it looks like from the plot of the data above, nor what we expected 
+to happen.
 
  
 ```{r pressure, echo=FALSE}
@@ -92,13 +133,7 @@ ggplot(pred) +
   geom_vline(xintercept=as.Date('2015-04-10'))
   
 
-# another option
-pd = plot(m)
-df1 = data.frame(n = pd[[1]]$fit, treatment = rep('C'), numericdate = pd[[1]]$x)
-df2 = data.frame(n = pd[[2]]$fit, treatment = rep('E'), numericdate = pd[[2]]$x)
-df3 = data.frame(n = pd[[3]]$fit, treatment = rep('X'), numericdate = pd[[3]]$x)
-df = rbind(df1,df2,df3)
-ggplot(df,aes(x=numericdate,y=n,colour=treatment)) +
-  geom_line() +
-  geom_vline(xintercept=16.53)
 ```
+This plot seems useful: we can talk about the difference in treatments by comparing overlap 
+of the confidence intervals. However this plot doesn't look anything like the "difference" 
+plots in the section above -- why??
