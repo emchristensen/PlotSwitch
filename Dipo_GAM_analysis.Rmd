@@ -96,7 +96,7 @@ ggplot(dipoN_avg, aes(x = censusdate, y =dipos, colour = treatment)) +
 This is strictly following Gavin's post-- the one on ordered factors
 https://www.fromthebottomoftheheap.net/2017/12/14/difference-splines-ii/
 
-```{r pressure, echo=FALSE}
+```{r, echo=FALSE}
 # create ordered factor
 dipoN_avg = mutate(dipoN_avg, oTreatment = ordered(treatment, levels = c('CC','EC','XC')))
 
@@ -112,7 +112,7 @@ but that is not what it looks like from the plot of the data above, nor what we 
 to happen.
 
  
-```{r pressure, echo=FALSE}
+```{r, echo=FALSE}
 # is this a good model?
 summary(m)
 gam.check(m)
