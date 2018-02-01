@@ -12,11 +12,18 @@ data = get_data()
 
 # dipo abundance by plot
 dipoN = make_N_data(species = 'Dipos', data)
+dipoN = rename(dipoN,dipos=n)
+write.csv(dipoN,'Dipo_counts.csv',row.names=F)
 
 # dipo abundance; average by treatment
-dipoN_avg = avg_by_trt(dipoN)
-dipoN_avg = rename(dipoN_avg, dipos=n)
-write.csv(dipoN_avg,'Dipo_abundance_by_treatment.csv',row.names = F)
+#dipoN_avg = avg_by_trt(dipoN)
+#dipoN_avg = rename(dipoN_avg, dipos=n)
+#write.csv(dipoN_avg,'Dipo_abundance_by_treatment.csv',row.names = F)
+
+# DM abundance by plot
+DM = make_N_data(species = 'DM', data)
+DM = rename(DM,dipos=n)
+write.csv(DM,'DM_counts.csv',row.names=F)
 
 # small granivore abundance
 sm_gran = make_N_data(species='SmGran', data)
