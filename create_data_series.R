@@ -5,7 +5,7 @@ source('data_functions.R')
 # Here is some code to use the data_functions.R file to create timeseries of various rodent metrics.
 
 # this function takes a while -- will have to eventually figure out a way to speed it up
-data = get_data()
+data = get_data(startdate = "2013-03-11",include_partial_census = T)
 
 
 

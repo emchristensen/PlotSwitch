@@ -13,6 +13,7 @@ library(portalr)
 #' @description make a data frame for running GAM models
 #' 
 #' @param startdate Census date of the period code used to filter the data
+#' @param include_partial_census T/F: include censuses when some but not all 24 plots were trapped
 #' 
 #' @return data frame with columns:
 #'            plot
@@ -23,15 +24,20 @@ library(portalr)
 #'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
 
 
-get_data = function(startdate = "2013-03-11"){
+get_data = function(startdate = "2013-03-11", include_partial_census = F){
   data = portalr::abundance(path='repo', level = 'Plot', type='Granivores',
                             length="All", unknowns=TRUE, incomplete=TRUE,
                             shape="flat", time='date')
   data_tables = portalr::loadData('repo')
   trapping = data_tables[[3]]
-  incomplete = portalr::find_incomplete_censuses(trapping)
-  # remove period 457 from this list of incomplete censuses: not all 24 plots were trapped, but all plots relevant to this project were
-  incomplete = incomplete[!incomplete==457]
+  
+  # identify partially trapped censuses
+  if (include_partial_census == F) {
+    incomplete = portalr::find_incomplete_censuses(trapping)
+    # remove period 457 from this list of incomplete censuses: not all 24 plots were trapped, but all plots relevant to this project were
+    incomplete = incomplete[!incomplete==457]
+  } else {incomplete = c()}
+  
   newmoons = data_tables[[4]]
   incomplete_censuses = filter(newmoons,period %in% incomplete)
   incomplete_censuses$censusdate = as.Date(incomplete_censuses$censusdate)
@@ -39,7 +45,8 @@ get_data = function(startdate = "2013-03-11"){
   data$species = as.character(data$species)
   data$numericdate = as.numeric(data$censusdate) / 1000
   rdat_filtered = dplyr::filter(data, censusdate >= startdate, !(censusdate %in% incomplete_censuses$censusdate))
-  rdat_filtered = add_treatment(rdat_filtered)
+  rdat_filtered = add_treatment(rdat_filtered) %>% arrange(censusdate)
+  
   return(rdat_filtered)
 }
 
@@ -100,7 +107,7 @@ make_N_data= function(species='All', dat) {
                             treatment=target_dat$treatment),
                     FUN=sum)
   
-  total$x[is.na(total$x)] = 0
+  #total$x[is.na(total$x)] = 0
   # change column name
   total_gam = rename(total,n=x)
   # put data in chronological order
