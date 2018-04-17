@@ -26,21 +26,12 @@ library(portalr)
 
 get_data = function(startdate = "2013-03-11", include_partial_census = F){
   data = portalr::abundance(path='..', level = 'Plot', type='Granivores',
-                            length="All", unknowns=TRUE, incomplete=TRUE,
+                            length="All", unknowns=FALSE, incomplete=TRUE,
                             shape="flat", time='date',clean=F)
-  data_tables = portalr::load_data('..',clean=F)
-  trapping = data_tables[[3]]
   
-  # identify partially trapped censuses
   if (include_partial_census == F) {
-    incomplete = portalr::find_incomplete_censuses(trapping)
-    # remove period 457 from this list of incomplete censuses: not all 24 plots were trapped, but all plots relevant to this project were
-    incomplete = incomplete[!incomplete==457]
-  } else {incomplete = c()}
-  
-  newmoons = data_tables[[4]]
-  incomplete_censuses = filter(newmoons,period %in% incomplete)
-  incomplete_censuses$censusdate = as.Date(incomplete_censuses$censusdate)
+    incomplete_censuses = find_incomplete_censuses_plotswitch()
+  } else {incomplete_censuses = c()}
   
   data$species = as.character(data$species)
   data$numericdate = as.numeric(data$censusdate) / 1000
@@ -48,6 +39,25 @@ get_data = function(startdate = "2013-03-11", include_partial_census = F){
   rdat_filtered = add_treatment(rdat_filtered) %>% arrange(censusdate)
   
   return(rdat_filtered)
+}
+
+#' @title find incomplete censuses
+#'
+#' @description finds censuses where not all plots were trapped: for this project only, census 457 is complete (all plots relevant here were trapped)
+#'  
+find_incomplete_censuses_plotswitch = function() {
+  data_tables = portalr::load_data('..',clean=F)
+  trapping = data_tables[[3]]
+  
+  # identify partially trapped censuses
+  incomplete = portalr::find_incomplete_censuses(trapping)
+  # remove period 457 from this list of incomplete censuses: not all 24 plots were trapped, but all plots relevant to this project were
+  incomplete = incomplete[!incomplete==457]
+  
+  newmoons = data_tables[[4]]
+  incomplete_censuses = filter(newmoons,period %in% incomplete)
+  incomplete_censuses$censusdate = as.Date(incomplete_censuses$censusdate)
+  return(incomplete_censuses)
 }
 
 #' @title Add treatment codes
@@ -166,6 +176,36 @@ make_speciesrich_data = function(dat) {
   # rearrange columns
   richness = richness[,c('plot','censusdate','numericdate','treatment','n')]
   return(richness)
+}
+
+#' @title 
+#' 
+#' @param startdate Census date of the period code used to filter the data
+#' @param include_partial_census T/F: include censuses when some but not all 24 plots were trapped
+#' 
+get_community_energy = function(startdate = "2013-03-11", include_partial_census = F) {
+  energydat = portalr::get_rodent_data(path='..', level = 'Plot', type='Granivores',
+                                       length="All", unknowns=FALSE, incomplete=TRUE,
+                                       shape="flat", time='date',clean=F,output='energy',
+                                       fillweight = T)
+  if (include_partial_census == F) {
+    incomplete_censuses = find_incomplete_censuses_plotswitch()
+  } else {incomplete_censuses = c()}
+  
+  energydat$numericdate = as.numeric(energydat$censusdate) / 1000
+  energydat_filtered = dplyr::filter(energydat, censusdate >= startdate, !(censusdate %in% incomplete_censuses$censusdate))
+  energydat_filtered = add_treatment(energydat_filtered) %>% arrange(censusdate)
+  
+  # sum by date and plot
+  energy_byplot = aggregate(energydat_filtered$energy,by=list(plot = energydat_filtered$plot,
+                                                              censusdate = energydat_filtered$censusdate,
+                                                              numericdate = energydat_filtered$numericdate,
+                                                              treatment = energydat_filtered$before_after),
+                            FUN=sum)
+  # put in chronological order
+  energy_byplot = energy_byplot[order(energy_byplot$numericdate),]
+  energy_byplot = dplyr::rename(energy_byplot,energy=x)
+  return(energy_byplot)
 }
 
 

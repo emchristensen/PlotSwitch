@@ -21,6 +21,9 @@ write.csv(dipoN,'Dipo_counts.csv',row.names=F)
 sprich = make_speciesrich_data(data)
 write.csv(sprich,'SpeciesRichness.csv',row.names=F)
 
+# total metabolic energy by plot (all granivores combined)
+total_energy = get_community_energy(startdate = "2013-03-11",include_partial_census = F)
+write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 
 # ==============================================================================
 # other, currently unused metrics
