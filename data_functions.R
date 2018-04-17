@@ -25,10 +25,10 @@ library(portalr)
 
 
 get_data = function(startdate = "2013-03-11", include_partial_census = F){
-  data = portalr::abundance(path='repo', level = 'Plot', type='Granivores',
+  data = portalr::abundance(path='..', level = 'Plot', type='Granivores',
                             length="All", unknowns=TRUE, incomplete=TRUE,
-                            shape="flat", time='date')
-  data_tables = portalr::loadData('repo')
+                            shape="flat", time='date',clean=F)
+  data_tables = portalr::load_data('..',clean=F)
   trapping = data_tables[[3]]
   
   # identify partially trapped censuses
@@ -62,16 +62,16 @@ get_data = function(startdate = "2013-03-11", include_partial_census = F){
 #'            species
 #'            abundance
 #'            numericdate
-#'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
+#'            before_after (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
 add_treatment = function(data){
-  treatment = data.frame(treatment = c('CX','CE','EE','CC',
+  treatment = data.frame(before_after = c('CX','CE','EE','CC',
                                        'XC','EC','XC','CE',
                                        'CX','XX','CC','CX',
                                        'EC','CC','EE','XX',
                                        'CC','EC','EE','EE',
                                        'EE','CE','XX','XC'),plot=seq(1,24))
-  data = merge(data,treatment)
-  data = data %>% dplyr::filter(treatment %in% c('CC','XC','EC'))
+  data = merge(data,treatment,by='plot')
+  data = data %>% dplyr::filter(before_after %in% c('CC','XC','EC'))
   return(data)
 }
 
@@ -102,12 +102,12 @@ make_N_data= function(species='All', dat) {
   
   target_dat = dplyr::filter(dat,species %in% targetsp)
   total = aggregate(target_dat$abundance,
-                    by=list(plot=target_dat$plot,censusdate=target_dat$censusdate,
+                    by=list(plot=target_dat$plot,
+                            censusdate=target_dat$censusdate,
                             numericdate=target_dat$numericdate, 
-                            treatment=target_dat$treatment),
+                            treatment=target_dat$before_after),
                     FUN=sum)
   
-  #total$x[is.na(total$x)] = 0
   # change column name
   total_gam = rename(total,n=x)
   # put data in chronological order
