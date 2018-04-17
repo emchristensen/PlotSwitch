@@ -9,3 +9,4 @@ Code for my project on the effects of changing rodent treatments on plots at Por
 ## Data files
   * __Dipo_counts.csv__ counts by plot and sampling time
   * __Dipo_abundance_by_treatment.csv__ counts by sampling time and treatment -- plots pooled by treatment type
+  * __SpeciesRichness.csv__ species richness by plot and sampling time
