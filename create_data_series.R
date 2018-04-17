@@ -1,4 +1,4 @@
-library(mgcv)
+#library(mgcv)
 source('data_functions.R')
 
 # Code to use the data_functions.R file to create timeseries of various rodent metrics.
@@ -16,29 +16,33 @@ dipoN = make_N_data(species = 'Dipos', data)
 dipoN = rename(dipoN,dipos=n)
 write.csv(dipoN,'Dipo_counts.csv',row.names=F)
 
+
+# species richness by plot
+sprich = make_speciesrich_data(data)
+write.csv(sprich,'SpeciesRichness.csv',row.names=F)
+
+
+# ==============================================================================
+# other, currently unused metrics
+#
 # dipo abundance; average by treatment
 #dipoN_avg = avg_by_trt(dipoN)
 #dipoN_avg = rename(dipoN_avg, dipos=n)
 #write.csv(dipoN_avg,'Dipo_abundance_by_treatment.csv',row.names = F)
 
 # DM abundance by plot
-DM = make_N_data(species = 'DM', data)
-DM = rename(DM,dipos=n)
-write.csv(DM,'DM_counts.csv',row.names=F)
+#DM = make_N_data(species = 'DM', data)
+#DM = rename(DM,dipos=n)
+#write.csv(DM,'DM_counts.csv',row.names=F)
 
 # small granivore abundance
-sm_gran = make_N_data(species='SmGran', data)
+#sm_gran = make_N_data(species='SmGran', data)
 
 # small granivore abundance; average by treatment
-sm_gran_avg = avg_by_trt(sm_gran)
-
-# species richness
-sprich = make_speciesrich_data(data)
+#sm_gran_avg = avg_by_trt(sm_gran)
 
 # species richness; average by treatment
-sprich_avg = avg_by_trt(sprich)
-
-
+#sprich_avg = avg_by_trt(sprich)
 
 ## total abundance
 #raw_abund = make_data(species='All', start_period=415) %>% trt_data()

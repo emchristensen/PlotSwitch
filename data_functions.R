@@ -152,15 +152,19 @@ count_integers = function(x){
 #' @return data frame with numericdate, plot, censusdate, treatment, n
 
 make_speciesrich_data = function(dat) {
+  # remove species == other 
+  dat = filter(dat,species != 'other')
   
   # count number of species in rodent data
   richness = aggregate(dat$abundance,
                        by=list(numericdate=dat$numericdate,plot=dat$plot, 
-                               censusdate=dat$censusdate, treatment=dat$treatment),
+                               censusdate=dat$censusdate, treatment=dat$before_after),
                        FUN=count_integers)
   # put data in chronological order
   richness = richness[order(richness$numericdate),]
   richness = dplyr::rename(richness,n=x)
+  # rearrange columns
+  richness = richness[,c('plot','censusdate','numericdate','treatment','n')]
   return(richness)
 }
 
