@@ -6,19 +6,19 @@ source('data_functions.R')
 
 
 # this function takes a while -- will have to eventually figure out a way to speed it up
-data = get_data(startdate = "2013-03-11",include_partial_census = F)
+dat = get_data(startdate = "2013-03-11",include_partial_census = F)
 
 
 
 
 # dipo abundance by plot
-dipoN = make_N_data(species = 'Dipos', data)
+dipoN = make_N_data(species = 'Dipos', dat)
 dipoN = rename(dipoN,dipos=n)
 write.csv(dipoN,'Dipo_counts.csv',row.names=F)
 
 
 # species richness by plot
-sprich = make_speciesrich_data(data)
+sprich = make_speciesrich_data(dat)
 write.csv(sprich,'SpeciesRichness.csv',row.names=F)
 
 # total metabolic energy by plot (all granivores combined)

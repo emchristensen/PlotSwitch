@@ -14,6 +14,7 @@ library(portalr)
 #' 
 #' @param startdate Census date of the period code used to filter the data
 #' @param include_partial_census T/F: include censuses when some but not all 24 plots were trapped
+#'                                    will always include censuses with > 21 plots trapped (special case period 457: only 21 plots trapped but all relevant to this project were trapped)
 #' 
 #' @return data frame with columns:
 #'            plot
@@ -24,18 +25,15 @@ library(portalr)
 #'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
 
 
-get_data = function(startdate = "2013-03-11", include_partial_census = F){
+get_data = function(startdate = "2013-03-11",include_partial_census=F){
+  if (include_partial_census == F) {min_num_plots=21} else {min_num_plots=24}
   data = portalr::abundance(path='..', level = 'Plot', type='Granivores',
-                            length="All", unknowns=FALSE, incomplete=TRUE,
-                            shape="flat", time='date',clean=F)
-  
-  if (include_partial_census == F) {
-    incomplete_censuses = find_incomplete_censuses_plotswitch()
-  } else {incomplete_censuses = c()}
+                            length="All", unknowns=FALSE, min_plots = min_num_plots,
+                            shape="flat", time='date',clean=F,na_drop=T)
   
   data$species = as.character(data$species)
   data$numericdate = as.numeric(data$censusdate) / 1000
-  rdat_filtered = dplyr::filter(data, censusdate >= startdate, !(censusdate %in% incomplete_censuses$censusdate))
+  rdat_filtered = dplyr::filter(data, censusdate >= startdate)
   rdat_filtered = add_treatment(rdat_filtered) %>% arrange(censusdate)
   
   return(rdat_filtered)
@@ -45,20 +43,20 @@ get_data = function(startdate = "2013-03-11", include_partial_census = F){
 #'
 #' @description finds censuses where not all plots were trapped: for this project only, census 457 is complete (all plots relevant here were trapped)
 #'  
-find_incomplete_censuses_plotswitch = function() {
-  data_tables = portalr::load_data('..',clean=F)
-  trapping = data_tables[[3]]
-  
-  # identify partially trapped censuses
-  incomplete = portalr::find_incomplete_censuses(trapping)
-  # remove period 457 from this list of incomplete censuses: not all 24 plots were trapped, but all plots relevant to this project were
-  incomplete = incomplete[!incomplete==457]
-  
-  newmoons = data_tables[[4]]
-  incomplete_censuses = filter(newmoons,period %in% incomplete)
-  incomplete_censuses$censusdate = as.Date(incomplete_censuses$censusdate)
-  return(incomplete_censuses)
-}
+# find_incomplete_censuses_plotswitch = function() {
+#   data_tables = portalr::load_data('..',clean=F)
+#   trapping = data_tables[[3]]
+#   
+#   # identify partially trapped censuses
+#   incomplete = portalr::find_incomplete_censuses(trapping)
+#   # remove period 457 from this list of incomplete censuses: not all 24 plots were trapped, but all plots relevant to this project were
+#   incomplete = incomplete[!incomplete==457]
+#   
+#   newmoons = data_tables[[4]]
+#   incomplete_censuses = filter(newmoons,period %in% incomplete)
+#   incomplete_censuses$censusdate = as.Date(incomplete_censuses$censusdate)
+#   return(incomplete_censuses)
+# }
 
 #' @title Add treatment codes
 #' 
@@ -178,22 +176,21 @@ make_speciesrich_data = function(dat) {
   return(richness)
 }
 
-#' @title 
+#' @title community energy by date
 #' 
 #' @param startdate Census date of the period code used to filter the data
 #' @param include_partial_census T/F: include censuses when some but not all 24 plots were trapped
+#'                                    will always include censuses with > 21 plots trapped (special case period 457: only 21 plots trapped but all relevant to this project were trapped)
 #' 
 get_community_energy = function(startdate = "2013-03-11", include_partial_census = F) {
+  if (include_partial_census == F) {min_num_plots=21} else {min_num_plots=24}
   energydat = portalr::get_rodent_data(path='..', level = 'Plot', type='Granivores',
-                                       length="All", unknowns=FALSE, incomplete=TRUE,
+                                       length="All", unknowns=FALSE, min_plots=min_num_plots,
                                        shape="flat", time='date',clean=F,output='energy',
-                                       fillweight = T)
-  if (include_partial_census == F) {
-    incomplete_censuses = find_incomplete_censuses_plotswitch()
-  } else {incomplete_censuses = c()}
+                                       fillweight = T,na_drop=T)
   
   energydat$numericdate = as.numeric(energydat$censusdate) / 1000
-  energydat_filtered = dplyr::filter(energydat, censusdate >= startdate, !(censusdate %in% incomplete_censuses$censusdate))
+  energydat_filtered = dplyr::filter(energydat, censusdate >= startdate)
   energydat_filtered = add_treatment(energydat_filtered) %>% arrange(censusdate)
   
   # sum by date and plot
