@@ -25,6 +25,15 @@ write.csv(sprich,'SpeciesRichness.csv',row.names=F)
 total_energy = get_community_energy(startdate = "2013-03-11",include_partial_census = F)
 write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 
+
+
+
+
+
+
+
+
+
 # ==============================================================================
 # other, currently unused metrics
 #

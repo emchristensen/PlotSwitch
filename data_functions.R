@@ -106,7 +106,7 @@ make_N_data= function(species='All', dat) {
   if (species=='SmH') {targetsp = c('PB','PF','PH','PI','PP')}
   if (species=='SmM') {targetsp = c('BA','PE','PL','PM','RF','RM','RO')}
   if (species=='Dipos') {targetsp = c('DM','DO','DS')}
-  if (species %in% unique(data$species)) {targetsp = species}
+  if (species %in% unique(dat$species)) {targetsp = species}
   
   target_dat = dplyr::filter(dat,species %in% targetsp)
   total = aggregate(target_dat$abundance,
@@ -117,7 +117,7 @@ make_N_data= function(species='All', dat) {
                     FUN=sum)
   
   # change column name
-  total_gam = rename(total,n=x)
+  total_gam = dplyr::rename(total,n=x)
   # put data in chronological order
   total_gam = total_gam[order(total_gam$numericdate),]
   return(total_gam)
