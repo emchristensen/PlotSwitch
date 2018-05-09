@@ -39,3 +39,14 @@ ggplot(energy, aes(x = censusdate, y =energy, colour = treatment)) +
   scale_colour_brewer(type = 'qual', palette = 'Dark2') +
   theme(legend.position = 'top') +
   geom_vline(xintercept=as.Date('2015-04-10'))
+
+
+# Small granivores
+smgran = read.csv('SmallGranivores.csv')
+smgran$censusdate = as.Date(smgran$censusdate)
+ggplot(smgran, aes(x = censusdate, y =n, colour = treatment)) +
+  geom_point() +
+  geom_smooth(method = 'loess', se = TRUE) +
+  scale_colour_brewer(type = 'qual', palette = 'Dark2') +
+  theme(legend.position = 'top') +
+  geom_vline(xintercept=as.Date('2015-04-10'))

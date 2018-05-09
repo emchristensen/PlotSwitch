@@ -7,7 +7,7 @@ source('data_functions.R')
 
 # this function takes a while -- will have to eventually figure out a way to speed it up
 dat = get_data(startdate = "2013-03-11",include_partial_census = F)
-
+dat = get_data(startdate = "1988-01-01",include_partial_census = F)
 
 
 
@@ -37,6 +37,11 @@ write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 # ==============================================================================
 # other, currently unused metrics
 #
+
+# abund of 5 species of small granivore (Heske et al 1994) PP, PE, PF, PM, RM. I also include PB -- it hadn't shown up yet in 1994
+smgran = make_N_data(species='SmGran',dat)
+write.csv(smgran,'SmallGranivores.csv',row.names=F)
+
 # dipo abundance; average by treatment
 #dipoN_avg = avg_by_trt(dipoN)
 #dipoN_avg = rename(dipoN_avg, dipos=n)
