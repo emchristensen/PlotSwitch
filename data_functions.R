@@ -205,6 +205,26 @@ get_community_energy = function(startdate = "2013-03-11", include_partial_census
   return(energy_byplot)
 }
 
+#' @title 3 month average
+#' @description calculates 3 month average of period-resolution data
+#' 
+#' @param df data frame: must include 'censusdate' and 'n' columns
+#'
+#'
+avg_3month = function(df) {
+  df$month = format(df$censusdate,'%m')
+  df$year = format(df$censusdate,'%Y')
+  df$quarter = rep(NA)
+  df$quarter[df$month %in% c('01','02','03')] <- 0
+  df$quarter[df$month %in% c('04','05','06')] <- .25
+  df$quarter[df$month %in% c('07','08','09')] <- .5
+  df$quarter[df$month %in% c('10','11','12')] <- .75
+  quarterly = aggregate(df$n,by=list(plot=df$plot,treatment=df$treatment,quarter=df$quarter,year=df$year),FUN=mean)
+  quarterly$censusdate = as.numeric(quarterly$year)+quarterly$quarter
+  quarterly = plyr::rename(quarterly,c("x"="n"))
+  return(quarterly)
+}
+
 
 ##### Below this point is code that has not been rectified with portalr.
 ##### This is because portalr does not have biomass functions yet and

@@ -26,10 +26,12 @@ total_energy = get_community_energy(startdate = "2013-03-11",include_partial_cen
 write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 
 
+# abund of 5 species of small granivore (Heske et al 1994) PP, PE, PF, PM, RM. I also include PB -- it hadn't shown up yet in 1994
+smgran = make_N_data(species='SmGran',dat)
+write.csv(smgran,'SmallGranivores.csv',row.names=F)
 
 
-
-
+quarterly = avg_3month(smgran)
 
 
 
@@ -38,9 +40,7 @@ write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 # other, currently unused metrics
 #
 
-# abund of 5 species of small granivore (Heske et al 1994) PP, PE, PF, PM, RM. I also include PB -- it hadn't shown up yet in 1994
-smgran = make_N_data(species='SmGran',dat)
-write.csv(smgran,'SmallGranivores.csv',row.names=F)
+
 
 # dipo abundance; average by treatment
 #dipoN_avg = avg_by_trt(dipoN)
