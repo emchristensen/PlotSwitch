@@ -7,7 +7,7 @@ source('data_functions.R')
 
 # this function takes a while -- will have to eventually figure out a way to speed it up
 dat = get_data(startdate = "2013-03-11",include_partial_census = F)
-dat = get_data(startdate = "1988-01-01",include_partial_census = F)
+#dat = get_data(startdate = "1988-01-01",include_partial_census = F)
 
 
 
@@ -22,13 +22,17 @@ sprich = make_speciesrich_data(dat)
 write.csv(sprich,'SpeciesRichness.csv',row.names=F)
 
 # total metabolic energy by plot (all granivores combined)
-total_energy = get_community_energy(startdate = "2013-03-11",include_partial_census = F)
+total_energy = get_community_energy(startdate = "2013-03-11",include_partial_census = F,species='Granivore')
 write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 
 
-# abund of 5 species of small granivore (Heske et al 1994) PP, PE, PF, PM, RM. I also include PB -- it hadn't shown up yet in 1994
+# abund of all small granivores (not just the 5 used in Heske et al 1994) [PP, PE, PF, PM, RM].
 smgran = make_N_data(species='SmGran',dat)
 write.csv(smgran,'SmallGranivores.csv',row.names=F)
+
+# total energy of small granivores (all, not just the 5)
+smgran_energy = get_community_energy(startdate = "2013-03-11",include_partial_census = F,species='SmGran')
+write.csv(smgran_energy,'SmallGranivoreEnergy.csv',row.names=F)
 
 
 quarterly = avg_3month(smgran)

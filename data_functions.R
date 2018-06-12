@@ -102,7 +102,7 @@ make_N_data= function(species='All', dat) {
   # select species of interest
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
   if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
-  if (species=='SmGran') {targetsp = c('PB','PE','PF','PM','PP','RM')}
+  if (species=='SmGran') {targetsp = c('BA','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}   #{targetsp = c('PB','PE','PF','PM','PP','RM')}
   if (species=='SmH') {targetsp = c('PB','PF','PH','PI','PP')}
   if (species=='SmM') {targetsp = c('BA','PE','PL','PM','RF','RM','RO')}
   if (species=='Dipos') {targetsp = c('DM','DO','DS')}
@@ -181,16 +181,26 @@ make_speciesrich_data = function(dat) {
 #' @param startdate Census date of the period code used to filter the data
 #' @param include_partial_census T/F: include censuses when some but not all 24 plots were trapped
 #'                                    will always include censuses with > 21 plots trapped (special case period 457: only 21 plots trapped but all relevant to this project were trapped)
+#' @param species 
 #' 
-get_community_energy = function(startdate = "2013-03-11", include_partial_census = F) {
+get_community_energy = function(startdate = "2013-03-11", include_partial_census = F,species='Granivore') {
+  # select species of interest
+  if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
+  if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
+  if (species=='SmGran') {targetsp = c('BA','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}   #{targetsp = c('PB','PE','PF','PM','PP','RM')}
+  if (species=='SmH') {targetsp = c('PB','PF','PH','PI','PP')}
+  if (species=='SmM') {targetsp = c('BA','PE','PL','PM','RF','RM','RO')}
+  if (species=='Dipos') {targetsp = c('DM','DO','DS')}
+  if (species %in% unique(dat$species)) {targetsp = species}
+  
   if (include_partial_census == F) {min_num_plots=21} else {min_num_plots=24}
-  energydat = portalr::get_rodent_data(path='..', level = 'Plot', type='Granivores',
+  energydat = portalr::get_rodent_data(path='..', level = 'Plot', type='Rodents',
                                        length="All", unknowns=FALSE, min_plots=min_num_plots,
                                        shape="flat", time='date',clean=F,output='energy',
                                        fillweight = T,na_drop=T)
   
   energydat$numericdate = as.numeric(energydat$censusdate) / 1000
-  energydat_filtered = dplyr::filter(energydat, censusdate >= startdate)
+  energydat_filtered = dplyr::filter(energydat, censusdate >= startdate, species %in% targetsp)
   energydat_filtered = add_treatment(energydat_filtered) %>% arrange(censusdate)
   
   # sum by date and plot
