@@ -1,5 +1,4 @@
 ## Analyse the full rodent data
-# analysis of continuous variable (energy) rather than discrete (# of Dipos)
 
 ## packages
 library('mgcv')
@@ -13,8 +12,7 @@ library('cowplot')
 theme_set(theme_bw())
 
 ## load data
-rodent <- read_csv('TotalCommunityEnergy.csv')
-rodent$censusdate = as.Date(rodent$censusdate,format='%m/%d/%Y')
+rodent <- read_csv('SmallGranivores.csv')
 
 ## create variables needed
 rodent <- mutate(rodent,
@@ -22,33 +20,83 @@ rodent <- mutate(rodent,
                  oPlot      = ordered(plot),
                  plot       = factor(plot))
 
+## control
+ctrl <- gam.control(nthreads = 4)
+
 ## model 1 --- this has an intercept for plot but plots follow respective treatment smooth
 ## truend select = TRUE on here to provide some extra regularisation as we need it for the
 ## more complex model...
-m1 <- gam(energy ~ oTreatment + s(numericdate, k=20) +
-              s(numericdate, by = oTreatment,k=15) +
-              s(plot, bs = "re"),
-          data = rodent, method = 'REML', family = tw, select = TRUE)
+m1 <- gam(n ~ oTreatment + s(numericdate, k = 20) +
+            s(numericdate, by = oTreatment, k = 15) +
+            s(plot, bs = "re"),
+          data = rodent, method = 'REML', family = poisson, select = TRUE, control = ctrl)
 
-gam.check(m1)          
-summary(m1)            
+gam.check(m1, rep = 500) 
+summary(m1)           
 plot(m1, pages = 1, shade = TRUE, scale = 0)
 
 ## model 2 --- this is similar to above but now we add plot-specific smooth differences
 ## need `select` here as there is a little issue with identifiability as plot is nested
 ## in treatment. SE explodes for one treatment at very end without regularisation
-m2 <- gam(energy ~ oPlot + oTreatment + s(numericdate, k = 20) +
-              s(numericdate, by = oTreatment, k = 15) +
-              s(numericdate, by = oPlot),
-          data = rodent, method = 'REML', family = tw, select = TRUE)
+m2 <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
+            s(numericdate, by = oTreatment, k = 15) +
+            s(numericdate, by = oPlot),
+          data = rodent, method = 'REML', family = poisson, select = TRUE, control = ctrl)
 
-gam.check(m2, rep = 200)    # looks ok?
-summary(m2)       # most plot-specific differences are shrunk to 0 EDF, except 5, 11, 13, maybe 17 & 18
-plot(m2, pages = 1, shade = TRUE, scale = 0)
+gam.check(m2, rep = 200) 
+summary(m2)       
+plot(m2, pages = 1, shade = TRUE, scale = 0, seWithMean = TRUE)
 
 AIC(m1, m2)                             # favours plot-specific smooths
 
+## rootograms help diagnose model fits
+## compare observed count distribution with the expected counts from the
+## conditional distribution of the response --- here Poisson
+root.m1 <- rootogram(m1, style = 'hanging', plot = FALSE)
+root.m2 <- rootogram(m2, style = 'hanging', plot = FALSE)
 
+## these aren't too bad; over-predicting at low counts (1s, 2s) and over-predicting
+## by similar amounts at intermediate counts (4s, 5s).
+autoplot(root.m1)
+autoplot(root.m2)
+
+## I thought maybe there might be some modest zero-inflation but a quick check with
+## a family = ziP fit made no difference. If any zero-inflation is present, it is
+## likely to be time-dependent so that needs a more complex fit that I dind't explore
+## here.
+
+## See if we can do better on the counts with a NegBin response
+## model 3: as model 1 but with negbin
+m3 <- gam(n ~ oTreatment + s(numericdate, k = 20) +
+            s(numericdate, by = oTreatment, k = 15) +
+            s(plot, bs = "re"),
+          data = rodent, method = 'REML', family = nb, select = TRUE, control = ctrl)
+
+gam.check(m3, rep = 500)
+summary(m3) # note massive theta == tiny over dispersion rel. to Possion
+plot(m3, pages = 1, shade = TRUE, scale = 0)
+
+## model 4: as model 2 but with negbin
+m4 <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
+            s(numericdate, by = oTreatment, k = 15) +
+            s(numericdate, by = oPlot),
+          data = rodent, method = 'REML', family = nb, select = TRUE, control = ctrl)
+
+gam.check(m4, rep = 500)
+summary(m4)
+plot(m4, pages = 1, shade = TRUE, scale = 0)
+
+AIC(m3, m4) 
+
+## rootograms
+root.m3 <- rootogram(m3, style = 'hanging', plot = FALSE)
+root.m4 <- rootogram(m4, style = 'hanging', plot = FALSE)
+
+## no change
+autoplot(root.m3)
+autoplot(root.m4)
+
+AIC(m1, m2, m3, m4)  # m2 wins barely
 
 ## Look at full model fits and compare with observations
 ## Data to predict at
@@ -69,8 +117,10 @@ newd <- transform(newd,
 ## predict from all the models...
 p1 <- predict(m1, newd, type = 'response')
 p2 <- predict(m2, newd, type = 'response')
+p3 <- predict(m3, newd, type = 'response')
+p4 <- predict(m4, newd, type = 'response')
 ## ...and bind on to the prediction data
-preds <- cbind(newd, p1, p2)
+preds <- cbind(newd, p1, p2, p3, p4)
 
 ## need to stack this tidily for ggplot
 pdata <- gather(preds, Model, Fitted, -(1:6))
@@ -79,19 +129,19 @@ pdata <- gather(preds, Model, Fitted, -(1:6))
 ## Type 1 is model with only a plot-level intercept
 ## Type 2 is model with plot level intercept plus plot-level difference smooths
 pdata <- mutate(pdata,
-                Family = case_when(Model %in% c('p1', 'p2') ~ 'Tweedie',
+                Family = case_when(Model %in% c('p1', 'p2') ~ 'Poisson',
                                    Model %in% c('p3', 'p4') ~ 'Negative Binomial'),
                 ModelForm = case_when(Model %in% c('p1', 'p3') ~ 'Type 1',
                                       Model %in% c('p2', 'p4') ~ 'Type 2'))
 
 ## visualise
 ggplot(pdata, aes(x = censusdate, y = Fitted, colour = ModelForm)) +
-    geom_point(aes(x = censusdate, y = energy), data = rodent, inherit.aes = FALSE) +
-    geom_line(size = 1) +
-    facet_grid(plot ~ Family) +
-    labs(y = 'Count', x = NULL) +
-    theme(legend.position = 'top') +
-    scale_colour_brewer(type = 'qual', palette = 'Dark2')
+  geom_point(aes(x = censusdate, y = n), data = rodent, inherit.aes = FALSE) +
+  geom_line(size = 1) +
+  facet_grid(plot ~ Family) +
+  labs(y = 'Count', x = NULL) +
+  theme(legend.position = 'top') +
+  scale_colour_brewer(type = 'qual', palette = 'Dark2')
 
 ## So plot-level smooth differences (i.e. plot-specific trends superimposed on
 ## treatment-specific smooths make modest differences, at some sites only.
@@ -146,30 +196,30 @@ treatPred <- transform(treatPred, Fitted = ilink(fit),
 
 ## plot
 p.plt <- ggplot(treatPred, aes(x = censusdate, y = Fitted)) +
-    geom_point(data = rodent, mapping = aes(y = energy, colour = treatment)) +
-    geom_ribbon(aes(ymax = Upper, ymin = Lower, fill = treatment),
-                alpha = 0.2) +
-    geom_line(aes(colour = treatment)) +
-    labs(y = 'Total E', x = NULL) +
-    theme(legend.position = 'top') +
-    scale_colour_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2') +
-    scale_fill_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2') +
+  geom_point(data = rodent, mapping = aes(y = n, colour = treatment)) +
+  geom_ribbon(aes(ymax = Upper, ymin = Lower, fill = treatment),
+              alpha = 0.2) +
+  geom_line(aes(colour = treatment)) +
+  labs(y = 'Count', x = NULL) +
+  theme(legend.position = 'top') +
+  scale_colour_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2') +
+  scale_fill_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2') +
   geom_vline(xintercept=as.Date('2015-04-10'))
 p.plt
 
+#ggsave('estimated-treatment-effects.pdf', p.plt)
 
-## OK - figured out what the issue is. This is more the plot you should be looking at when you consider the *differences*, 
-##    because the splines are fitted on the link scale and that's also the scale where differences make sense.
+## OK - figured out what the issue is. This is more the plot you should be looking at when you consider the *differences*, because the splines are fitted on the link scale and that's also the scale where differences make sense.
 exVars2 <- c(exVars, "oTreatment")
-treatPred2 <- predict(MODEL, treatEff, type = 'terms', exclude = exVars2)
+treatPred2 <- predict(MODEL, treatEff, type = 'terms', exclude = exVars)
 treatPred2 <- rowSums(treatPred2)
 treatPred2 <- cbind(treatEff, Fitted = treatPred2)
 ## plot
 p.plt2 <- ggplot(treatPred2, aes(x = censusdate, y = Fitted)) +
-    geom_line(aes(colour = treatment)) +
-    labs(y = 'Total E', x = NULL) +
-    theme(legend.position = 'top') +
-    scale_colour_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2')
+  geom_line(aes(colour = treatment)) +
+  labs(y = 'Count', x = NULL) +
+  theme(legend.position = 'top') +
+  scale_colour_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2')
 p.plt2
 ## Now compare the smooths on that plot with the differences I generate below
 
@@ -236,7 +286,7 @@ diffPlt
 
 ## or facetted
 #ggsave('plot-differences-inc-parametrics-facetted.pdf', diffPlt + facet_wrap(~ pair, ncol = 3),
-#       width = 9, height = 4)
+       width = 9, height = 4)
 
 ## Compute pairwise treatment diffs if we **exclude** the parametric Treatment terms
 d1b <- osmooth_diff(MODEL, treatEff, "numericdate", "CC", "EC", var = "oTreatment",
@@ -260,4 +310,4 @@ diffPlt2 <- ggplot(diffs2, aes(x = censusdate, y = diff, group = pair, colour = 
   scale_fill_brewer(name = 'Treatment pair', type = 'qual', palette = 'Dark2')
 diffPlt2
 
-#ggsave('plot-differences-wo-parametrics.pdf', diffPlt2)
+ggsave('plot-differences-wo-parametrics.pdf', diffPlt2)
