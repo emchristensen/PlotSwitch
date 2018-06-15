@@ -13,8 +13,9 @@ library(portalr)
 #' @description make a data frame for running GAM models
 #' 
 #' @param startdate Census date of the period code used to filter the data
-#' @param include_partial_census T/F: include censuses when some but not all 24 plots were trapped
-#'                                    will always include censuses with > 21 plots trapped (special case period 457: only 21 plots trapped but all relevant to this project were trapped)
+#' @param min_num_plots integer 1-24: input for abundance() function in portalr (how many plots for a census to be considered complete)
+#'                                    24 is all plots(special case period 457: only 21 plots trapped but all CC, EC, and XC were trapped)
+#' @param treatments which treatments to include in output (choices are 'CC','EC','XC','CE','EE','XE','CX','XX')
 #' 
 #' @return data frame with columns:
 #'            plot
@@ -25,8 +26,7 @@ library(portalr)
 #'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
 
 
-get_data = function(startdate = "2013-03-11",include_partial_census=F){
-  if (include_partial_census == F) {min_num_plots=21} else {min_num_plots=24}
+get_data = function(startdate = "2013-03-11",min_num_plots=24, treatments = 'all'){
   data = portalr::abundance(path='..', level = 'Plot', type='Granivores',
                             length="All", unknowns=FALSE, min_plots = min_num_plots,
                             shape="flat", time='date',clean=F,na_drop=T)
@@ -35,6 +35,7 @@ get_data = function(startdate = "2013-03-11",include_partial_census=F){
   data$numericdate = as.numeric(data$censusdate) / 1000
   rdat_filtered = dplyr::filter(data, censusdate >= startdate)
   rdat_filtered = add_treatment(rdat_filtered) %>% arrange(censusdate)
+  rdat_filtered = rdat_filtered %>% dplyr::filter(before_after %in% treatments)
   
   return(rdat_filtered)
 }
@@ -79,7 +80,7 @@ add_treatment = function(data){
                                        'CC','EC','EE','EE',
                                        'EE','CE','XX','XC'),plot=seq(1,24))
   data = merge(data,treatment,by='plot')
-  data = data %>% dplyr::filter(before_after %in% c('CC','XC','EC'))
+  
   return(data)
 }
 
@@ -179,11 +180,11 @@ make_speciesrich_data = function(dat) {
 #' @title community energy by date
 #' 
 #' @param startdate Census date of the period code used to filter the data
-#' @param include_partial_census T/F: include censuses when some but not all 24 plots were trapped
-#'                                    will always include censuses with > 21 plots trapped (special case period 457: only 21 plots trapped but all relevant to this project were trapped)
+#' @param min_num_plots integer 1-24: input for abundance() function in portalr (how many plots for a census to be considered complete)
+#'                                    24 is all plots(special case period 457: only 21 plots trapped but all CC, EC, and XC were trapped)
 #' @param species 
 #' 
-get_community_energy = function(startdate = "2013-03-11", include_partial_census = F,species='Granivore') {
+get_community_energy = function(startdate = "2013-03-11", min_num_plots = 24,species='Granivore') {
   # select species of interest
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
   if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
@@ -193,7 +194,6 @@ get_community_energy = function(startdate = "2013-03-11", include_partial_census
   if (species=='Dipos') {targetsp = c('DM','DO','DS')}
   if (species %in% unique(dat$species)) {targetsp = species}
   
-  if (include_partial_census == F) {min_num_plots=21} else {min_num_plots=24}
   energydat = portalr::get_rodent_data(path='..', level = 'Plot', type='Rodents',
                                        length="All", unknowns=FALSE, min_plots=min_num_plots,
                                        shape="flat", time='date',clean=F,output='energy',

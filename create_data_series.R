@@ -3,11 +3,11 @@ source('data_functions.R')
 
 # Code to use the data_functions.R file to create timeseries of various rodent metrics.
 
-
+treatments = c('CC','EC','XC')
 
 # this function takes a while -- will have to eventually figure out a way to speed it up
-dat = get_data(startdate = "2013-03-11",include_partial_census = F)
-#dat = get_data(startdate = "1988-01-01",include_partial_census = F)
+dat = get_data(startdate = "2013-03-11",min_num_plots = 21,treatments)
+#dat = get_data(startdate = "1988-01-01",min_num_plots = 21,treatments)
 
 
 
@@ -22,7 +22,7 @@ sprich = make_speciesrich_data(dat)
 write.csv(sprich,'SpeciesRichness.csv',row.names=F)
 
 # total metabolic energy by plot (all granivores combined)
-total_energy = get_community_energy(startdate = "2013-03-11",include_partial_census = F,species='Granivore')
+total_energy = get_community_energy(startdate = "2013-03-11",min_num_plots = 21,species='Granivore')
 write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 
 
@@ -31,7 +31,7 @@ smgran = make_N_data(species='SmGran',dat)
 write.csv(smgran,'SmallGranivores.csv',row.names=F)
 
 # total energy of small granivores (all, not just the 5)
-smgran_energy = get_community_energy(startdate = "2013-03-11",include_partial_census = F,species='SmGran')
+smgran_energy = get_community_energy(startdate = "2013-03-11",min_num_plots = 21,species='SmGran')
 write.csv(smgran_energy,'SmallGranivoreEnergy.csv',row.names=F)
 
 
