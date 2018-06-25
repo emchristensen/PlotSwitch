@@ -23,6 +23,7 @@ write.csv(sprich,'SpeciesRichness.csv',row.names=F)
 
 # total metabolic energy by plot (all granivores combined)
 total_energy = get_community_energy(startdate = "2013-03-11",min_num_plots = 21,species='Granivore')
+total_energy = dplyr::filter(total_energy,treatment %in% c('CC','EC','XC'))
 write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 
 
