@@ -31,7 +31,7 @@ treatPred.dipo <- predict_treat_effect(dipo, np = 500, MODEL=dipo.gam, exVars.d)
 d.plt <- plot_gam_prediction(treatPred.dipo,dipo)
 d.plt
 
-#ggsave('estimated-treatment-effects.pdf', p.plt)
+#ggsave('dipo-treatment-effects.png', d.plt,width=6,height=2.5)
 
 # Compute pairwise treatment diffs if we leave *in* the parametric Treatment terms
 d1 <- osmooth_diff(dipo.gam, treatPred.dipo, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
@@ -41,6 +41,7 @@ diffs.dipo <- rbind(d1, d2)
 ## difference of smooths
 diffPlt <- plot_smooth_diff(diffs.dipo)
 diffPlt
+#ggsave('dipo-difference.png', diffPlt,width=6,height=2.5)
 
 # =========================================================================================
 # number of small granivores
@@ -65,6 +66,7 @@ treatPred.sg <- predict_treat_effect(smgran, np = 500, MODEL=smgran.gam, exVars.
 
 sg.plt <- plot_gam_prediction(treatPred.sg, smgran)
 sg.plt
+#ggsave('smallgran-treatment-effects.png', sg.plt,width=6,height=2.5)
 
 # difference of smooths
 d1 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
@@ -72,6 +74,7 @@ d2 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "XC", var = "o
 diffs.sg <- rbind(d1,d2)
 sg.diffPlt <- plot_smooth_diff(diffs.sg)
 sg.diffPlt
+#ggsave('smallgran-difference.png', sg.diffPlt,width=6,height=2.5)
 
 # ==========================================================================================
 # Species richness
@@ -96,6 +99,7 @@ treatPred.rich <- predict_treat_effect(sprich, np = 500, MODEL=sprich.gam, exVar
 
 rich.plt <- plot_gam_prediction(treatPred.rich, sprich)
 rich.plt
+#ggsave('richness-treatment-effects.png', rich.plt,width=6,height=2.5)
 
 # difference of smooths
 d1 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
@@ -103,6 +107,7 @@ d2 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "XC", var = 
 diffs.rich <- rbind(d1,d2)
 rich.diffPlt <- plot_smooth_diff(diffs.rich)
 rich.diffPlt
+#ggsave('richness-difference.png', rich.diffPlt,width=6,height=2.5)
 
 # ========================================================================================
 # Total rodent energy
@@ -126,6 +131,7 @@ treatPred.energy <- predict_treat_effect(energy, np = 500, MODEL=energy.gam, exV
 
 energy.plt <- plot_gam_prediction(treatPred.energy, energy)
 energy.plt
+#ggsave('energy-treatment-effects.png', energy.plt,width=6,height=2.5)
 
 # difference of smooths
 d1 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
@@ -133,3 +139,4 @@ d2 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "XC", var 
 diffs.energy <- rbind(d1,d2)
 energy.diffPlt <- plot_smooth_diff(diffs.energy)
 energy.diffPlt
+#ggsave('energy-difference.png', energy.diffPlt,width=6,height=2.5)
