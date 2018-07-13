@@ -28,7 +28,7 @@ library(portalr)
 
 get_data = function(startdate = "2013-03-11",min_num_plots=24, treatments = 'all'){
   data = portalr::abundance(path='..', level = 'Plot', type='Granivores',
-                            length="All", unknowns=FALSE, min_plots = min_num_plots,
+                            plots='all', unknowns=FALSE, min_plots = min_num_plots,
                             shape="flat", time='date',clean=F,na_drop=T)
   
   data$species = as.character(data$species)
@@ -195,7 +195,7 @@ get_community_energy = function(startdate = "2013-03-11", min_num_plots = 24,spe
   if (species %in% unique(dat$species)) {targetsp = species}
   
   energydat = portalr::get_rodent_data(path='..', level = 'Plot', type='Rodents',
-                                       length="All", unknowns=FALSE, min_plots=min_num_plots,
+                                       plots="All", unknowns=FALSE, min_plots=min_num_plots,
                                        shape="flat", time='date',clean=F,output='energy',
                                        fillweight = T,na_drop=T)
   
