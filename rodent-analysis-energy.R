@@ -25,7 +25,7 @@ rodent <- mutate(rodent,
 ## model 1 --- this has an intercept for plot but plots follow respective treatment smooth
 ## truend select = TRUE on here to provide some extra regularisation as we need it for the
 ## more complex model...
-m1 <- gam(energy ~ oTreatment + s(numericdate, k=20) +
+m1 <- gam(n ~ oTreatment + s(numericdate, k=20) +
               s(numericdate, by = oTreatment,k=15) +
               s(plot, bs = "re"),
           data = rodent, method = 'REML', family = tw, select = TRUE)
@@ -37,7 +37,7 @@ plot(m1, pages = 1, shade = TRUE, scale = 0)
 ## model 2 --- this is similar to above but now we add plot-specific smooth differences
 ## need `select` here as there is a little issue with identifiability as plot is nested
 ## in treatment. SE explodes for one treatment at very end without regularisation
-m2 <- gam(energy ~ oPlot + oTreatment + s(numericdate, k = 20) +
+m2 <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
               s(numericdate, by = oTreatment, k = 15) +
               s(numericdate, by = oPlot),
           data = rodent, method = 'REML', family = tw, select = TRUE)
@@ -86,7 +86,7 @@ pdata <- mutate(pdata,
 
 ## visualise
 ggplot(pdata, aes(x = censusdate, y = Fitted, colour = ModelForm)) +
-    geom_point(aes(x = censusdate, y = energy), data = rodent, inherit.aes = FALSE) +
+    geom_point(aes(x = censusdate, y = n), data = rodent, inherit.aes = FALSE) +
     geom_line(size = 1) +
     facet_grid(plot ~ Family) +
     labs(y = 'Count', x = NULL) +
@@ -146,7 +146,7 @@ treatPred <- transform(treatPred, Fitted = ilink(fit),
 
 ## plot
 p.plt <- ggplot(treatPred, aes(x = censusdate, y = Fitted)) +
-    geom_point(data = rodent, mapping = aes(y = energy, colour = treatment)) +
+    geom_point(data = rodent, mapping = aes(y = n, colour = treatment)) +
     geom_ribbon(aes(ymax = Upper, ymin = Lower, fill = treatment),
                 alpha = 0.2) +
     geom_line(aes(colour = treatment)) +

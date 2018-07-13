@@ -26,7 +26,7 @@ ctrl <- gam.control(nthreads = 4)
 ## model 1 --- this has an intercept for plot but plots follow respective treatment smooth
 ## truend select = TRUE on here to provide some extra regularisation as we need it for the
 ## more complex model...
-m1 <- gam(dipos ~ oTreatment + s(numericdate, k = 20) +
+m1 <- gam(n ~ oTreatment + s(numericdate, k = 20) +
               s(numericdate, by = oTreatment, k = 15) +
               s(plot, bs = "re"),
           data = rodent, method = 'REML', family = poisson, select = TRUE, control = ctrl)
@@ -38,7 +38,7 @@ plot(m1, pages = 1, shade = TRUE, scale = 0)
 ## model 2 --- this is similar to above but now we add plot-specific smooth differences
 ## need `select` here as there is a little issue with identifiability as plot is nested
 ## in treatment. SE explodes for one treatment at very end without regularisation
-m2 <- gam(dipos ~ oPlot + oTreatment + s(numericdate, k = 20) +
+m2 <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
               s(numericdate, by = oTreatment, k = 15) +
               s(numericdate, by = oPlot),
           data = rodent, method = 'REML', family = poisson, select = TRUE, control = ctrl)
@@ -67,7 +67,7 @@ autoplot(root.m2)
 
 ## See if we can do better on the counts with a NegBin response
 ## model 3: as model 1 but with negbin
-m3 <- gam(dipos ~ oTreatment + s(numericdate, k = 20) +
+m3 <- gam(n ~ oTreatment + s(numericdate, k = 20) +
               s(numericdate, by = oTreatment, k = 15) +
               s(plot, bs = "re"),
           data = rodent, method = 'REML', family = nb, select = TRUE, control = ctrl)
@@ -77,7 +77,7 @@ summary(m3) # note massive theta == tiny over dispersion rel. to Possion
 plot(m3, pages = 1, shade = TRUE, scale = 0)
 
 ## model 4: as model 2 but with negbin
-m4 <- gam(dipos ~ oPlot + oTreatment + s(numericdate, k = 20) +
+m4 <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
               s(numericdate, by = oTreatment, k = 15) +
               s(numericdate, by = oPlot),
           data = rodent, method = 'REML', family = nb, select = TRUE, control = ctrl)
@@ -136,7 +136,7 @@ pdata <- mutate(pdata,
 
 ## visualise
 ggplot(pdata, aes(x = censusdate, y = Fitted, colour = ModelForm)) +
-    geom_point(aes(x = censusdate, y = dipos), data = rodent, inherit.aes = FALSE) +
+    geom_point(aes(x = censusdate, y = n), data = rodent, inherit.aes = FALSE) +
     geom_line(size = 1) +
     facet_grid(plot ~ Family) +
     labs(y = 'Count', x = NULL) +
@@ -196,7 +196,7 @@ treatPred <- transform(treatPred, Fitted = ilink(fit),
 
 ## plot
 p.plt <- ggplot(treatPred, aes(x = censusdate, y = Fitted)) +
-    geom_point(data = rodent, mapping = aes(y = dipos, colour = treatment)) +
+    geom_point(data = rodent, mapping = aes(y = n, colour = treatment)) +
     geom_ribbon(aes(ymax = Upper, ymin = Lower, fill = treatment),
                 alpha = 0.2) +
     geom_line(aes(colour = treatment)) +
