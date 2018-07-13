@@ -14,7 +14,8 @@ plot_gam_prediction = function(modelPred, dat) {
     labs(y = 'Count', x = NULL) +
     theme(legend.position = 'top') +
     scale_colour_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2') +
-    scale_fill_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2')
+    scale_fill_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2') +
+    geom_vline(xintercept=as.Date('2015-04-10'))
   return(p.plt)
 }
 
@@ -31,8 +32,10 @@ plot_smooth_diff = function(diffs) {
     theme(legend.position = 'top') +
     labs(y = 'Difference', x = NULL) + 
     scale_colour_brewer(name = 'Treatment pair', type = 'qual', palette = 'Set1') +
-    scale_fill_brewer(name = 'Treatment pair', type = 'qual', palette = 'Set1')
-}
+    scale_fill_brewer(name = 'Treatment pair', type = 'qual', palette = 'Set1') +
+    geom_vline(xintercept=as.Date('2015-04-10')) +
+    geom_hline(yintercept=0)
+} 
 
 
 #' @title predict treatment effect
@@ -62,6 +65,8 @@ predict_treat_effect = function(dat, np, MODEL) {
                                      exclude = exVars))
   # bind predictions to data we predicted at
   treatPred <- cbind(treatEff, treatPred)
+  # extract inverse of link function from the model
+  ilink <- family(MODEL)$linkinv
   # form 95% bayesian credible interval / frequentist across-function confidence interval
   treatPred <- transform(treatPred, Fitted = ilink(fit),
                          Upper = ilink(fit + (2 * se.fit)),

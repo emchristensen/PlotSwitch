@@ -2,49 +2,70 @@ library(dplyr)
 library(mgcv)
 library(ggplot2)
 
-source('figure_functions.R')
+source('analysis_functions.R')
+theme_set(theme_bw())
 
 # ==========================================================================================
 # Number of dipodomys
-rodent <- read.csv('Dipo_counts.csv')
-rodent$censusdate <-as.Date(rodent$censusdate)
+dipo <- read.csv('Dipo_counts.csv')
+dipo$censusdate <-as.Date(dipo$censusdate)
 
 # create variables needed for GAM
-rodent <- dplyr::mutate(rodent,
+dipo <- dplyr::mutate(dipo,
                  oTreatment = ordered(treatment, levels = c('CC','EC','XC')),
                  oPlot      = ordered(plot),
                  plot       = factor(plot))
 
-# control
-ctrl <- gam.control(nthreads = 4)
-
-# GAM model --- includes plot-specific smooth differences
+# GAM model --- includes plot-specific smooths
 dipo.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
                   s(numericdate, by = oTreatment, k = 15) +
                   s(numericdate, by = oPlot),
-                data = rodent, method = 'REML', family = poisson, select = TRUE, control = ctrl)
-
+                data = dipo, method = 'REML', family = poisson, select = TRUE, control = gam.control(nthreads = 4))
 
 # Look at the treatment effect smooths on count scale. 
 # Requires us to exclude plot effects
-treatPred <- predict_treat_effect(rodent, np = 500, MODEL=dipo.gam)
-
-# extract inverse of link function from the model
-ilink <- family(dipo.gam)$linkinv
+treatPred.dipo <- predict_treat_effect(dipo, np = 500, MODEL=dipo.gam)
 
 # plot GAM fit and data
-p.plt = plot_gam_prediction(treatPred,rodent)
-p.plt
+d.plt = plot_gam_prediction(treatPred.dipo,dipo)
+d.plt
 
 #ggsave('estimated-treatment-effects.pdf', p.plt)
 
-
 # Compute pairwise treatment diffs if we leave *in* the parametric Treatment terms
-d1 <- osmooth_diff(MODEL, treatEff, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
-d2 <- osmooth_diff(MODEL, treatEff, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
+d1 <- osmooth_diff(dipo.gam, treatPred.dipo, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
+d2 <- osmooth_diff(dipo.gam, treatPred.dipo, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
+diffs.dipo <- rbind(d1, d2)
 
-diffs <- rbind(d1, d2)
-
-## plot difference
-diffPlt = plot_smooth_diff(diffs)
+## difference of smooths
+diffPlt = plot_smooth_diff(diffs.dipo)
 diffPlt
+
+# =========================================================================================
+# number of small granivores
+smgran <- read.csv('SmallGranivores.csv')
+smgran$censusdate = as.Date(smgran$censusdate)
+
+smgran <- mutate(smgran,
+                 oTreatment = ordered(treatment, levels = c('CC','EC','XC')),
+                 oPlot      = ordered(plot),
+                 plot       = factor(plot))
+
+# GAM model - plot and treatment smooths
+smgran.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
+                    s(numericdate, by = oTreatment, k = 15) +
+                    s(numericdate, by = oPlot),
+                  data = smgran, method = 'REML', family = poisson, select = TRUE, control = gam.control(nthreads = 4))
+
+# plot treatment effects
+treatPred.sg = predict_treat_effect(smgran, np = 500, MODEL=smgran.gam)
+
+sg.plt = plot_gam_prediction(treatPred.sg, smgran)
+sg.plt
+
+# difference of smooths
+d1 = osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
+d2 = osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
+diffs.sg = rbind(d1,d2)
+sg.diffPlt = plot_smooth_diff(diffs.sg)
+sg.diffPlt
