@@ -13,13 +13,13 @@ dat = get_data(startdate = "2013-03-11",
 
 # dipo abundance by plot
 dipoN = make_N_data(species = 'Dipos', dat)
-dipoN = rename(dipoN,dipos=n)
 write.csv(dipoN,'Dipo_counts.csv',row.names=F)
 
 
 # species richness by plot
 sprich = make_speciesrich_data(dat)
 write.csv(sprich,'SpeciesRichness.csv',row.names=F)
+
 
 # total metabolic energy by plot (all granivores combined)
 total_energy = get_community_energy(startdate = "2013-03-11",

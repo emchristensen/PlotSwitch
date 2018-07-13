@@ -1,4 +1,4 @@
-"plot","censusdate","numericdate","treatment","energy"
+"plot","censusdate","numericdate","treatment","n"
 4,2013-03-13,15.777,"CC",59.399610737689
 11,2013-03-13,15.777,"CC",116.626269217221
 14,2013-03-13,15.777,"CC",72.0704312761469

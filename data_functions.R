@@ -211,7 +211,7 @@ get_community_energy = function(startdate = "2013-03-11", min_num_plots = 24,spe
                             FUN=sum)
   # put in chronological order
   energy_byplot = energy_byplot[order(energy_byplot$numericdate),]
-  energy_byplot = dplyr::rename(energy_byplot,energy=x)
+  energy_byplot = dplyr::rename(energy_byplot,n=x)
   return(energy_byplot)
 }
 
