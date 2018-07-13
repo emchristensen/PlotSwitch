@@ -45,8 +45,9 @@ plot_smooth_diff = function(diffs) {
 #' @param dat data frame of original data
 #' @param np length of prediction you want (how many prediction points)
 #' @param MODEL gam model object
+#' @param exVars list of variables (from gam) to be excluded in smooth diff
 #' 
-predict_treat_effect = function(dat, np, MODEL) {
+predict_treat_effect = function(dat, np, MODEL, exVars) {
   # Data to predict at; note the dummy plot - need to provide all variables used to
   # fit the model when predicting
   treatEff <- with(dat,
@@ -58,8 +59,7 @@ predict_treat_effect = function(dat, np, MODEL) {
                         oPlot       = ordered(plot),
                         oTreatment  = ordered(treatment, levels = c('CC','EC','XC')),
                         numericdate = as.numeric(censusdate) / 1000)
-  # terms to exclude; must be named exactly as printed in `summary(model)` output
-  exVars <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
+  
   # actually predict, on link scale so we can get proper CIs, exclude
   treatPred <- as.data.frame(predict(MODEL, treatEff, type = 'link', se.fit = TRUE,
                                      exclude = exVars))

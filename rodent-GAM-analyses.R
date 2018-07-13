@@ -23,11 +23,12 @@ dipo.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
                 data = dipo, method = 'REML', family = poisson, select = TRUE, control = gam.control(nthreads = 4))
 
 # Look at the treatment effect smooths on count scale. 
-# Requires us to exclude plot effects
-treatPred.dipo <- predict_treat_effect(dipo, np = 500, MODEL=dipo.gam)
+# terms to exclude; must be named exactly as printed in `summary(model)` output
+exVars.d <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
+treatPred.dipo <- predict_treat_effect(dipo, np = 500, MODEL=dipo.gam, exVars.d)
 
 # plot GAM fit and data
-d.plt = plot_gam_prediction(treatPred.dipo,dipo)
+d.plt <- plot_gam_prediction(treatPred.dipo,dipo)
 d.plt
 
 #ggsave('estimated-treatment-effects.pdf', p.plt)
@@ -38,13 +39,13 @@ d2 <- osmooth_diff(dipo.gam, treatPred.dipo, "numericdate", "CC", "XC", var = "o
 diffs.dipo <- rbind(d1, d2)
 
 ## difference of smooths
-diffPlt = plot_smooth_diff(diffs.dipo)
+diffPlt <- plot_smooth_diff(diffs.dipo)
 diffPlt
 
 # =========================================================================================
 # number of small granivores
 smgran <- read.csv('SmallGranivores.csv')
-smgran$censusdate = as.Date(smgran$censusdate)
+smgran$censusdate <- as.Date(smgran$censusdate)
 
 smgran <- mutate(smgran,
                  oTreatment = ordered(treatment, levels = c('CC','EC','XC')),
@@ -58,14 +59,77 @@ smgran.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
                   data = smgran, method = 'REML', family = poisson, select = TRUE, control = gam.control(nthreads = 4))
 
 # plot treatment effects
-treatPred.sg = predict_treat_effect(smgran, np = 500, MODEL=smgran.gam)
+# terms to exclude; must be named exactly as printed in `summary(model)` output
+exVars.sg <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
+treatPred.sg <- predict_treat_effect(smgran, np = 500, MODEL=smgran.gam, exVars.sg)
 
-sg.plt = plot_gam_prediction(treatPred.sg, smgran)
+sg.plt <- plot_gam_prediction(treatPred.sg, smgran)
 sg.plt
 
 # difference of smooths
-d1 = osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
-d2 = osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
-diffs.sg = rbind(d1,d2)
-sg.diffPlt = plot_smooth_diff(diffs.sg)
+d1 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
+d2 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
+diffs.sg <- rbind(d1,d2)
+sg.diffPlt <- plot_smooth_diff(diffs.sg)
 sg.diffPlt
+
+# ==========================================================================================
+# Species richness
+sprich <- read.csv('SpeciesRichness.csv')
+sprich$censusdate <- as.Date(sprich$censusdate)
+
+sprich <- mutate(sprich,
+                 oTreatment = ordered(treatment, levels = c('CC','EC','XC')),
+                 oPlot      = ordered(plot),
+                 plot       = factor(plot))
+
+# model 1 --- this has an intercept for plot but plots follow respective treatment smooth
+sprich.gam <- gam(n ~ oTreatment + s(numericdate, k = 20) +
+                    s(numericdate, by = oTreatment, k = 15) +
+                    s(plot, bs = "re"),
+                  data = sprich, method = 'REML', family = poisson, select = TRUE, control = gam.control(nthreads = 4))
+
+# plot treatment effects
+# terms to exclude
+exVars.rich <- 's(plot)'
+treatPred.rich <- predict_treat_effect(sprich, np = 500, MODEL=sprich.gam, exVars.rich)
+
+rich.plt <- plot_gam_prediction(treatPred.rich, sprich)
+rich.plt
+
+# difference of smooths
+d1 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
+d2 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
+diffs.rich <- rbind(d1,d2)
+rich.diffPlt <- plot_smooth_diff(diffs.rich)
+rich.diffPlt
+
+# ========================================================================================
+# Total rodent energy
+energy <- read.csv('TotalCommunityEnergy.csv')
+energy$censusdate <- as.Date(energy$censusdate)
+
+energy <- mutate(energy,
+                 oTreatment = ordered(treatment, levels = c('CC','EC','XC')),
+                 oPlot      = ordered(plot),
+                 plot       = factor(plot))
+
+# GAM model -- includes plot smooths
+energy.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
+                    s(numericdate, by = oTreatment, k = 15) +
+                    s(numericdate, by = oPlot),
+                  data = rodent, method = 'REML', family = tw, select = TRUE)
+
+# plot treatment effects (exclude plot smooths)
+exVars.energy <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
+treatPred.energy <- predict_treat_effect(energy, np = 500, MODEL=energy.gam, exVars.energy)
+
+energy.plt <- plot_gam_prediction(treatPred.energy, energy)
+energy.plt
+
+# difference of smooths
+d1 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
+d2 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
+diffs.energy <- rbind(d1,d2)
+energy.diffPlt <- plot_smooth_diff(diffs.energy)
+energy.diffPlt
