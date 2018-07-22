@@ -235,109 +235,80 @@ avg_3month = function(df) {
   return(quarterly)
 }
 
-
-##### Below this point is code that has not been rectified with portalr.
-##### This is because portalr does not have biomass functions yet and
-##### because we decided not to do eveness, but I haven't removed the code yet.
-
-#' @title get mass data
-#' 
-#' @description get total or average rodent mass by period and plot
+#' @title get winter or summer plant data: crosstab
 #'
-#' @param start_period first period number of data desired; default is 130 (1989)
-#' @param avg T/F: if true, computes average wgt per plot, if F computes total wgt
-#' @param metE T/F: if T converts mass to metabolic energy, if F returns mass data
-#' 
-#' @example avg_mass = get_mass(start_period = 415,avg=T)
+#' @param selected_plots plot numbers: 1-24
+#' @param plant_community which plant community (e.g. annuals or perennials; input 'type' in plant_abundance function)
+#' @param summer_winter 'summer' or 'winter' census; or "both" for perennials
+#' @param threshold value used to remove "rare" or "transient" species from the table. For example, a threshold of .1 removes species that are present in less than 10% of sampling years
 #'
+#' @return table of plant counts by species
 #'
-#' get_mass = function(start_period=130, avg, metE) {
-#'   # load rodent data
-#'   rdat_filtered = filter_data(start_period,incomplete=F) %>% select(period,plot,species,wgt)
-#'   
-#'   # fill in unweighed rodents with avg mass for that species
-#'   avgmass = aggregate(rdat_filtered$wgt, by = list(species = rdat_filtered$species),FUN=mean,na.rm=T)
-#'   rdat_filtered = merge(rdat_filtered,avgmass)
-#'   for (n in seq(length(rdat_filtered$species))) {
-#'     if (is.na(rdat_filtered$wgt[n])) {
-#'       rdat_filtered$wgt[n] = rdat_filtered$x[n]
-#'     }
-#'   }
-#'   
-#'   # convert mass to metabolic energy if desired
-#'   if (metE == T) {
-#'     rdat_filtered$wgt = 5.69 * rdat_filtered$wgt^0.75
-#'   }
-#'   
-#'   # get either total or average mass per plot and period
-#'   if (avg == T) {
-#'     mass = aggregate(rdat_filtered$wgt,by=list(period=rdat_filtered$period,plot=rdat_filtered$plot),FUN=mean)
-#'   } else {
-#'     mass = aggregate(rdat_filtered$wgt,by=list(period=rdat_filtered$period,plot=rdat_filtered$plot),FUN=sum)
-#'   }
-#'   
-#'   # change column name
-#'   mass = rename(mass,n=x)
-#'   
-#'   # data frame of all plots in all periods
-#'   allplotsperiod = expand.grid(period=unique(rdat_filtered$period), plot=unique(rdat_filtered$plot))
-#'   #attach date columns according to period
-#'   allplotsperiod = append_dates(allplotsperiod)
-#'   # attach treatment column according to plot number
-#'   treatment = data.frame(treatment = c('CX','CE','EE','CC',
-#'                                        'XC','EC','XC','CE',
-#'                                        'CX','XX','CC','CX',
-#'                                        'EC','CC','EE','XX',
-#'                                        'CC','EC','EE','EE',
-#'                                        'EE','CE','XX','XC'),plot=seq(1,24))
-#'   allplotsperiod = merge(allplotsperiod,treatment)
-#'   # merge capture data with data frame of all plots and all periods, and fill in empty data with zeros
-#'   mass_data = merge(allplotsperiod,mass,all=T)
-#'   mass_data$n[is.na(mass_data$n)] = 0
-#'   # put data in chronological order
-#'   mass_data = mass_data[order(mass_data$period),]
-#'   return(mass_data)
-#' }
-#' 
-#' #' @title get species evenness
-#' #' 
-#' #' @description calculate species evenness per plot/period
-#' #' 
-#' #' @param start_period first period number of data desired
-#' #' 
-#' get_evenness = function(start_period=415) {
-#'   # load rodent data
-#'   rdat_filtered = filter_data(start_period,incomplete=F) %>% select('period','plot','species')
-#'   
-#'   # put data in tabular form
-#'   rdat_filtered$periodplot = paste(rdat_filtered$period,rdat_filtered$plot)
-#'   plt_table = table(rdat_filtered$periodplot,rdat_filtered$species)
-#' 
-#'   # calculate Shannon diversity and evenness
-#'   H = vegan::diversity(plt_table)
-#'   even = H/log(vegan::specnumber(plt_table))
-#'   
-#'   evenness = data.frame(periodplot = names(even), n = unname(even))
-#'   evenness$periodplot = as.character(evenness$periodplot)
-#'   evenness$period = rep(NA)
-#'   evenness$plot = rep(NA)
-#'   for (ind in seq(length(evenness$periodplot))) {
-#'     evenness$period[ind] = strsplit(evenness$periodplot,' ')[[ind]][1]
-#'     evenness$plot[ind] = strsplit(evenness$periodplot,' ')[[ind]][2]
-#'   }
-#'   # append date columns
-#'   evenness_dat = evenness %>% select(-periodplot) %>% append_dates()
-#'   # attach treatment column according to plot number
-#'   treatment = data.frame(treatment = c('CX','CE','EE','CC',
-#'                                        'XC','EC','XC','CE',
-#'                                        'CX','XX','CC','CX',
-#'                                        'EC','CC','EE','XX',
-#'                                        'CC','EC','EE','EE',
-#'                                        'EE','CE','XX','XC'),plot=seq(1,24))
-#'   evenness_dat = merge(evenness_dat,treatment)
-#'   # put rows in chronological order
-#'   evenness_dat = evenness_dat[order(evenness_dat$period),]
-#'   
-#'   return(evenness_dat)
-#' }
+make_plant_table = function(selected_plots,plant_community,summer_winter,threshold=0.1) {
+  plant_data = portalr::plant_abundance('repo',level='Plot',type=plant_community,
+                                        correct_sp=T,unknowns=F,plots=selected_plots,
+                                        shape='flat')
+  
+  # remove data before 1983 to avoid having to adjust by quadrat area per plot
+  season_data = dplyr::filter(plant_data,year>1982, season==summer_winter)
 
+  # find species that occurred in >10% of years
+  transients = find_transient_species(season_data,threshold)
+  
+  # filter based on selected_plots, remove transient species
+  seasonplants = filter(season_data,plot %in% selected_plots, !(species %in% transients$species))
+  
+  # sum by year (effort doesn't vary by year)
+  seasontotal = aggregate(seasonplants$abundance,by=list(year=seasonplants$year,season=seasonplants$season,species=seasonplants$species,plot=seasonplants$plot),FUN=sum)
+  seasontable = portalr:::make_crosstab(seasontotal,variable_name='x')
+  seasontable[is.na(seasontable)] <- 0
+  
+  
+  return(seasontable)
+}
+
+#' @title find transient species
+#'
+#' @description identifies species found in less than a given percentage of sampling events
+#'
+#' @param data_table table of data including species and year
+#' @param threshold value for determining transient. Default 10%
+#' 
+#' @return vector of species names that are rare
+#'
+find_transient_species = function(data_table,threshold=0.1) {
+  ntimesteps = dplyr::select(data_table,year) %>% unique() %>% nrow()
+  sp_time = dplyr::select(data_table,year,species) %>% unique()
+  yrs_present = dplyr::count(sp_time,species)
+  transient_names = dplyr::filter(yrs_present,n <= threshold*ntimesteps) %>% dplyr::select(species)
+  return(transient_names)
+}
+
+
+#' @title make treatment table
+#' @description make table of plot numbers and treatment before/after switch
+#' 
+make_treatment_table = function() {
+  
+  treat_table = data.frame(plot=1:24,
+                           treat_before = rep(NA),
+                           treat_after = rep(NA),
+                           flip_type = rep(NA))
+  
+  treat_table$treat_before[treat_table$plot %in% c(1,2,4,8,9,11,12,14,17,22)] <- 'control'
+  treat_table$treat_before[treat_table$plot %in% c(3,6,13,15,18,19,20,21)] <- 'exclosure'
+  treat_table$treat_before[treat_table$plot %in% c(5,7,10,16,23,24)] <- 'removal'
+  
+  treat_table$treat_after[treat_table$plot %in% c(4,5,6,7,11,13,14,17,18,24)] <- 'control'
+  treat_table$treat_after[treat_table$plot %in% c(2,3,8,15,19,20,21,22)] <- 'exclosure'
+  treat_table$treat_after[treat_table$plot %in% c(1,9,10,12,16,23)] <- 'removal'
+  
+  treat_table$flip_type[treat_table$plot %in% c(4,11,14,17)] <- 'control'
+  treat_table$flip_type[treat_table$plot %in% c(3,15,19,20,21)] <- 'exclosure'
+  treat_table$flip_type[treat_table$plot %in% c(10,16,23)] <- 'removal'
+  treat_table$flip_type[treat_table$plot %in% c(2,8,22)] <- 'control-exclosure'
+  treat_table$flip_type[treat_table$plot %in% c(6,13,18)] <- 'exclosure-control'
+  treat_table$flip_type[treat_table$plot %in% c(5,7,24)] <- 'removal-control'
+  treat_table$flip_type[treat_table$plot %in% c(1,12,9)] <- 'control-removal'
+  return(treat_table)
+}

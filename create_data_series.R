@@ -34,11 +34,24 @@ smgran = make_N_data(species='SmGran',dat)
 write.csv(smgran,'SmallGranivores.csv',row.names=F)
 
 
+# plants
+winterannuals = make_plant_table(selected_plots=1:24,
+                                 plant_community='Winter Annuals',
+                                 summer_winter = 'winter',
+                                 threshold = 0.33)
+summerannuals = make_plant_table(selected_plots=1:24,
+                                 plant_community='Summer Annuals',
+                                 summer_winter = 'summer',
+                                 threshold = 0.33)
+treat_table = make_treatment_table()
+ 
+dat.winter = merge(winterannuals,treat_table, by='plot') %>%
+  dplyr::filter(year<2016,year>=2008)
+dat.summer = merge(summerannuals,treat_table, by='plot') %>%
+  dplyr::filter(year<2015,year>=2008)
 
-
-
-
-
+write.csv(dat.winter,'WinterAnnualTreatments2.csv',row.names=F)
+write.csv(dat.summer,'SummerAnnualTreatments.csv',row.names=F)
 
 
 # ==============================================================================
