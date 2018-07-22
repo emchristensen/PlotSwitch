@@ -123,7 +123,7 @@ energy <- mutate(energy,
 energy.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
                     s(numericdate, by = oTreatment, k = 15) +
                     s(numericdate, by = oPlot),
-                  data = rodent, method = 'REML', family = tw, select = TRUE)
+                  data = energy, method = 'REML', family = tw, select = TRUE)
 
 # plot treatment effects (exclude plot smooths)
 exVars.energy <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
