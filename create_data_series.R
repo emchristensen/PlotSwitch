@@ -29,9 +29,11 @@ total_energy = dplyr::filter(total_energy,treatment %in% c('CC','EC','XC'))
 write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
 
 
-# abund of all small granivores (not just the 5 used in Heske et al 1994) [PP, PE, PF, PM, RM].
+# abundance of small granivores.
 smgran = make_N_data(species='SmGran',dat)
 write.csv(smgran,'SmallGranivores.csv',row.names=F)
+
+
 
 
 # plants
@@ -50,7 +52,7 @@ dat.winter = merge(winterannuals,treat_table, by='plot') %>%
 dat.summer = merge(summerannuals,treat_table, by='plot') %>%
   dplyr::filter(year<2015,year>=2008)
 
-write.csv(dat.winter,'WinterAnnualTreatments2.csv',row.names=F)
+write.csv(dat.winter,'WinterAnnualTreatments.csv',row.names=F)
 write.csv(dat.summer,'SummerAnnualTreatments.csv',row.names=F)
 
 

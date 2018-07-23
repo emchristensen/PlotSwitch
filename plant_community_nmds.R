@@ -82,7 +82,7 @@ treatments_combined = data.frame(treatment = c('CX','CE','EE','CC','XC','EC',
                                                'EE','EE','EE','CE','XX','XC'),
                                  plot=seq(24))
 
-plant_table = get_plant_data(plantdat,plantsp,2015,'winter','Annual')
+plant_table = get_plant_data(plantdat,plantsp,2016,'winter','Annual')
 
 # distance -- I took this stuff from code Baiser gave me, I think...
 plantdist = vegdist(plant_table[-1],'bray')
@@ -90,6 +90,6 @@ plantdist = vegdist(plant_table[-1],'bray')
 # the actual nmds calculation.  k=2 to restrict to 2 dimensions
 nmds_out<-metaMDS(plantdist,k=2, trace=T)
 
-#stressplot(nmdsrat)
+stressplot(nmds_out)
 
-plot_nmds(treatments,nmds_out)
+plot_nmds(treatments2,nmds_out)

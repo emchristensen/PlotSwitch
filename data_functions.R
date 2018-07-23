@@ -103,11 +103,13 @@ make_N_data= function(species='All', dat) {
   # select species of interest
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
   if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
-  if (species=='SmGran') {targetsp = c('BA','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}   #{targetsp = c('PB','PE','PF','PM','PP','RM')}
+  if (species=='SmGran') {targetsp = c('BA','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}   
   if (species=='SmH') {targetsp = c('PB','PF','PH','PI','PP')}
   if (species=='SmM') {targetsp = c('BA','PE','PL','PM','RF','RM','RO')}
   if (species=='Dipos') {targetsp = c('DM','DO','DS')}
   if (species %in% unique(dat$species)) {targetsp = species}
+  if (species=='SmCore') {targetsp = c('PB','PE','PF','PP','RM')}
+  if (species=='SmTemp') {targetsp = c('BA','PL','PM','RF','RO')}
   
   target_dat = dplyr::filter(dat,species %in% targetsp)
   total = aggregate(target_dat$abundance,
