@@ -4,8 +4,9 @@
 #'
 #' @param modelPred data frame of predictions from GAM model
 #' @param dat data frame of data points used for the GAM
+#' @param Palette colours to use
 #'
-plot_gam_prediction = function(modelPred, dat) {
+plot_gam_prediction = function(modelPred, dat, Palette) {
   p.plt <- ggplot(modelPred, aes(x = censusdate, y = Fitted)) +
     geom_point(data = dat, mapping = aes(y = n, colour = treatment)) +
     geom_ribbon(aes(ymax = Upper, ymin = Lower, fill = treatment),
@@ -13,10 +14,10 @@ plot_gam_prediction = function(modelPred, dat) {
     geom_line(aes(colour = treatment)) +
     labs(y = 'Count', x = NULL) +
     theme(legend.position = 'right') +
-    scale_colour_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2',
+    scale_colour_manual(name = 'Treatment', values = Palette,
                         breaks=c("CC","EC","XC"),
                         labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
-    scale_fill_brewer(name = 'Treatment', type = 'qual', palette = 'Dark2', 
+    scale_fill_manual(name = 'Treatment', values = Palette, 
                       breaks=c("CC","EC","XC"),
                       labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
     geom_vline(xintercept=as.Date('2015-04-10')) 
@@ -33,7 +34,7 @@ plot_smooth_diff = function(diffs) {
   diffPlt <- ggplot(diffs, aes(x = censusdate, y = diff, group = pair, colour = pair)) +
     geom_ribbon(aes(ymax = upper, ymin = lower, colour = NULL, fill = pair), alpha = 0.15) +
     geom_line() +
-    theme(legend.position = 'top') +
+    #theme(legend.position = 'top') +
     labs(y = 'Control - Treatment', x = NULL) + 
     scale_colour_brewer(name = 'Treatment pair', type = 'qual', palette = 'Set1',
                         breaks=c('CC-EC','CC-XC'),
