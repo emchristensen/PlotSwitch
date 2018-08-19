@@ -254,11 +254,11 @@ make_plant_table = function(selected_plots,plant_community,summer_winter,thresho
   # remove data before 1983 to avoid having to adjust by quadrat area per plot
   season_data = dplyr::filter(plant_data,year>1982, season==summer_winter)
 
-  # find species that occurred in >10% of years
+  # find species that occurred in <10% of years
   transients = find_transient_species(season_data,threshold)
   
   # filter based on selected_plots, remove transient species
-  seasonplants = filter(season_data,plot %in% selected_plots, !(species %in% transients$species))
+  seasonplants = dplyr::filter(season_data,plot %in% selected_plots, !(species %in% transients$species))
   
   # sum by year (effort doesn't vary by year)
   seasontotal = aggregate(seasonplants$abundance,by=list(year=seasonplants$year,season=seasonplants$season,species=seasonplants$species,plot=seasonplants$plot),FUN=sum)
@@ -279,6 +279,7 @@ make_plant_table = function(selected_plots,plant_community,summer_winter,thresho
 #' @return vector of species names that are rare
 #'
 find_transient_species = function(data_table,threshold=0.1) {
+  data_table = dplyr::ungroup(data_table)
   ntimesteps = dplyr::select(data_table,year) %>% unique() %>% nrow()
   sp_time = dplyr::select(data_table,year,species) %>% unique()
   yrs_present = dplyr::count(sp_time,species)

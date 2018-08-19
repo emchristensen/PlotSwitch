@@ -48,9 +48,9 @@ summerannuals = make_plant_table(selected_plots=1:24,
 treat_table = make_treatment_table()
  
 dat.winter = merge(winterannuals,treat_table, by='plot') %>%
-  dplyr::filter(year<2016,year>=2008)
+  dplyr::filter(year %in% c(2008,2012,2013,2014,2015))
 dat.summer = merge(summerannuals,treat_table, by='plot') %>%
-  dplyr::filter(year<2015,year>=2008)
+  dplyr::filter(year %in% c(2008,2011,2014))
 
 write.csv(dat.winter,'WinterAnnualTreatments.csv',row.names=F)
 write.csv(dat.summer,'SummerAnnualTreatments.csv',row.names=F)
