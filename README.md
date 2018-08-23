@@ -9,9 +9,6 @@ Code for my project on the effects of changing rodent treatments on plots at Por
   * __SpeciesRichness.csv__ species richness by plot and sampling time
   * __TotalCommunityEnergy.csv__ total metabolic energy of all species on a plot combined
   * __SmallGranivores.csv__ counts of small granivore species (Dipo competitors); counts by plot and sampling time
-  * __WinterAnnualTreatments.csv__ table of winter annual plants by species, plot, year. Contains plot treatment info
-  * __SummerAnnualTreatments.csv__ table of summer annual plants by species, plot, year. Contains plot treatment info
-
 
 ## Model exploration and selection
   * __rodent-analysis.R__ GAM analysis of dipodomys count data
@@ -19,6 +16,13 @@ Code for my project on the effects of changing rodent treatments on plots at Por
   * __rodent-analysis-richness.R__ GAM analysis of species richness
   * __rodent-analysis-smallgranivores.R__ GAM analysis of small granivore count data
   
-## Final analysis and figures
+## Final analysis and figure creation
   * __rodent-GAM-analyses.R__ final models for each analysis, with code for creating figures
   * __analysis_functions.R__ functions used by rodent-GAM-analyses.R
+  * __baileys.R__ code for plotting population dynamics of C. baileyi
+  * __pre-flip_differences.R__ code to analyze differences by treatment before change in 2015
+
+## PlantAnalysis
+  * __plant_ordination_analysis.R__ code for running pCCA of plant communities
+  * __WinterAnnualTreatments.csv__ table of winter annual plants by species, plot, year. Contains plot treatment info
+  * __SummerAnnualTreatments.csv__ table of summer annual plants by species, plot, year. Contains plot treatment info
