@@ -41,7 +41,7 @@ d2 <- osmooth_diff(dipo.gam, treatPred.dipo, "numericdate", "CC", "XC", var = "o
 diffs.dipo <- rbind(d1, d2)
 
 ## difference of smooths
-diffPlt <- plot_smooth_diff(diffs.dipo)
+diffPlt <- plot_smooth_diff(diffs.dipo, Palette=cbPalette[2:3])
 diffPlt
 #ggsave('dipo-difference.png', diffPlt,width=6,height=2.5)
 
@@ -79,7 +79,7 @@ sg.plt
 d1 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
 d2 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
 diffs.sg <- rbind(d1,d2)
-sg.diffPlt <- plot_smooth_diff(diffs.sg)
+sg.diffPlt <- plot_smooth_diff(diffs.sg,Palette=cbPalette[2:3])
 sg.diffPlt
 #ggsave('smallgran-difference.png', sg.diffPlt,width=6,height=2.5)
 
@@ -117,14 +117,14 @@ rich.plt
 d1 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
 d2 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
 diffs.rich <- rbind(d1,d2)
-rich.diffPlt <- plot_smooth_diff(diffs.rich)
+rich.diffPlt <- plot_smooth_diff(diffs.rich,Palette=cbPalette[2:3])
 rich.diffPlt
 #ggsave('richness-difference.png', rich.diffPlt,width=6,height=2.5)
 
 ## Cowplot grid
 rich_plot = plot_grid(rich.plt, rich.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 rich_plot
-ggsave('sprich-gam-plots.png', rich_plot, width=7, height = 5)
+#ggsave('sprich-gam-plots.png', rich_plot, width=7, height = 5)
 
 # ========================================================================================
 # Total rodent energy
@@ -154,7 +154,7 @@ energy.plt
 d1 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
 d2 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
 diffs.energy <- rbind(d1,d2)
-energy.diffPlt <- plot_smooth_diff(diffs.energy)
+energy.diffPlt <- plot_smooth_diff(diffs.energy,Palette=cbPalette[2:3])
 energy.diffPlt
 #ggsave('energy-difference.png', energy.diffPlt,width=6,height=2.5)
 

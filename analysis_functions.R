@@ -29,17 +29,18 @@ plot_gam_prediction = function(modelPred, dat, Palette) {
 #' @description plot of difference of smoothes from GAM model
 #' 
 #' @param diffs data frame containing difference of smooth info (output from osmooth_diff())
+#' @param Palette colours to use
 #'
-plot_smooth_diff = function(diffs) {
+plot_smooth_diff = function(diffs,Palette) {
   diffPlt <- ggplot(diffs, aes(x = censusdate, y = diff, group = pair, colour = pair)) +
     geom_ribbon(aes(ymax = upper, ymin = lower, colour = NULL, fill = pair), alpha = 0.15) +
     geom_line() +
     #theme(legend.position = 'top') +
     labs(y = 'Control - Treatment', x = NULL) + 
-    scale_colour_brewer(name = 'Treatment pair', type = 'qual', palette = 'Set1',
+    scale_colour_manual(name = 'Treatment pair', values = Palette,
                         breaks=c('CC-EC','CC-XC'),
                         labels=c('Control - Former \n kangaroo rat removal','Control - Former \n rodent removal')) +
-    scale_fill_brewer(name = 'Treatment pair', type = 'qual', palette = 'Set1',
+    scale_fill_manual(name = 'Treatment pair', values = Palette,
                       breaks=c('CC-EC','CC-XC'),
                       labels=c('Control - Former \n kangaroo rat removal','Control - Former \n rodent removal')) +
     geom_vline(xintercept=as.Date('2015-04-10')) +
