@@ -45,8 +45,10 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
                      year=plantdat$year,
                      plot=plantdat$plot,
                      treatment=plantdat$treat_before)
+  centroids = aggregate(cbind(CCA1, CA1) ~ treatment, data = results, FUN = mean)
   plotobj=ggplot(results,aes(CCA1, CA1)) + 
     stat_ellipse(aes(color = treatment)) +
+    geom_point(aes(colour = treatment), data = centroids, size = 5, stroke = 1, shape = 3) +
     geom_point(aes(color = treatment)) +
     #geom_text(aes(label = plot, color = as.factor(year))) +
     coord_equal() +                     # biplots only work with equal scaling
