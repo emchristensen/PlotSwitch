@@ -41,10 +41,10 @@ plant_pcca = function(plantdat) {
 #' 
 plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
   
-  results=data.frame(scores(pcca.obj)$sites,
-                      year=plantdat$year,
-                      plot=plantdat$plot,
-                      treatment=plantdat$treat_before)
+  results=data.frame(scores(pcca.obj, display = "sites", scaling = "sites"),
+                     year=plantdat$year,
+                     plot=plantdat$plot,
+                     treatment=plantdat$treat_before)
   plotobj=ggplot(results,aes(CCA1, CA1)) + 
     stat_ellipse(aes(color = treatment)) +
     geom_point(aes(color = treatment)) +
