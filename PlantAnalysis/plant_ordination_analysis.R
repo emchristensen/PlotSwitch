@@ -49,7 +49,7 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
     stat_ellipse(aes(color = treatment)) +
     geom_point(aes(color = treatment)) +
     #geom_text(aes(label = plot, color = as.factor(year))) +
-    coord_cartesian(xlim = c(-5, 4), ylim = c(-7, 7)) +
+    coord_equal() +                     # biplots only work with equal scaling
     scale_shape_discrete(guide=F) +
     theme(legend.title=element_blank()) +
     #scale_color_discrete(direction=-1) +
