@@ -14,6 +14,9 @@ library(cowplot)
 cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
 theme_set(theme_bw())
 
+## set a seed
+seed <- 1
+
 # functions ----
 #' @title plant pcca
 #' 
@@ -80,7 +83,9 @@ dat.summer1 = dplyr::filter(dat.summer,treat_before %in% c('exclosure','removal'
 win.pcca1 = plant_pcca(dat.winter1)
 
 vif.cca(win.pcca1)
+set.seed(seed)
 anova(win.pcca1)
+set.seed(seed)
 permutest(win.pcca1,permutations=500) # should be similar to anova on pcca
 #anova(win.pcca1,strata=dat.winter1$year) # more conservative test   
 
@@ -96,7 +101,9 @@ excl_rem_win
 sum.pcca1 = plant_pcca(dat.summer1)
 
 vif.cca(sum.pcca1)
+set.seed(seed)
 anova(sum.pcca1)
+set.seed(seed)
 permutest(sum.pcca1,permutations=500) 
 
 # proportion of variance explained
@@ -128,7 +135,9 @@ dat.summer3 = dplyr::filter(dat.summer,treat_before %in% c('removal','control'))
 win.pcca3 = plant_pcca(dat.winter3)
 
 vif.cca(win.pcca3)
+set.seed(seed)
 anova(win.pcca3)
+set.seed(seed)
 permutest(win.pcca3,permutations=500) # should be similar to anova on pcca
 #anova(win.pcca3,strata=dat.winter3$year) # more conservative test   
 
@@ -144,7 +153,9 @@ ctrl_rem_win
 sum.pcca3 = plant_pcca(dat.summer3)
 
 vif.cca(sum.pcca3)
+set.seed(seed)
 anova(sum.pcca3)
+set.seed(seed)
 permutest(sum.pcca3,permutations=500)
 #anova(sum.pcca3,strata=dat.summer3$year) # more conservative test 
 
@@ -177,7 +188,9 @@ dat.summer2 = dplyr::filter(dat.summer,treat_before %in% c('exclosure','control'
 win.pcca2 = plant_pcca(dat.winter2)
 
 vif.cca(win.pcca2)
+set.seed(seed)
 anova(win.pcca2)
+set.seed(seed)
 permutest(win.pcca2,permutations=500) # should be similar to anova on pcca
 #anova(win.pcca2,strata=dat.winter2$year) # more conservative test   
 
@@ -193,7 +206,9 @@ ctrl_excl_win
 sum.pcca2 = plant_pcca(dat.summer2)
 
 vif.cca(sum.pcca2)
+set.seed(seed)
 anova(sum.pcca2)
+set.seed(seed)
 permutest(sum.pcca2,permutations=500)
 #anova(sum.pcca2,strata=dat.summer2$year) # more conservative test 
 
