@@ -1,5 +1,6 @@
 # what are Bailey's doing with the plot switch??
 library(ggplot2)
+library("mgcv")
 
 source('data_functions.R')
 theme_set(theme_bw())
@@ -29,6 +30,70 @@ baileys = ggplot(pb, aes(x = censusdate, y =n, colour = treatment)) +
 baileys
 ggsave('BaileysAbundance.png',baileys,width=6,height=2)
 
+## Alternate version using model estimates
+## add variabels for modelling
+pb <- mutate(pb,
+             year = as.numeric(format(censusdate, format = "%Y")),
+             doy = as.numeric(format(censusdate, format = "%j")),
+             nmonth = as.numeric(format(censusdate, format = "%m")))
+
+## ## push the boundary knot locations to past the endpoint of the data
+## ## allows different values for Dec and Jan
+## knots <- list(nmonth = c(0.5, 12.5))
+
+m.pois <- gam(n ~ s(numericdate, k = 20, by = treatment),
+              data = pb, family = poisson,
+              method = 'REML')
+
+gam.check(m.pois, rep = 100)
+
+m.nb <- gam(n ~ s(numericdate, k = 20, by = treatment),
+            data = pb, family = nb,
+            method = 'REML')
+
+gam.check(m.nb, rep = 100)
+
+## as before the NegBIn is ~= poisson
+## the check out is OK esp given the low mean, and
+## randomised quantile residuals from https://gist.github.com/dill/d0e4549cbe6c903f232ff5bf456dd1f6
+## aren't so bad - for the NegBin as better_check only works with tw and nb
+
+## predict to get trend lines for each group
+
+## new data, predict every 7 days; plot looks smooth enough
+pdata <- with(pb, expand.grid(censusdate = seq(min(censusdate), max(censusdate),
+                                               by = 7),
+                              treatment = c('CC', 'EC', 'XC')))
+pdata <- mutate(pdata,
+                numericdate = as.numeric(censusdate) / 1000)
+## predict
+pred <- predict(m.pois, newdata = pdata, se.fit = TRUE)
+ilink <- family(m.pois)$linkinv         # grab the inverse link
+## add predictions and a creible interval
+pdata <- mutate(pdata,
+                fit     = pred$fit, se = pred$se.fit,
+                predict = ilink(fit),
+                upper   = ilink(fit + (2 * se)),
+                lower   = ilink(fit - (2 * se)))
+
+## plot
+baileys <- ggplot(pb, aes(x = censusdate, y = n, colour = treatment)) +
+    geom_ribbon(aes(x = censusdate, ymin = upper, ymax = lower, fill = treatment),
+                data = pdata, alpha = 0.3, inherit.aes = FALSE) +
+    geom_jitter(height = 0.1, width = 0.3) +
+    geom_line(aes(x = censusdate, y = predict, colour = treatment), data = pdata, size = 1) +
+    theme(legend.position = 'right') +
+    labs(y = 'Abundance', x = NULL) +
+    geom_vline(xintercept=as.Date('2015-04-10')) +
+    scale_colour_manual(name = 'Treatment', values = cbPalette,
+                        breaks=c("CC","EC","XC"),
+                        labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+    scale_fill_manual(name = 'Treatment', values = cbPalette, 
+                      breaks=c("CC","EC","XC"),
+                      labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) 
+baileys
+
+ggsave('BaileysAbundance.png', baileys, width = 6, height = 2)
 
 # PB disappear from EC plots but not EE
 # PF maybe a difference?
