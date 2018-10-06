@@ -172,3 +172,9 @@ kruskal.test(n~plot,data=en_rem)
 #   summarise(n = mean(n), sd = sd(n))
 # 
 # ggsave('SpeciesRichnessBoxplot.png',richbox,width=6,height=2.5)
+
+
+
+# =======================================================================================================
+# GLMs
+# https://cran.r-project.org/web/packages/multcomp/vignettes/multcomp-examples.pdf
