@@ -71,8 +71,8 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
 # Data I'm using is all censuses before flip, back to 2008 (many summers were missed)
 # Summer: 2008, 2011, 2014 and Winter: 2008, 2012, 2013, 2014, 2015
 
-dat.winter <- read.csv('WinterAnnualTreatments.csv')
-dat.summer <- read.csv('SummerAnnualTreatments.csv')
+dat.winter <- read.csv('PlantAnalysis/WinterAnnualTreatments.csv')
+dat.summer <- read.csv('PlantAnalysis/SummerAnnualTreatments.csv')
 
 # ===================================================================
 # Do plant communities differ by treatment 2008-2015?
