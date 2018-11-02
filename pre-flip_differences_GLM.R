@@ -15,8 +15,9 @@ dipo.glm= glm(n ~ treatment + numericdate, data = df1, family = poisson())
 summary(dipo.glm)
 confint(dipo.glm)
 
-# glht (general linear hypothesis)
+# test for pairwise differences using glht (general linear hypothesis)
 summary(glht(dipo.glm, linfct=mcp(treatment='Tukey')))
+
 
 # small granivores ----
 df2 = read.csv('SmallGranivores.csv') %>% filter(numericdate<16.543)

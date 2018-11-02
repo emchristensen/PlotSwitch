@@ -58,7 +58,7 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
     scale_shape_discrete(guide=F) +
     theme(legend.title=element_blank(), legend.position = "right",
           legend.key.height = unit(1, "cm"), legend.spacing = unit(1, "cm"),
-          legend.key.width = unit(1, "cm")) +
+          legend.key.width = unit(1, "cm")) 
     #scale_color_discrete(direction=-1) +
     scale_colour_manual(values = Palette,
                         breaks=c("control","exclosure","removal"),
