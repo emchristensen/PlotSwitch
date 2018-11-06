@@ -30,10 +30,10 @@ exVars.d <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)
 treatPred.dipo <- predict_treat_effect(dipo, np = 500, MODEL=dipo.gam, exVars.d)
 
 # plot GAM fit and data
-d.plt <- plot_gam_prediction(treatPred.dipo,dipo,Palette=cbPalette[1:3])
+d.plt <- plot_gam_prediction(treatPred.dipo, dipo, Palette=cbPalette[1:3], ylab='Count')
 d.plt
 
-#ggsave('dipo-treatment-effects.png', d.plt,width=6,height=2.5)
+#ggsave('Figures/dipo-treatment-effects.png', d.plt,width=6,height=2.5)
 
 # Compute pairwise treatment diffs if we leave *in* the parametric Treatment terms
 d1 <- osmooth_diff(dipo.gam, treatPred.dipo, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
@@ -48,7 +48,7 @@ diffPlt
 ## Cowplot grid
 dipo_plot = plot_grid(d.plt, diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 dipo_plot
-ggsave('dipo-gam-plots.png', dipo_plot, width=7, height = 5)
+ggsave('Figures/dipo-gam-plots.png', dipo_plot, width=7, height = 5)
 
 # =========================================================================================
 # number of small granivores
@@ -71,7 +71,7 @@ smgran.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
 exVars.sg <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
 treatPred.sg <- predict_treat_effect(smgran, np = 500, MODEL=smgran.gam, exVars.sg)
 
-sg.plt <- plot_gam_prediction(treatPred.sg, smgran, Palette=cbPalette[1:3])
+sg.plt <- plot_gam_prediction(treatPred.sg, smgran, Palette=cbPalette[1:3], ylab='Count')
 sg.plt
 #ggsave('smallgran-treatment-effects.png', sg.plt,width=6,height=2.5)
 
@@ -86,7 +86,7 @@ sg.diffPlt
 ## Cowplot grid
 sg_plot = plot_grid(sg.plt, sg.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 sg_plot
-ggsave('smallgran-gam-plots.png', sg_plot, width=7, height = 5)
+ggsave('Figures/smallgran-gam-plots.png', sg_plot, width=7, height = 5)
 
 # ==========================================================================================
 # Species richness
@@ -109,7 +109,7 @@ sprich.gam <- gam(n ~ oTreatment + s(numericdate, k = 20) +
 exVars.rich <- 's(plot)'
 treatPred.rich <- predict_treat_effect(sprich, np = 500, MODEL=sprich.gam, exVars.rich)
 
-rich.plt <- plot_gam_prediction(treatPred.rich, sprich, Palette = cbPalette[1:3])
+rich.plt <- plot_gam_prediction(treatPred.rich, sprich, Palette = cbPalette[1:3], ylab='# species')
 rich.plt
 #ggsave('richness-treatment-effects.png', rich.plt,width=6,height=2.5)
 
@@ -124,7 +124,7 @@ rich.diffPlt
 ## Cowplot grid
 rich_plot = plot_grid(rich.plt, rich.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 rich_plot
-#ggsave('sprich-gam-plots.png', rich_plot, width=7, height = 5)
+#ggsave('Figures/sprich-gam-plots.png', rich_plot, width=7, height = 5)
 
 # ========================================================================================
 # Total rodent energy
@@ -146,7 +146,7 @@ energy.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
 exVars.energy <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
 treatPred.energy <- predict_treat_effect(energy, np = 500, MODEL=energy.gam, exVars.energy)
 
-energy.plt <- plot_gam_prediction(treatPred.energy, energy, Palette = cbPalette[1:3])
+energy.plt <- plot_gam_prediction(treatPred.energy, energy, Palette = cbPalette[1:3], ylab='Metabolic Flux (kJ)')
 energy.plt
 #ggsave('energy-treatment-effects.png', energy.plt,width=6,height=2.5)
 
@@ -161,4 +161,4 @@ energy.diffPlt
 ## Cowplot grid
 energy_plot = plot_grid(energy.plt, energy.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 energy_plot
-ggsave('energy-gam-plots.png', energy_plot, width=7, height = 5)
+ggsave('Figures/energy-gam-plots.png', energy_plot, width=7, height = 5)

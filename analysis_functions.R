@@ -5,14 +5,15 @@
 #' @param modelPred data frame of predictions from GAM model
 #' @param dat data frame of data points used for the GAM
 #' @param Palette colours to use
+#' @param ylab text for y-axis label
 #'
-plot_gam_prediction = function(modelPred, dat, Palette) {
+plot_gam_prediction = function(modelPred, dat, Palette, ylab='Count') {
   p.plt <- ggplot(modelPred, aes(x = censusdate, y = Fitted)) +
     geom_point(data = dat, mapping = aes(y = n, colour = treatment)) +
     geom_ribbon(aes(ymax = Upper, ymin = Lower, fill = treatment),
-                alpha = 0.2) +
+                alpha = 0.4) +
     geom_line(aes(colour = treatment)) +
-    labs(y = 'Count', x = NULL) +
+    labs(y = ylab, x = NULL) +
     theme(legend.position = 'right') +
     scale_colour_manual(name = 'Treatment', values = Palette,
                         breaks=c("CC","EC","XC"),
@@ -33,7 +34,7 @@ plot_gam_prediction = function(modelPred, dat, Palette) {
 #'
 plot_smooth_diff = function(diffs,Palette) {
   diffPlt <- ggplot(diffs, aes(x = censusdate, y = diff, group = pair, colour = pair)) +
-    geom_ribbon(aes(ymax = upper, ymin = lower, colour = NULL, fill = pair), alpha = 0.15) +
+    geom_ribbon(aes(ymax = upper, ymin = lower, colour = NULL, fill = pair), alpha = 0.4) +
     geom_line() +
     #theme(legend.position = 'top') +
     labs(y = 'Control - Treatment', x = NULL) + 

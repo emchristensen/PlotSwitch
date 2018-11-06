@@ -14,7 +14,7 @@ pb = make_N_data(species = 'PB',dat)
 
 
 ## Alternate version using model estimates
-## add variabels for modelling
+## add variables for modelling
 pb <- mutate(pb,
              year = as.numeric(format(censusdate, format = "%Y")),
              doy = as.numeric(format(censusdate, format = "%j")),
@@ -62,9 +62,9 @@ pdata <- mutate(pdata,
 ## plot
 baileys <- ggplot(pb, aes(x = censusdate, y = n, colour = treatment)) +
     geom_ribbon(aes(x = censusdate, ymin = upper, ymax = lower, fill = treatment),
-                data = pdata, alpha = 0.3, inherit.aes = FALSE) +
+                data = pdata, alpha = 0.4, inherit.aes = FALSE) +
     geom_jitter(height = 0.1, width = 0.3) +
-    geom_line(aes(x = censusdate, y = predict, colour = treatment), data = pdata, size = 1) +
+    geom_line(aes(x = censusdate, y = predict, colour = treatment), data = pdata) +
     theme(legend.position = 'right') +
     labs(y = 'Abundance', x = NULL) +
     geom_vline(xintercept=as.Date('2015-04-10')) +
@@ -76,7 +76,7 @@ baileys <- ggplot(pb, aes(x = censusdate, y = n, colour = treatment)) +
                       labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) 
 baileys
 
-ggsave('BaileysAbundanceGAM.png', baileys, width = 6, height = 2)
+ggsave('Figures/BaileysAbundanceGAM.png', baileys, width = 6, height = 2)
 
 
 

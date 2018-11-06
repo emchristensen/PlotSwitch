@@ -50,9 +50,9 @@ dipobox
 
 dat1 %>%
   group_by(treatment) %>%
-  summarise(n = mean(n), sd = sd(n))
+  summarise(avg = mean(n), sd = sd(n))
 
-ggsave('DipoCountBoxplot.png',dipobox,width=6,height=2.5)
+ggsave('Figures/DipoCountBoxplot.png',dipobox,width=6,height=2.5)
 
 # small granivores ----
 df = read.csv('SmallGranivores.csv')
@@ -83,9 +83,9 @@ smgranbox
 
 dat %>%
   group_by(treatment) %>%
-  summarise(n = mean(n), sd = sd(n))
+  summarise(avg = mean(n), sd = sd(n))
 
-ggsave('SmallGranivoreBoxplot.png',smgranbox,width=6,height=2.5)
+ggsave('Figures/SmallGranivoreBoxplot.png',smgranbox,width=6,height=2.5)
 
 # energy ---- 
 df2 = read.csv('TotalCommunityEnergy.csv')
@@ -116,9 +116,9 @@ energybox
 
 dat2 %>%
   group_by(treatment) %>%
-  summarise(n = mean(n), sd = sd(n))
+  summarise(avg = mean(n), sd = sd(n))
 
-ggsave('TotalEnergyBoxplot.png',energybox,width=6,height=2.5)
+ggsave('Figures/TotalEnergyBoxplot.png',energybox,width=6,height=2.5)
 
 
 
