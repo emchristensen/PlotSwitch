@@ -6,65 +6,59 @@ library('mgcv')
 library(ggplot2)
 
 # dipos -----
-df1 = read.csv('Dipo_counts.csv') %>% filter(numericdate<16.543)
+df1 = read.csv('Dipo_counts.csv') %>% filter(numericdate<16.543) %>%
+    mutate(plot = factor(plot))
 # plot data
 ggplot(df1,aes(x=censusdate,y=n,colour=treatment)) + geom_jitter(width=.1,height=.2)
 
 # glm of krat abundance
-dipo.glm= glm(n ~ treatment + numericdate, data = df1, family = poisson())
-summary(dipo.glm)
-confint(dipo.glm)
+dipo.mod <- gam(n ~ treatment + numericdate + s(plot, bs = 're'), data = df1,
+                family = poisson(), method ='REML')
+summary(dipo.mod)
 
-# test for pairwise differences using glht (general linear hypothesis)
-summary(glht(dipo.glm, linfct=mcp(treatment='Tukey')))
+## Achim Zeileis answer a Q on Crossvalidated on this topic, so we can
+## follow him and use a hand-crafted cnotrast matrix.
+## https://stats.stackexchange.com/a/376257/1390
 
+## test for pairwise differences using glht (general linear hypothesis)
+contr <- matrix(0, nrow = 3, ncol = length(coef(dipo.mod)))
+colnames(contr) <- names(coef(dipo.mod))
+rownames(contr) <- c("EC - CC", "XC - CC", "XC - EC")
+contr[, 2:3] <- rbind(c(1, 0), c(0, 1), c(-1, 1))
+dipo.glht <- glht(dipo.mod, linfct = contr)
+summary(dipo.glht)                        # summary
 
 # small granivores ----
-df2 = read.csv('SmallGranivores.csv') %>% filter(numericdate<16.543)
+df2 = read.csv('SmallGranivores.csv') %>% filter(numericdate<16.543) %>%
+    mutate(plot = factor(plot))
 ggplot(df2,aes(x=censusdate,y=n,colour=treatment)) + geom_jitter(width=.1,height=.2)
 
-sm.glm = glm(n ~ treatment+numericdate, data = df2, family = poisson())
-summary(sm.glm)
-confint(sm.glm)
-layout(matrix(1:4, ncol = 2, byrow = TRUE))
-plot(sm.glm)
-layout(1)
+sm.mod <- gam(n ~ treatment+numericdate + s(plot, bs = 're'), data = df2,
+              family = poisson(), method = 'REML')
+summary(sm.mod)
+plot(sm.mod, pages = 1)
 
-summary(glht(sm.glm, linfct=mcp(treatment='Tukey')))
+# test for pairwise differences using glht (general linear hypothesis)
+contr <- matrix(0, nrow = 3, ncol = length(coef(sm.mod)))
+colnames(contr) <- names(coef(sm.mod))
+rownames(contr) <- c("EC - CC", "XC - CC", "XC - EC")
+contr[, 2:3] <- rbind(c(1, 0), c(0, 1), c(-1, 1))
+sm.glht <- glht(sm.mod, linfct = contr)
+summary(sm.glht)                        # summary
 
 # energy ---- 
-df3 = read.csv('TotalCommunityEnergy.csv') %>% filter(numericdate<16.543)
+df3 = read.csv('TotalCommunityEnergy.csv') %>% filter(numericdate<16.543) %>%
+    mutate(plot = factor(plot))
 ggplot(df3,aes(x=censusdate,y=n,colour=treatment)) +geom_jitter(width=.1,height=.2)
 
-en.mod = gam(n ~ treatment+numericdate, data = df3, family = tw, method = "REML")
-summary(en.mod)     
-## confint(en.mod)                         # nope, fails for a gam
+en.mod <- gam(n ~ treatment+numericdate + s(plot, bs = 're'), data = df3,
+              family = tw, method = "REML")
+summary(en.mod)
 
-## mgcv's model.matrix.gam doesn't add the attributes that we
-## need for multcom::glth(), but it does return the required
-## objects in the fitted model:
-##   This adds `contrasts` and `assign` attributes to the
-##   model matrix returned by model.matrix.gam
-`model.matrix.gam` <- function (object, ...) {
-    if (!inherits(object, "gam")) 
-        stop("`object' is not of class \"gam\"")
-    out <- predict(object, type = "lpmatrix", ...)
-    attr(out, "contrasts") <- object[["contrasts"]]
-    attr(out, "assign") <- object[["assign"]]
-    out
-}
-
-## as this is all in the mgxcv namespace we need to source the above
-## function into R and then use the following to assign the value of
-## the function into the mcgv namespace
-assignInNamespace('model.matrix.gam', model.matrix.gam, ns = 'mgcv')
-
-## estimate the Tukey all pairwise comparison of treatment levels
-en.glht <- glht(en.mod, linfct=mcp(treatment='Tukey'))
+## test for pairwise differences using glht (general linear hypothesis)
+contr <- matrix(0, nrow = 3, ncol = length(coef(en.mod)))
+colnames(contr) <- names(coef(en.mod))
+rownames(contr) <- c("EC - CC", "XC - CC", "XC - EC")
+contr[, 2:3] <- rbind(c(1, 0), c(0, 1), c(-1, 1))
+en.glht <- glht(en.mod, linfct = contr)
 summary(en.glht)                        # summary
-
-## check I didn't mess up
-newd <- expand.grid(treatment = c('CC', 'EC', 'XC'),
-                    numericdate = 15.777)
-pred <- predict(en.mod, newd)
-pred[c(2,3,3)] - pred[c(1,1,2)] # should be Estimate column in summary(en.glht)
