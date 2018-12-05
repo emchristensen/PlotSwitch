@@ -1,13 +1,24 @@
 source('data_functions.R')
 
+library(portalr)
+
+## install older version of portalr if necessary
+# require(devtools)
+# install_version('portalr', version = '0.1.4')
+
+# Download the PortalData repo, version 1.53.0 (this will take several minutes)
+data_folder = '.'
+portalr::download_observations(base_folder = data_folder, version = '1.53.0')
+
 # Code to use the data_functions.R file to create timeseries of various rodent metrics.
 
 treatments = c('CC','EC','XC')
 
-# this function takes a while -- will have to eventually figure out a way to speed it up
+# get abundance data
 dat = get_data(startdate = "2013-03-11",
                min_num_plots = 21,
-               treatments)
+               treatments, 
+               data_folder = data_folder)
 
 
 

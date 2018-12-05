@@ -1,12 +1,11 @@
 library(dplyr)
 library(portalr)
 
-#################################################
-# TO DO:
+## install older version of portalr if necessary
+# require(devtools)
+# install_version('portalr', version = '0.1.4')
 
 
-
-#################################################
 
 #' @title Get Rodent Data
 #' 
@@ -16,6 +15,7 @@ library(portalr)
 #' @param min_num_plots integer 1-24: input for abundance() function in portalr (how many plots for a census to be considered complete)
 #'                                    24 is all plots(special case period 457: only 21 plots trapped but all CC, EC, and XC were trapped)
 #' @param treatments which treatments to include in output (choices are 'CC','EC','XC','CE','EE','XE','CX','XX')
+#' @param data_folder path to folder where PortalData repo was downloaded into
 #' 
 #' @return data frame with columns:
 #'            plot
@@ -25,9 +25,8 @@ library(portalr)
 #'            numericdate
 #'            treatment (two letters representing before/after switch: C = control, E = krat exclosure, X = total rodent removal)
 
-
-get_data = function(startdate = "2013-03-11",min_num_plots=24, treatments = 'all'){
-  data = portalr::abundance(path='..', level = 'Plot', type='Granivores',
+get_data = function(startdate = "2013-03-11",min_num_plots=24, treatments = 'all', data_folder = '.'){
+  data = portalr::abundance(path=data_folder, level = 'Plot', type='Granivores',
                             plots='all', unknowns=FALSE, min_plots = min_num_plots,
                             shape="flat", time='date',clean=F,na_drop=T)
   
