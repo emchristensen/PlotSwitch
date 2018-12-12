@@ -48,7 +48,7 @@ diffPlt
 ## Cowplot grid
 dipo_plot = plot_grid(d.plt, diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 dipo_plot
-ggsave('Figures/dipo-gam-plots.png', dipo_plot, width=7, height = 5)
+ggsave('Figures/dipo-gam-plots.png', dipo_plot, width=4, height = 4.2, dpi=300)
 
 # =========================================================================================
 # number of small granivores
@@ -86,7 +86,7 @@ sg.diffPlt
 ## Cowplot grid
 sg_plot = plot_grid(sg.plt, sg.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 sg_plot
-ggsave('Figures/smallgran-gam-plots.png', sg_plot, width=7, height = 5)
+ggsave('Figures/smallgran-gam-plots.png', sg_plot, width=4, height = 4.2, dpi=300)
 
 # ==========================================================================================
 # Species richness
@@ -146,7 +146,7 @@ energy.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
 exVars.energy <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
 treatPred.energy <- predict_treat_effect(energy, np = 500, MODEL=energy.gam, exVars.energy)
 
-energy.plt <- plot_gam_prediction(treatPred.energy, energy, Palette = cbPalette[1:3], ylab='Metabolic Flux (kJ)')
+energy.plt <- plot_gam_prediction(treatPred.energy, energy, Palette = cbPalette[1:3], ylab='Metabolic Flux \n(kJ)')
 energy.plt
 #ggsave('energy-treatment-effects.png', energy.plt,width=6,height=2.5)
 
@@ -161,4 +161,4 @@ energy.diffPlt
 ## Cowplot grid
 energy_plot = plot_grid(energy.plt, energy.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 energy_plot
-ggsave('Figures/energy-gam-plots.png', energy_plot, width=7, height = 5)
+ggsave('Figures/energy-gam-plots.png', energy_plot, width=4, height = 4.2, dpi=300)

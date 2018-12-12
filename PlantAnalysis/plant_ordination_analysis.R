@@ -56,9 +56,9 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
     #geom_text(aes(label = plot, color = as.factor(year))) +
     coord_equal() +                     # biplots only work with equal scaling
     scale_shape_discrete(guide=F) +
-    theme(legend.title=element_blank(), legend.position = "right",
-          legend.key.height = unit(1, "cm"), legend.spacing = unit(1, "cm"),
-          legend.key.width = unit(1, "cm")) +
+    theme(legend.title=element_blank(), legend.position = "bottom",
+          legend.key.height = unit(.5, "cm"), legend.spacing = unit(1, "cm"),
+          legend.key.width = unit(.5, "cm"), legend.text = element_text(size=10)) +
     #scale_color_discrete(direction=-1) +
     scale_colour_manual(values = Palette,
                         breaks=c("control","exclosure","removal"),
@@ -95,7 +95,7 @@ permutest(win.pcca1,permutations=500) # should be similar to anova on pcca
 win.pcca1$CCA$tot.chi/win.pcca1$tot.chi
 
 # plot with year, plot, treatment
-excl_rem_win = plot_pcca_ellipses(win.pcca1, dat.winter1,'Winter Annual Plants',Palette=cbPalette[2:3])
+excl_rem_win = plot_pcca_ellipses(win.pcca1, dat.winter1,'Winter Annuals',Palette=cbPalette[2:3])
 excl_rem_win
 #ggsave('Winter_Exclosure_Removal.png',excl_rem_win,width=4,height=3)
 
@@ -112,7 +112,7 @@ permutest(sum.pcca1,permutations=500)
 sum.pcca1$CCA$tot.chi/sum.pcca1$tot.chi
 
 # plot with year, plot, treatment
-excl_rem_sum = plot_pcca_ellipses(sum.pcca1, dat.summer1,'Summer Annual Plants',Palette=cbPalette[2:3])
+excl_rem_sum = plot_pcca_ellipses(sum.pcca1, dat.summer1,'Summer Annuals',Palette=cbPalette[2:3])
 excl_rem_sum
 #ggsave('Summer_Exclosure_Removal.png',excl_rem_sum,width=4,height=3)
 
@@ -121,13 +121,14 @@ excl_rem_row <- plot_grid( excl_rem_win + theme(legend.position="none"),
                    excl_rem_sum + theme(legend.position="none"),
                    align = 'vh', axis = 'lrtb',
                    labels = c("A", "B"),
-                   hjust = -1,
+                   hjust = -2,
                    nrow = 1)
-legend1 <- get_legend(excl_rem_win)
+legend1 <- get_legend(excl_rem_sum)
 excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 1, rel_widths = c(1, .2))
+excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1,.2))
 excl_rem
 
-ggsave('Plants_Exclosure_Removal.png',excl_rem, width=8, height=5)
+ggsave('Figures/Plants_Exclosure_Removal.png',excl_rem, width=4, height=2.5)
 
 
 # controls vs total rodent removals ----

@@ -61,22 +61,25 @@ pdata <- mutate(pdata,
 
 ## plot
 baileys <- ggplot(pb, aes(x = censusdate, y = n, colour = treatment)) +
-    geom_ribbon(aes(x = censusdate, ymin = upper, ymax = lower, fill = treatment),
-                data = pdata, alpha = 0.4, inherit.aes = FALSE) +
-    geom_jitter(height = 0.1, width = 0.3) +
-    geom_line(aes(x = censusdate, y = predict, colour = treatment), data = pdata) +
-    theme(legend.position = 'right') +
-    labs(y = 'Abundance', x = NULL) +
-    geom_vline(xintercept=as.Date('2015-04-10')) +
-    scale_colour_manual(name = 'Treatment', values = cbPalette,
-                        breaks=c("CC","EC","XC"),
-                        labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
-    scale_fill_manual(name = 'Treatment', values = cbPalette, 
+  geom_ribbon(aes(x = censusdate, ymin = upper, ymax = lower, fill = treatment),
+              data = pdata, alpha = 0.4, inherit.aes = FALSE) +
+  geom_jitter(height = 0.1, width = 0.3, size=.5) +
+  geom_line(aes(x = censusdate, y = predict, colour = treatment), data = pdata, size=1) +
+  theme(legend.position = 'bottom',
+        legend.title = element_text(size=8),
+        legend.text = element_text(size=8),
+        axis.text = element_text(size=8)) +
+  labs(y = 'Abundance', x = NULL) +
+  geom_vline(xintercept=as.Date('2015-04-10')) +
+  scale_colour_manual(name = 'Treatment:', values = cbPalette,
                       breaks=c("CC","EC","XC"),
-                      labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) 
+                      labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+  scale_fill_manual(name = 'Treatment:', values = cbPalette, 
+                    breaks=c("CC","EC","XC"),
+                    labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) 
 baileys
 
-ggsave('Figures/BaileysAbundanceGAM.png', baileys, width = 6, height = 2)
+ggsave('Figures/BaileysAbundanceGAM.png', baileys, width=4, height = 2, dpi=300)
 
 
 

@@ -9,16 +9,19 @@
 #'
 plot_gam_prediction = function(modelPred, dat, Palette, ylab='Count') {
   p.plt <- ggplot(modelPred, aes(x = censusdate, y = Fitted)) +
-    geom_point(data = dat, mapping = aes(y = n, colour = treatment)) +
+    geom_point(data = dat, size=.5, alpha=1, mapping = aes(y = n, colour = treatment)) +
     geom_ribbon(aes(ymax = Upper, ymin = Lower, fill = treatment),
                 alpha = 0.4) +
-    geom_line(aes(colour = treatment)) +
+    geom_line(aes(colour = treatment), size=1) +
     labs(y = ylab, x = NULL) +
-    theme(legend.position = 'right') +
-    scale_colour_manual(name = 'Treatment', values = Palette,
+    theme(legend.position = 'bottom',
+          legend.title = element_text(size=8),
+          legend.text = element_text(size=8),
+          axis.text = element_text(size=8)) +
+    scale_colour_manual(name = 'Treatment:', values = Palette,
                         breaks=c("CC","EC","XC"),
                         labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
-    scale_fill_manual(name = 'Treatment', values = Palette, 
+    scale_fill_manual(name = 'Treatment:', values = Palette, 
                       breaks=c("CC","EC","XC"),
                       labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
     geom_vline(xintercept=as.Date('2015-04-10')) 
@@ -35,13 +38,16 @@ plot_gam_prediction = function(modelPred, dat, Palette, ylab='Count') {
 plot_smooth_diff = function(diffs,Palette) {
   diffPlt <- ggplot(diffs, aes(x = censusdate, y = diff, group = pair, colour = pair)) +
     geom_ribbon(aes(ymax = upper, ymin = lower, colour = NULL, fill = pair), alpha = 0.4) +
-    geom_line() +
-    #theme(legend.position = 'top') +
-    labs(y = 'Control - Treatment', x = NULL) + 
-    scale_colour_manual(name = 'Treatment pair', values = Palette,
+    geom_line(size=1) +
+    theme(legend.position = 'bottom',
+          legend.title = element_text(size=8),
+          legend.text = element_text(size=8),
+          axis.text = element_text(size=8)) +
+    labs(y = 'Control - \nTreatment', x = NULL) + 
+    scale_colour_manual(name = 'Treatment pair:', values = Palette,
                         breaks=c('CC-EC','CC-XC'),
                         labels=c('Control - Former \n kangaroo rat removal','Control - Former \n rodent removal')) +
-    scale_fill_manual(name = 'Treatment pair', values = Palette,
+    scale_fill_manual(name = 'Treatment pair:', values = Palette,
                       breaks=c('CC-EC','CC-XC'),
                       labels=c('Control - Former \n kangaroo rat removal','Control - Former \n rodent removal')) +
     geom_vline(xintercept=as.Date('2015-04-10')) +
