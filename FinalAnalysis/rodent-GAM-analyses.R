@@ -3,13 +3,13 @@ library(mgcv)
 library(ggplot2)
 library(cowplot)
 
-source('analysis_functions.R')
+source('FinalAnalysis/analysis_functions.R')
 theme_set(theme_bw())
 cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
 
 # ==========================================================================================
 # Number of dipodomys
-dipo <- read.csv('Dipo_counts.csv')
+dipo <- read.csv('Data/Dipo_counts.csv')
 dipo$censusdate <-as.Date(dipo$censusdate)
 
 # create variables needed for GAM
@@ -52,7 +52,7 @@ ggsave('Figures/dipo-gam-plots.png', dipo_plot, width=4, height = 4.2, dpi=300)
 
 # =========================================================================================
 # number of small granivores
-smgran <- read.csv('SmallGranivores.csv')
+smgran <- read.csv('Data/SmallGranivores.csv')
 smgran$censusdate <- as.Date(smgran$censusdate)
 
 smgran <- mutate(smgran,
@@ -88,47 +88,9 @@ sg_plot = plot_grid(sg.plt, sg.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 sg_plot
 ggsave('Figures/smallgran-gam-plots.png', sg_plot, width=4, height = 4.2, dpi=300)
 
-# ==========================================================================================
-# Species richness
-sprich <- read.csv('SpeciesRichness.csv')
-sprich$censusdate <- as.Date(sprich$censusdate)
-
-sprich <- mutate(sprich,
-                 oTreatment = ordered(treatment, levels = c('CC','EC','XC')),
-                 oPlot      = ordered(plot),
-                 plot       = factor(plot))
-
-# model 1 --- this has an intercept for plot but plots follow respective treatment smooth
-sprich.gam <- gam(n ~ oTreatment + s(numericdate, k = 20) +
-                    s(numericdate, by = oTreatment, k = 15) +
-                    s(plot, bs = "re"),
-                  data = sprich, method = 'REML', family = poisson, select = TRUE, control = gam.control(nthreads = 4))
-
-# plot treatment effects
-# terms to exclude
-exVars.rich <- 's(plot)'
-treatPred.rich <- predict_treat_effect(sprich, np = 500, MODEL=sprich.gam, exVars.rich)
-
-rich.plt <- plot_gam_prediction(treatPred.rich, sprich, Palette = cbPalette[1:3], ylab='# species')
-rich.plt
-#ggsave('richness-treatment-effects.png', rich.plt,width=6,height=2.5)
-
-# difference of smooths
-d1 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
-d2 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
-diffs.rich <- rbind(d1,d2)
-rich.diffPlt <- plot_smooth_diff(diffs.rich,Palette=cbPalette[2:3])
-rich.diffPlt
-#ggsave('richness-difference.png', rich.diffPlt,width=6,height=2.5)
-
-## Cowplot grid
-rich_plot = plot_grid(rich.plt, rich.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
-rich_plot
-#ggsave('Figures/sprich-gam-plots.png', rich_plot, width=7, height = 5)
-
 # ========================================================================================
 # Total rodent energy
-energy <- read.csv('TotalCommunityEnergy.csv')
+energy <- read.csv('Data/TotalCommunityEnergy.csv')
 energy$censusdate <- as.Date(energy$censusdate)
 
 energy <- mutate(energy,
@@ -162,3 +124,42 @@ energy.diffPlt
 energy_plot = plot_grid(energy.plt, energy.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 energy_plot
 ggsave('Figures/energy-gam-plots.png', energy_plot, width=4, height = 4.2, dpi=300)
+
+# # ==========================================================================================
+# # Species richness
+# sprich <- read.csv('Data/SpeciesRichness.csv')
+# sprich$censusdate <- as.Date(sprich$censusdate)
+# 
+# sprich <- mutate(sprich,
+#                  oTreatment = ordered(treatment, levels = c('CC','EC','XC')),
+#                  oPlot      = ordered(plot),
+#                  plot       = factor(plot))
+# 
+# # model 1 --- this has an intercept for plot but plots follow respective treatment smooth
+# sprich.gam <- gam(n ~ oTreatment + s(numericdate, k = 20) +
+#                     s(numericdate, by = oTreatment, k = 15) +
+#                     s(plot, bs = "re"),
+#                   data = sprich, method = 'REML', family = poisson, select = TRUE, control = gam.control(nthreads = 4))
+# 
+# # plot treatment effects
+# # terms to exclude
+# exVars.rich <- 's(plot)'
+# treatPred.rich <- predict_treat_effect(sprich, np = 500, MODEL=sprich.gam, exVars.rich)
+# 
+# rich.plt <- plot_gam_prediction(treatPred.rich, sprich, Palette = cbPalette[1:3], ylab='# species')
+# rich.plt
+# #ggsave('richness-treatment-effects.png', rich.plt,width=6,height=2.5)
+# 
+# # difference of smooths
+# d1 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
+# d2 <- osmooth_diff(sprich.gam, treatPred.rich, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
+# diffs.rich <- rbind(d1,d2)
+# rich.diffPlt <- plot_smooth_diff(diffs.rich,Palette=cbPalette[2:3])
+# rich.diffPlt
+# #ggsave('richness-difference.png', rich.diffPlt,width=6,height=2.5)
+# 
+# ## Cowplot grid
+# rich_plot = plot_grid(rich.plt, rich.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
+# rich_plot
+# #ggsave('Figures/sprich-gam-plots.png', rich_plot, width=7, height = 5)
+# 

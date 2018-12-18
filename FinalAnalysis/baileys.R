@@ -2,7 +2,7 @@
 library(ggplot2)
 library("mgcv")
 
-source('data_functions.R')
+source('Data/data_functions.R')
 theme_set(theme_bw())
 cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
 

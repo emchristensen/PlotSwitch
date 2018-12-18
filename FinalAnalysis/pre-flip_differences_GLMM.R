@@ -6,7 +6,7 @@ library('mgcv')
 library(ggplot2)
 
 # dipos -----
-df1 = read.csv('Dipo_counts.csv') %>% 
+df1 = read.csv('Data/Dipo_counts.csv') %>% 
   filter(numericdate<16.543) %>%
   mutate(plot = factor(plot))
 # plot data
@@ -30,7 +30,7 @@ dipo.glht <- glht(dipo.mod, linfct = contr)
 summary(dipo.glht)                        # summary
 
 # small granivores ----
-df2 = read.csv('SmallGranivores.csv') %>% 
+df2 = read.csv('Data/SmallGranivores.csv') %>% 
   filter(numericdate<16.543) %>%
   mutate(plot = factor(plot))
 ggplot(df2, es(x=censusdate, y=n, colour=treatment)) + geom_jitter(width=.1, height=.2)
@@ -50,7 +50,7 @@ sm.glht <- glht(sm.mod, linfct = contr)
 summary(sm.glht)                        # summary
 
 # energy ---- 
-df3 = read.csv('TotalCommunityEnergy.csv') %>% 
+df3 = read.csv('Data/TotalCommunityEnergy.csv') %>% 
   filter(numericdate<16.543) %>%
   mutate(plot = factor(plot))
 ggplot(df3, aes(x=censusdate, y=n, colour=treatment)) +geom_jitter(width=.1, height=.2)
