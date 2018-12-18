@@ -6,21 +6,22 @@ library('mgcv')
 library(ggplot2)
 
 # dipos -----
-df1 = read.csv('Dipo_counts.csv') %>% filter(numericdate<16.543) %>%
-    mutate(plot = factor(plot))
+df1 = read.csv('Dipo_counts.csv') %>% 
+  filter(numericdate<16.543) %>%
+  mutate(plot = factor(plot))
 # plot data
-ggplot(df1,aes(x=censusdate,y=n,colour=treatment)) + geom_jitter(width=.1,height=.2)
+ggplot(df1, aes(x=censusdate, y=n, colour=treatment)) + geom_jitter(width=.1, height=.2)
 
-# glm of krat abundance
+# model krat abundance
 dipo.mod <- gam(n ~ treatment + numericdate + s(plot, bs = 're'), data = df1,
                 family = poisson(), method ='REML')
 summary(dipo.mod)
 
-## Achim Zeileis answer a Q on Crossvalidated on this topic, so we can
-## follow him and use a hand-crafted cnotrast matrix.
+## Achim Zeileis answered a Q on Crossvalidated on this topic, so we can
+## follow him and use a hand-crafted contrast matrix.
 ## https://stats.stackexchange.com/a/376257/1390
 
-## test for pairwise differences using glht (general linear hypothesis)
+# test for pairwise differences using glht (general linear hypothesis)
 contr <- matrix(0, nrow = 3, ncol = length(coef(dipo.mod)))
 colnames(contr) <- names(coef(dipo.mod))
 rownames(contr) <- c("EC - CC", "XC - CC", "XC - EC")
@@ -29,11 +30,13 @@ dipo.glht <- glht(dipo.mod, linfct = contr)
 summary(dipo.glht)                        # summary
 
 # small granivores ----
-df2 = read.csv('SmallGranivores.csv') %>% filter(numericdate<16.543) %>%
-    mutate(plot = factor(plot))
-ggplot(df2,aes(x=censusdate,y=n,colour=treatment)) + geom_jitter(width=.1,height=.2)
+df2 = read.csv('SmallGranivores.csv') %>% 
+  filter(numericdate<16.543) %>%
+  mutate(plot = factor(plot))
+ggplot(df2, es(x=censusdate, y=n, colour=treatment)) + geom_jitter(width=.1, height=.2)
 
-sm.mod <- gam(n ~ treatment+numericdate + s(plot, bs = 're'), data = df2,
+# model small granivore abundance
+sm.mod <- gam(n ~ treatment + numericdate + s(plot, bs = 're'), data = df2,
               family = poisson(), method = 'REML')
 summary(sm.mod)
 plot(sm.mod, pages = 1)
@@ -47,15 +50,17 @@ sm.glht <- glht(sm.mod, linfct = contr)
 summary(sm.glht)                        # summary
 
 # energy ---- 
-df3 = read.csv('TotalCommunityEnergy.csv') %>% filter(numericdate<16.543) %>%
-    mutate(plot = factor(plot))
-ggplot(df3,aes(x=censusdate,y=n,colour=treatment)) +geom_jitter(width=.1,height=.2)
+df3 = read.csv('TotalCommunityEnergy.csv') %>% 
+  filter(numericdate<16.543) %>%
+  mutate(plot = factor(plot))
+ggplot(df3, aes(x=censusdate, y=n, colour=treatment)) +geom_jitter(width=.1, height=.2)
 
-en.mod <- gam(n ~ treatment+numericdate + s(plot, bs = 're'), data = df3,
+# model total metabolic energy
+en.mod <- gam(n ~ treatment + numericdate + s(plot, bs = 're'), data = df3,
               family = tw, method = "REML")
 summary(en.mod)
 
-## test for pairwise differences using glht (general linear hypothesis)
+# test for pairwise differences using glht (general linear hypothesis)
 contr <- matrix(0, nrow = 3, ncol = length(coef(en.mod)))
 colnames(contr) <- names(coef(en.mod))
 rownames(contr) <- c("EC - CC", "XC - CC", "XC - EC")
