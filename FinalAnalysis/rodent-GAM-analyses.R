@@ -48,7 +48,7 @@ diffPlt
 ## Cowplot grid
 dipo_plot = plot_grid(d.plt, diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 dipo_plot
-ggsave('Figures/dipo-gam-plots.png', dipo_plot, width=4, height = 4.2, dpi=300)
+ggsave('Figures/dipo-gam-plots.pdf', dipo_plot, width=4, height = 4.2, dpi=300)
 
 # =========================================================================================
 # number of small granivores
@@ -86,7 +86,7 @@ sg.diffPlt
 ## Cowplot grid
 sg_plot = plot_grid(sg.plt, sg.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 sg_plot
-ggsave('Figures/smallgran-gam-plots.png', sg_plot, width=4, height = 4.2, dpi=300)
+ggsave('Figures/smallgran-gam-plots.pdf', sg_plot, width=4, height = 4.2, dpi=300)
 
 # ========================================================================================
 # Total rodent energy
@@ -123,7 +123,7 @@ energy.diffPlt
 ## Cowplot grid
 energy_plot = plot_grid(energy.plt, energy.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 energy_plot
-ggsave('Figures/energy-gam-plots.png', energy_plot, width=4, height = 4.2, dpi=300)
+ggsave('Figures/energy-gam-plots.pdf', energy_plot, width=4, height = 4.2, dpi=300)
 
 # # ==========================================================================================
 # # Species richness

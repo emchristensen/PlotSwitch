@@ -58,7 +58,9 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
     scale_shape_discrete(guide=F) +
     theme(legend.title=element_blank(), legend.position = "bottom",
           legend.key.height = unit(.5, "cm"), legend.spacing = unit(1, "cm"),
-          legend.key.width = unit(.5, "cm"), legend.text = element_text(size=10)) +
+          legend.key.width = unit(.5, "cm"), legend.text = element_text(size=8),
+          plot.title = element_text(size=11),
+          axis.title = element_text(size=10)) +
     #scale_color_discrete(direction=-1) +
     scale_colour_manual(values = Palette,
                         breaks=c("control","exclosure","removal"),
@@ -124,11 +126,11 @@ excl_rem_row <- plot_grid( excl_rem_win + theme(legend.position="none"),
                    hjust = -2,
                    nrow = 1)
 legend1 <- get_legend(excl_rem_sum)
-excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 1, rel_widths = c(1, .2))
-excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1,.2))
+#excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 1, rel_widths = c(1, .2))
+excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1, .2))
 excl_rem
 
-ggsave('Figures/Plants_Exclosure_Removal.png',excl_rem, width=4, height=2.5)
+ggsave('Figures/Plants_Exclosure_Removal.pdf',excl_rem, width=4.2, height=2.5)
 
 
 # controls vs total rodent removals ----
@@ -179,10 +181,11 @@ ctrl_rem_row <- plot_grid( ctrl_rem_win + theme(legend.position="none"),
                            hjust = -1,
                            nrow = 1)
 legend2 <- get_legend(ctrl_rem_win)
-ctrl_rem <- plot_grid( ctrl_rem_row, legend2, rel_widths = c(1, .2))
+#ctrl_rem <- plot_grid( ctrl_rem_row, legend2, rel_widths = c(1, .2))
+ctrl_rem <- plot_grid( ctrl_rem_row, legend2, nrow = 2, rel_heights = c(1, .2))
 ctrl_rem
 
-ggsave('Plants_Control_Removal.png',ctrl_rem,width=8,height=5)
+ggsave('Figures/Plants_Control_Removal.tiff',ctrl_rem,width=8,height=5)
 
 
 # controls vs krat exclosures ----
@@ -233,10 +236,11 @@ ctrl_excl_row <- plot_grid( ctrl_excl_win + theme(legend.position="none"),
                            hjust = -1,
                            nrow = 1)
 legend3 <- get_legend(ctrl_excl_win)
-ctrl_excl <- plot_grid( ctrl_excl_row, legend3, rel_widths = c(1, .2))
+#ctrl_excl <- plot_grid( ctrl_excl_row, legend3, rel_widths = c(1, .2))
+ctrl_excl <- plot_grid( ctrl_excl_row, legend3, nrow = 2, rel_heights = c(1, .2))
 ctrl_excl
 
-ggsave('Plants_Control_Exclosure.png',ctrl_excl, width=8, height=5)
+ggsave('Figures/Plants_Control_Exclosure.tiff',ctrl_excl, width=6, height=5)
 
 
 # other significance tests ----

@@ -67,3 +67,49 @@ rownames(contr) <- c("EC - CC", "XC - CC", "XC - EC")
 contr[, 2:3] <- rbind(c(1, 0), c(0, 1), c(-1, 1))
 en.glht <- glht(en.mod, linfct = contr)
 summary(en.glht)                        # summary
+
+
+# ========================================================================
+# create boxplots for supplement
+dipobox = ggplot(df1,aes(x=treatment,y=n, colour=treatment)) + 
+  geom_boxplot() +
+  ggtitle('Kangaroo rat abundances 2013-2015') +
+  scale_colour_manual(values=cbPalette) +
+  labs(y = 'Count', x = NULL) +
+  scale_x_discrete(breaks=c("CC","EC","XC"),
+                   labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+  theme(legend.position = 'none')
+dipobox
+ggsave('Figures/DipoCountBoxplot.pdf',dipobox,width=6,height=2.5)
+
+smgranbox = ggplot(df2,aes(x=treatment,y=n, colour=treatment)) + 
+  geom_boxplot() +
+  ggtitle('Small granivore abundances 2013-2015') +
+  scale_colour_manual(values=cbPalette) +
+  labs(y = 'Count', x = NULL) +
+  scale_x_discrete(breaks=c("CC","EC","XC"),
+                   labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+  theme(legend.position = 'none')
+smgranbox
+
+df2 %>%
+  group_by(treatment) %>%
+  summarise(avg = mean(n), sd = sd(n))
+
+ggsave('Figures/SmallGranivoreBoxplot.pdf',smgranbox,width=6,height=2.5)
+
+energybox = ggplot(df3,aes(x=treatment,y=n, colour=treatment)) + 
+  geom_boxplot() +
+  ggtitle('Metabolic Flux 2013-2015') +
+  scale_colour_manual(values=cbPalette) +
+  labs(y = 'Metabolic Flux', x = NULL) +
+  scale_x_discrete(breaks=c("CC","EC","XC"),
+                   labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+  theme(legend.position = 'none')
+energybox
+
+df3 %>%
+  group_by(treatment) %>%
+  summarise(avg = mean(n), sd = sd(n))
+
+ggsave('Figures/TotalEnergyBoxplot.pdf',energybox,width=6,height=2.5)

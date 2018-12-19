@@ -79,7 +79,7 @@ baileys <- ggplot(pb, aes(x = censusdate, y = n, colour = treatment)) +
                     labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) 
 baileys
 
-ggsave('Figures/BaileysAbundanceGAM.png', baileys, width=4, height = 2, dpi=300)
+ggsave('Figures/BaileysAbundanceGAM.pdf', baileys, width=4, height = 2, dpi=300)
 
 
 
