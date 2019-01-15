@@ -97,7 +97,7 @@ permutest(win.pcca1,permutations=500) # should be similar to anova on pcca
 win.pcca1$CCA$tot.chi/win.pcca1$tot.chi
 
 # plot with year, plot, treatment
-excl_rem_win = plot_pcca_ellipses(win.pcca1, dat.winter1,'Winter Annuals',Palette=cbPalette[2:3])
+excl_rem_win = plot_pcca_ellipses(win.pcca1, dat.winter1,'Winter Annuals',Palette=c('#606060',cbPalette[3]))
 excl_rem_win
 #ggsave('Winter_Exclosure_Removal.png',excl_rem_win,width=4,height=3)
 
@@ -114,7 +114,7 @@ permutest(sum.pcca1,permutations=500)
 sum.pcca1$CCA$tot.chi/sum.pcca1$tot.chi
 
 # plot with year, plot, treatment
-excl_rem_sum = plot_pcca_ellipses(sum.pcca1, dat.summer1,'Summer Annuals',Palette=cbPalette[2:3])
+excl_rem_sum = plot_pcca_ellipses(sum.pcca1, dat.summer1,'Summer Annuals',Palette=c('#606060',cbPalette[3]))
 excl_rem_sum
 #ggsave('Summer_Exclosure_Removal.png',excl_rem_sum,width=4,height=3)
 
@@ -130,7 +130,7 @@ legend1 <- get_legend(excl_rem_sum)
 excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1, .2))
 excl_rem
 
-ggsave('Figures/Plants_Exclosure_Removal.pdf',excl_rem, width=4.2, height=2.5)
+ggsave('Figures/Plants_Exclosure_Removal.tiff',excl_rem, width=4.2, height=2.5)
 
 
 # controls vs total rodent removals ----

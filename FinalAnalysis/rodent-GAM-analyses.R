@@ -123,7 +123,7 @@ energy.diffPlt
 ## Cowplot grid
 energy_plot = plot_grid(energy.plt, energy.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 energy_plot
-ggsave('Figures/energy-gam-plots.pdf', energy_plot, width=4, height = 4.2, dpi=300)
+ggsave('Figures/energy-gam-plots.tiff', energy_plot, width=4, height = 4.2, dpi=300)
 
 # # ==========================================================================================
 # # Species richness
