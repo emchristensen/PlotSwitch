@@ -51,15 +51,16 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
   centroids = aggregate(cbind(CCA1, CA1) ~ treatment, data = results, FUN = mean)
   plotobj=ggplot(results,aes(CCA1, CA1)) + 
     stat_ellipse(aes(color = treatment)) +
-    geom_point(aes(colour = treatment), data = centroids, size = 5, stroke = 1, shape = 3) +
-    geom_point(aes(color = treatment)) +
+    geom_point(aes(colour = treatment), data = centroids, size = 3, stroke = 1, shape = 3) +
+    geom_point(aes(color = treatment), size=.5) +
     #geom_text(aes(label = plot, color = as.factor(year))) +
     coord_equal() +                     # biplots only work with equal scaling
     scale_shape_discrete(guide=F) +
     theme(legend.title=element_blank(), legend.position = "bottom",
           legend.key.height = unit(.5, "cm"), legend.spacing = unit(1, "cm"),
           legend.key.width = unit(.5, "cm"), legend.text = element_text(size=8),
-          plot.title = element_text(size=11),
+          plot.title = element_blank(),
+          #plot.title = element_text(size=11),
           axis.title = element_text(size=10)) +
     #scale_color_discrete(direction=-1) +
     scale_colour_manual(values = Palette,
@@ -130,8 +131,8 @@ legend1 <- get_legend(excl_rem_sum)
 excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1, .2))
 excl_rem
 
-ggsave('Figures/Plants_Exclosure_Removal.tiff',excl_rem, width=4.2, height=2.5)
-
+ggsave('Figures/Plants_Exclosure_Removal-test.tiff',excl_rem, width=4.2, height=2.5)
+ggsave('Figures/Plants_Exclosure_Removal-test.pdf',excl_rem, width=4.2, height=2.5)
 
 # controls vs total rodent removals ----
 dat.winter3 = dplyr::filter(dat.winter,treat_before %in% c('removal','control'))

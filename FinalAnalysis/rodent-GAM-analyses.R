@@ -6,6 +6,9 @@ library(cowplot)
 source('FinalAnalysis/analysis_functions.R')
 theme_set(theme_bw())
 cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
+cbbPalette <- c("#000000", "#009E73", "#e79f00", "#9ad0f3", "#0072B2", "#D55E00", 
+                "#CC79A7", "#F0E442")
+
 
 # ==========================================================================================
 # Number of dipodomys
@@ -30,7 +33,7 @@ exVars.d <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)
 treatPred.dipo <- predict_treat_effect(dipo, np = 500, MODEL=dipo.gam, exVars.d)
 
 # plot GAM fit and data
-d.plt <- plot_gam_prediction(treatPred.dipo, dipo, Palette=cbPalette[1:3], ylab='Count')
+d.plt <- plot_gam_prediction(treatPred.dipo, dipo, Palette=cbbPalette[c(6,1,4)], ylab='Count')
 d.plt
 
 #ggsave('Figures/dipo-treatment-effects.png', d.plt,width=6,height=2.5)
@@ -41,7 +44,7 @@ d2 <- osmooth_diff(dipo.gam, treatPred.dipo, "numericdate", "CC", "XC", var = "o
 diffs.dipo <- rbind(d1, d2)
 
 ## difference of smooths
-diffPlt <- plot_smooth_diff(diffs.dipo, Palette=cbPalette[2:3])
+diffPlt <- plot_smooth_diff(diffs.dipo, Palette=cbbPalette[c(1,4)])
 diffPlt
 #ggsave('dipo-difference.png', diffPlt,width=6,height=2.5)
 
@@ -71,7 +74,7 @@ smgran.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
 exVars.sg <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
 treatPred.sg <- predict_treat_effect(smgran, np = 500, MODEL=smgran.gam, exVars.sg)
 
-sg.plt <- plot_gam_prediction(treatPred.sg, smgran, Palette=cbPalette[1:3], ylab='Count')
+sg.plt <- plot_gam_prediction(treatPred.sg, smgran, Palette=cbbPalette[c(6,1,4)], ylab='Count')
 sg.plt
 #ggsave('smallgran-treatment-effects.png', sg.plt,width=6,height=2.5)
 
@@ -79,7 +82,7 @@ sg.plt
 d1 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
 d2 <- osmooth_diff(smgran.gam, treatPred.sg, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
 diffs.sg <- rbind(d1,d2)
-sg.diffPlt <- plot_smooth_diff(diffs.sg,Palette=cbPalette[2:3])
+sg.diffPlt <- plot_smooth_diff(diffs.sg,Palette=cbbPalette[c(1,4)])
 sg.diffPlt
 #ggsave('smallgran-difference.png', sg.diffPlt,width=6,height=2.5)
 
@@ -108,7 +111,7 @@ energy.gam <- gam(n ~ oPlot + oTreatment + s(numericdate, k = 20) +
 exVars.energy <- c('oPlot', paste0('s(numericdate):oPlot', c(5,6,7,11,13,14,17,18,24)))
 treatPred.energy <- predict_treat_effect(energy, np = 500, MODEL=energy.gam, exVars.energy)
 
-energy.plt <- plot_gam_prediction(treatPred.energy, energy, Palette = cbPalette[1:3], ylab='Metabolic Flux \n(kJ)')
+energy.plt <- plot_gam_prediction(treatPred.energy, energy, Palette = cbbPalette[c(6,1,4)], ylab='Metabolic Flux \n(kJ)')
 energy.plt
 #ggsave('energy-treatment-effects.png', energy.plt,width=6,height=2.5)
 
@@ -116,14 +119,14 @@ energy.plt
 d1 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "EC", var = "oTreatment", removePara = FALSE)
 d2 <- osmooth_diff(energy.gam, treatPred.energy, "numericdate", "CC", "XC", var = "oTreatment", removePara = FALSE)
 diffs.energy <- rbind(d1,d2)
-energy.diffPlt <- plot_smooth_diff(diffs.energy,Palette=cbPalette[2:3])
+energy.diffPlt <- plot_smooth_diff(diffs.energy,Palette=cbbPalette[c(1,4)])
 energy.diffPlt
 #ggsave('energy-difference.png', energy.diffPlt,width=6,height=2.5)
 
 ## Cowplot grid
 energy_plot = plot_grid(energy.plt, energy.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 energy_plot
-ggsave('Figures/energy-gam-plots.tiff', energy_plot, width=4, height = 4.2, dpi=300)
+ggsave('Figures/energy-gam-plots.pdf', energy_plot, width=4, height = 4.2, dpi=300)
 
 # # ==========================================================================================
 # # Species richness
