@@ -1,3 +1,5 @@
+library(igraph)
+
 
 #' @description used by individual_tag_cleanup: will split apart multiple uses of same tag number if captures are
 #'              too far apart in time to be considered the same individual
@@ -43,12 +45,6 @@ individual_tag_cleanup = function(sp, dat, interval=5*365, nulls = c(0,-1,'','00
   prtag = sp_dat[,c('recordID','date','prevrt')]
   pltag = sp_dat[,c('recordID','date','prevlet')]
   
-  # remove nulls from these data frames
-  rtag = rtag[!rtag$tag %in% nulls,] 
-  ltag = ltag[!ltag$ltag %in% nulls,]
-  prtag = prtag[!prtag$prevrt %in% nulls,]
-  pltag = pltag[!pltag$prevlet %in% nulls,]
-  
   # split up previous tags (may contain multiple tags in tag column)
   recordID = c()
   date = c()
@@ -75,6 +71,12 @@ individual_tag_cleanup = function(sp, dat, interval=5*365, nulls = c(0,-1,'','00
     }
   }
   plt = data.frame(recordID,date,tag,stringsAsFactors=F)
+  
+  # remove nulls from these data frames
+  rtag = rtag[!rtag$tag %in% nulls,] 
+  ltag = ltag[!ltag$ltag %in% nulls,]
+  prt = prt[!prt$tag %in% nulls,]
+  plt = plt[!plt$tag %in% nulls,]
   
   # Put data frames together into one big data frame
   ltag = dplyr::rename(ltag, tag=ltag)
@@ -138,7 +140,7 @@ individual_tag_cleanup = function(sp, dat, interval=5*365, nulls = c(0,-1,'','00
   #--------------------------------------------------------------------------------------
   # Make it a graph (igraph package)
   
-  sp_graph = graph.empty() + vertices(alltags)
+  sp_graph = igraph::graph.empty() + vertices(alltags)
   
   for (edge in s) {
     sp_graph = sp_graph + path(as.vector(edge))
@@ -169,16 +171,14 @@ individual_tag_cleanup = function(sp, dat, interval=5*365, nulls = c(0,-1,'','00
   }
   new_sp_dat = merge(newdatframe,taggroups,by.x='tagunique1',by.y='tagunique')
   
-  # sort by time (record id)
-  new_sp_dat = new_sp_dat[order(new_sp_dat$recordID),]
-  
-  
-  
-  selectdat = new_sp_dat[,c('recordID','month','day','year','period','plot','species','sex','age',
-                            'reprod','testes','vagina','pregnant','nipples','lactation','hfl',
-                            'wgt','tag','note2','ltag','note3','prevrt','prevlet','note5','date',
-                            'tagunique','group')]
-  
+  # sort by time (record id) and select columns
+  selectdat = new_sp_dat %>% 
+    dplyr::select(recordID, month, day, year, period, plot, species, sex,
+                  age, reprod, testes, vagina, pregnant, nipples, lactation,
+                  hfl, wgt, tag, note2, ltag, note3, prevrt, prevlet, note5,
+                  date, tagunique, group) %>%
+    arrange(recordID)
+
   return(selectdat)
 }
 

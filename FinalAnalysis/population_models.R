@@ -6,14 +6,13 @@
 # LIBRARIES and SOURCE CODE #
 
 library(tidyverse)
-library(portalr)
-library(RCurl)
-library(plotrix)
+#library(portalr)
+#library(plotrix)
 library(RMark)
-library(forecast)
-library(nlme)
-library(patchwork) # devtools::install_github("thomasp85/patchwork")
-library(rapportools)
+#library(forecast)
+#library(nlme)
+#library(patchwork) # devtools::install_github("thomasp85/patchwork")
+#library(rapportools)
 
 source("FinalAnalysis/population_model_functions.r")
 
@@ -26,7 +25,7 @@ rdat <- read.csv('PortalData/Rodents/Portal_rodent.csv', header = TRUE, na.strin
 #sdat <- read.csv('PortalData/Rodents/Portal_rodent_species.csv', header = TRUE, na.strings = c(""), stringsAsFactors = FALSE)
 
 # trapping data
-tdat <- read.csv('PortalData/Rodents/Portal_rodent_trapping.csv', header = TRUE, stringsAsFactors = FALSE)
+#tdat <- read.csv('PortalData/Rodents/Portal_rodent_trapping.csv', header = TRUE, stringsAsFactors = FALSE)
 
 # plot treatments: type of switch
 #pdat <- read.csv('PortalData/SiteandMethods/Portal_plots.csv', header = TRUE, stringsAsFactors = FALSE)
@@ -42,32 +41,21 @@ pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
 #---------------------------------------------------------
 # Clean the Data
 #---------------------------------------------------------
-rdat_filtered = dplyr::filter(rdat, period>=415, plot %in% c(4,11,14,17,6,13,18,5,7,24))
+# restrict to only the plots relevant to this project (controls after the switch in 2015)
+rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% c(4,11,14,17,6,13,18,5,7,24))
 
-dmdat = individual_tag_cleanup('DM', rdat_filtered)
-dipodat = individual_tag_cleanup(sp=c('DO','DM','DS'), rdat_filtered)
+#dipodat = individual_tag_cleanup(sp=c('DO','DM','DS'), rdat_filtered)
+#smgrandat = individual_tag_cleanup(sp=c('BA','PB','PP','PF','PE','PL','PM','RF','RM','RO'), rdat_filtered)
 
+
+#############################################################
+# DM models
+#############################################################
+dmdat = individual_tag_cleanup(c('DM'), rdat_filtered)
 dmdat_trt = merge(dmdat, pdat, by=c('plot'))
-
-#################################################################################
-### Warning: this will take a long time to run and maybe crash your computer! ###
-#################################################################################
-#                                                                               #
-#       The `create_trmt_hist` function to create mark_trmt_all will            #
-#       take a long time to run. If you don't want to run it, you can           #
-#       read in the results from the GitHub repo (line 233-4) and then          #
-#       run the RMark code -OR- skip to line 286 for all RMark results          #
-#                                                                               #
-#################################################################################
 
 mark_dm = create_trmt_hist(dmdat_trt)
 # resulting warnings are probably for animals captured twice in same sampling period
-
-# mark_trmt_all = create_trmt_hist(PP_only, tags_all, periods_all)
-
-# load in capture histories if already created
-#all_hist <- getURL("https://raw.githubusercontent.com/bleds22e/PP_shifts/master/data/PP_capture_history_all_20180711.csv")
-#mark_trmt_all <- read.csv(text = all_hist, header = TRUE, stringsAsFactors = FALSE)
 
 # prep data for RMark
 all_ms <- select(mark_dm, captures) %>% dplyr::rename("ch" = "captures")
@@ -77,46 +65,69 @@ first_per <- min(dmdat_trt$period)
 ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
  
 # Create default design data
- ms.ddl = make.design.data(ms.pr)
+ms.ddl = make.design.data(ms.pr)
  
-# add design covariates for PB era
+# run model just on after-switch data
+ms.results = run.ms(S_dot = NULL,
+                    S_stratum = list(formula = ~ -1 + stratum),
+                    p_dot = list(formula = ~ 1),
+                    p_stratum = NULL,
+                    Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
+ms.results
+
+rmark_results <- ms.summary$results$real
+rmark_results
+write.csv(ms.summary$results$real, "Data/MARK_DM_top_model_summary_[DATE]2.csv")
+
+#############################################################
+# PB models
+#############################################################
+pbdat = individual_tag_cleanup('PB', rdat_filtered)
+pbdat_trt = merge(pbdat, pdat, by=c('plot'))
+
+mark_pb = create_trmt_hist(pbdat_trt)
+# resulting warnings are probably for animals captured twice in same sampling period
+
+# prep data for RMark
+all_ms <- select(mark_pb, captures) %>% dplyr::rename("ch" = "captures")
+first_per <- min(pbdat_trt$period)
+
+# Process data
+ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
+
+# Create default design data
+ms.ddl = make.design.data(ms.pr)
+
+# add design covariates for before/after switch
 after_switch = as.factor(437:476)
- 
+
 ms.ddl$S$after_switch = 0
 ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
- 
+
 ms.ddl$p$after_switch = 0
 ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
- 
+
 ms.ddl$Psi$after_switch = 0
 ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
 
 # Run the models and examine the output
-
-#################################################################################
-### Warning: this will take a long time to run and maybe crash your computer! ###
-#################################################################################
-#                                                                               #
-#       Running the `run.ms` function to get ms.results will take a             #
-#       long time to run. If you don't want to run this yourself, you           #
-#       can read in the RMark results from GitHub instead (line 286)            #
-#                                                                               #
-#################################################################################
-
- MarkViewer="open -a TextEdit" # edit to make results pop up on a Mac
-
- ms.results = run.ms(S_dot = NULL,
-                     S_stratum = list(formula = ~ -1 + stratum * after_switch),
-                     p_dot = list(formula = ~ 1),
-                     p_stratum = NULL,
-                     Psi_s = list(formula =  ~ -1 + stratum:tostratum * after_switch, link = "logit"))
+ms.results = run.ms(S_dot = NULL,
+                    S_stratum = list(formula = ~ -1 + stratum * after_switch),
+                    p_dot = list(formula = ~ 1),
+                    p_stratum = NULL,
+                    Psi_s = list(formula =  ~ -1 + stratum:tostratum * after_switch, link = "logit"))
 ms.results
 names(ms.results)
- 
+
 ms.summary = ms.results$S.stratum.p.dot.Psi.s
-ms.summary
+
 rmark_results <- ms.summary$results$real
-write.csv(ms.summary$results$real, "Data/MARKdatatop_model_summary_[DATE].csv")
+rmark_results
+write.csv(ms.summary$results$real, "Data/MARK_PB_top_model_summary_[DATE].csv")
+
+##########################
+# make plots
+#######################
 
 # read in Mark results if skipping that section
 rmark_results <- read.csv("../PP_shifts/data/top_model_summary_20190416.csv", stringsAsFactors = FALSE)
@@ -321,3 +332,47 @@ energy_ratio <- energy_spread %>% mutate(EX_to_CO_ratio = exclosure/control)
 
 (plot3_energy <- plot_energy_ratio(energy_ratio))
 # ggsave("figures/1989-2010/Figure3_energy.png", plot3_energy, width = 3.5, height = 3, dpi = 600)
+
+##########################################################################################
+# scraps
+##############################################################################################
+
+# # code for running MARK model including before/after switch data, with a factor for before/after
+
+# rdat_filtered = dplyr::filter(rdat, period>=415, plot %in% c(4,11,14,17,6,13,18,5,7,24))
+# dmdat = individual_tag_cleanup(c('DM','DO'), rdat_filtered)
+# dmdat_trt = merge(dmdat, pdat, by=c('plot'))
+# 
+# mark_dm = create_trmt_hist(dmdat_trt)
+# # resulting warnings are probably for animals captured twice in same sampling period
+# 
+# # prep data for RMark
+# all_ms <- select(mark_dm, captures) %>% dplyr::rename("ch" = "captures")
+# first_per <- min(dmdat_trt$period)
+# 
+# # Process data
+# ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
+# 
+# # Create default design data
+# ms.ddl = make.design.data(ms.pr)
+#
+# # add design covariates for PB era
+# after_switch = as.factor(437:476)
+#  
+# ms.ddl$S$after_switch = 0
+# ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
+#  
+# ms.ddl$p$after_switch = 0
+# ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
+#  
+# ms.ddl$Psi$after_switch = 0
+# ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
+
+# Run the models and examine the output
+# ms.results = run.ms(S_dot = NULL,
+#                     S_stratum = list(formula = ~ -1 + stratum * after_switch),
+#                     p_dot = list(formula = ~ 1),
+#                     p_stratum = NULL,
+#                     Psi_s = list(formula =  ~ -1 + stratum:tostratum * after_switch, link = "logit"))
+# rmark_results <- ms.summary$results$real
+# rmark_results
