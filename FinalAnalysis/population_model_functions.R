@@ -307,3 +307,35 @@ prep_RMark_data_for_plotting <- function(data){
   return(data)
   
 }
+
+# written by Ellen Bledsoe
+plot_estimated_survival <- function(data){
+  
+  # plot estimated survival metrics from RMark
+  
+  x_axis_title <- expression(paste(italic("C. baileyi"), " establishment"))
+  
+  plot <- ggplot(data[(data$metric == "S"),], color = Treatment) +
+    geom_pointrange(aes(x = time, y = estimate, 
+                        ymin = (estimate - se), ymax = (estimate + se), 
+                        color = Treatment), 
+                    position = position_dodge(.1), size = .75) +
+    scale_colour_manual(values = cbbPalette) + 
+    xlab(x_axis_title) +
+    ylab("Estimated survival") + 
+    labs(subtitle = 'a') +
+    theme_classic() +
+    theme(panel.border = element_rect(fill = NA, colour = "black", size = 1.25),
+          plot.subtitle = element_text(size = 14, hjust = -.4),
+          axis.line = element_line(size = .25),
+          axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+          axis.title.y = element_text(size = 12, margin = margin(r = 10)),
+          axis.text.x = element_text(size = 10),
+          axis.text.y = element_text(size = 10),
+          legend.position = "top",
+          legend.title = element_blank(),
+          plot.margin = margin(l = 5, t = 20))
+  
+  return(plot)
+  
+}

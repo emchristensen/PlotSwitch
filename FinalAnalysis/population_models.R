@@ -75,9 +75,9 @@ ms.results = run.ms(S_dot = NULL,
                     Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
 ms.results
 
-rmark_results <- ms.summary$results$real
+rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
 rmark_results
-write.csv(ms.summary$results$real, "Data/MARK_DM_top_model_summary_[DATE]2.csv")
+write.csv(rmark_results, "Data/MARK_DM_top_model_summary_[DATE].csv")
 
 #############################################################
 # PB models
@@ -98,42 +98,57 @@ ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
 # Create default design data
 ms.ddl = make.design.data(ms.pr)
 
-# add design covariates for before/after switch
-after_switch = as.factor(437:476)
-
-ms.ddl$S$after_switch = 0
-ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
-
-ms.ddl$p$after_switch = 0
-ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
-
-ms.ddl$Psi$after_switch = 0
-ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
-
-# Run the models and examine the output
+# run model just on after-switch data
 ms.results = run.ms(S_dot = NULL,
-                    S_stratum = list(formula = ~ -1 + stratum * after_switch),
+                    S_stratum = list(formula = ~ -1 + stratum),
                     p_dot = list(formula = ~ 1),
                     p_stratum = NULL,
-                    Psi_s = list(formula =  ~ -1 + stratum:tostratum * after_switch, link = "logit"))
+                    Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
 ms.results
-names(ms.results)
 
-ms.summary = ms.results$S.stratum.p.dot.Psi.s
-
-rmark_results <- ms.summary$results$real
+rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
 rmark_results
-write.csv(ms.summary$results$real, "Data/MARK_PB_top_model_summary_[DATE].csv")
+write.csv(rmark_results, "Data/MARK_PB_top_model_summary_[DATE].csv")
+
+#############################################################
+# PP models
+#############################################################
+ppdat = individual_tag_cleanup('PP', rdat_filtered)
+ppdat_trt = merge(ppdat, pdat, by=c('plot'))
+
+mark_pp = create_trmt_hist(ppdat_trt)
+# resulting warnings are probably for animals captured twice in same sampling period
+
+# prep data for RMark
+all_ms <- select(mark_pp, captures) %>% dplyr::rename("ch" = "captures")
+first_per <- min(ppdat_trt$period)
+
+# Process data
+ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
+
+# Create default design data
+ms.ddl = make.design.data(ms.pr)
+
+# run model just on after-switch data
+ms.results = run.ms(S_dot = NULL,
+                    S_stratum = list(formula = ~ -1 + stratum),
+                    p_dot = list(formula = ~ 1),
+                    p_stratum = NULL,
+                    Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
+ms.results
+
+rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
+rmark_results
+write.csv(rmark_results, "Data/MARK_PP_top_model_summary_[DATE].csv")
 
 ##########################
 # make plots
 #######################
 
 # read in Mark results if skipping that section
-rmark_results <- read.csv("../PP_shifts/data/top_model_summary_20190416.csv", stringsAsFactors = FALSE)
+dm_results <- read.csv("Data/MARK_DM_top_model_summary_20190426.csv", stringsAsFactors = FALSE)
 
 # plot RMark results
-
 plot_rmark <- prep_RMark_data_for_plotting(rmark_results)
 
 (plot2a <- plot_estimated_survival(plot_rmark))
