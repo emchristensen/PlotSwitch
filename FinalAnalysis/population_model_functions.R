@@ -1,5 +1,5 @@
 library(igraph)
-
+cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 #' @description used by individual_tag_cleanup: will split apart multiple uses of same tag number if captures are
 #'              too far apart in time to be considered the same individual
@@ -281,58 +281,47 @@ run.ms <- function(S_dot = list(formula = ~ 1),
 
 #' written by Ellen Bledsoe
 prep_RMark_data_for_plotting <- function(data){
-  
-  # prep RMark results for plotting
-  data$time = c("Before", "After", "Before", "After", "Before", "After", NA, 
-                "Before", "After", "Before", "After", "Before", "After",
-                "Before", "After", "Before", "After", "Before", "After")
-  
+
   # add descriptive columns
-  data$metric = rep("S", nrow(data))
-  data$metric[7] = "p"
-  data$metric[8:19] = "Psi"
+  data$metric = gsub(' .*$', '', data$X)
+  data$stratum = gsub(' g1.*$', '', data$X)
+  data$stratum = gsub('.* s', '', data$stratum)
+
+  data$Treatment = gsub('C', 'Former rodent \nremoval', data$stratum)
+  data$Treatment = gsub('A', 'Long-term \ncontrol', data$Treatment)
+  data$Treatment = gsub('B', 'Former kangaroo \nrat removal', data$Treatment)
   
-  data$stratum = c("A", "A", "B", "B", "C", "C", NA, 
-                   "AB", "AB",  "AC", "AC", "BA", "BA",
-                   "BC", "BC", "CA", "CA", "CB", "CB")
-  data$Treatment = c("Control", "Control", "KR Exclosure", "KR Exclosure", "Removal", "Removal", NA,
-                     "Control to KR Exclosure", "Control to KR Exclosure", "Control to Removal", "Control to Removal",
-                     "KR Exclosure to Control", "KR Exclosure to Control", "KR Exclosure to Removal", "KR Exclosure to Removal",
-                     "Removal to Control", "Removal to Control", "Removal to KR Exclosure", "Removal to KR Exclosure")
+  outdata <- data %>% 
+    filter(metric == "S")
   
-  data <- data %>% 
-    filter(metric != "p", stratum == "A" | stratum == "B" | stratum == "AB" | stratum == "BA")
-  data$time <- factor(data$time, levels = c("Before", "After"))
-  
-  return(data)
+  return(outdata)
   
 }
 
 # written by Ellen Bledsoe
-plot_estimated_survival <- function(data){
+plot_estimated_survival <- function(data, maintitle){
   
   # plot estimated survival metrics from RMark
   
-  x_axis_title <- expression(paste(italic("C. baileyi"), " establishment"))
+  #x_axis_title <- expression(paste(italic("C. baileyi"), " establishment"))
   
-  plot <- ggplot(data[(data$metric == "S"),], color = Treatment) +
-    geom_pointrange(aes(x = time, y = estimate, 
+  plot <- ggplot(data, color = Treatment) +
+    geom_pointrange(aes(x = Treatment, y = estimate, 
                         ymin = (estimate - se), ymax = (estimate + se), 
                         color = Treatment), 
                     position = position_dodge(.1), size = .75) +
     scale_colour_manual(values = cbbPalette) + 
-    xlab(x_axis_title) +
+    ggtitle(maintitle) +
     ylab("Estimated survival") + 
-    labs(subtitle = 'a') +
     theme_classic() +
     theme(panel.border = element_rect(fill = NA, colour = "black", size = 1.25),
           plot.subtitle = element_text(size = 14, hjust = -.4),
           axis.line = element_line(size = .25),
-          axis.title.x = element_text(size = 12, margin = margin(t = 10)),
+          axis.title.x = element_text(size = 12, margin = margin(r = 10)),
           axis.title.y = element_text(size = 12, margin = margin(r = 10)),
           axis.text.x = element_text(size = 10),
           axis.text.y = element_text(size = 10),
-          legend.position = "top",
+          legend.position = "none",
           legend.title = element_blank(),
           plot.margin = margin(l = 5, t = 20))
   
