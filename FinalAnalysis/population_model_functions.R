@@ -240,11 +240,15 @@ create_trmt_hist = function(dat) {
 
 
 #' written by Ellen Bledsoe
-run.ms <- function(S_dot = list(formula = ~ 1), 
+run.ms <- function(ms.pr,
+                   S_dot = list(formula = ~ 1), 
                    S_stratum = list(formula =  ~ -1 + stratum + after_switch), 
                    p_dot = list(formula =  ~ 1), 
                    p_stratum = list(formula =  ~ -1 + stratum + after_switch), 
                    Psi_s = list(formula =  ~ -1 + stratum:tostratum + after_switch, link = "logit")) {
+  
+  # Create default design data
+  ms.ddl = make.design.data(ms.pr)
   
   # RMark function for Portal data
   if (is.null(S_dot)) {
@@ -277,6 +281,49 @@ run.ms <- function(S_dot = list(formula = ~ 1),
   # Return model table and list of models
   return(ms.results)
   
+}
+
+#' @title run pop model
+#' @description this is a wrapper function that runs tag cleanup, the chosen rmark model, and 
+#'              writes the output to csv for later plotting/analysis
+#' @param rdat data frame of rodent data, filtered to the appropriate time period and plots
+#' @param sp species (2-letter character code)
+run_species_pop_model <- function(rdat, sp) {
+  # plot treatment information (create data frame)
+  pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
+                                                'XC','CE','CX','XX','CC','CX',
+                                                'EC','CC','EE','XX','CC','EC',
+                                                'EE','EE','EE','CE','XX','XC'))
+  # filter main data frame by species and run individual tag cleanup
+  spdat = individual_tag_cleanup(sp, rdat)
+  spdat_trt = merge(spdat, pdat, by=c('plot'))
+  
+  # number of individuals
+  n_indiv = length(unique(spdat$group))
+  
+  # create treatment history file
+  mark_sp = create_trmt_hist(spdat_trt)
+  # resulting warnings are probably for animals captured twice in same sampling period
+  
+  # prep data for RMark
+  all_ms <- select(mark_sp, captures) %>% dplyr::rename("ch" = "captures")
+  first_per <- min(spdat_trt$period)
+  
+  # Process data
+  ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
+  
+  # run model just on after-switch data
+  ms.results = run.ms(ms.pr,
+                      S_dot = NULL,
+                      S_stratum = list(formula = ~ -1 + stratum),
+                      p_dot = list(formula = ~ 1),
+                      p_stratum = NULL,
+                      Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
+  
+  # write output to csv
+  rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
+  rmark_results$n_indiv <- n_indiv
+  write.csv(rmark_results, paste0("Data/MARK_", sp, "_top_model_summary_[DATE].csv"))
 }
 
 #' written by Ellen Bledsoe

@@ -21,14 +21,7 @@ source("FinalAnalysis/population_model_functions.r")
 # rodent file
 rdat <- read.csv('PortalData/Rodents/Portal_rodent.csv', header = TRUE, na.strings = c(""), stringsAsFactors = FALSE)
 
-# species file
-#sdat <- read.csv('PortalData/Rodents/Portal_rodent_species.csv', header = TRUE, na.strings = c(""), stringsAsFactors = FALSE)
-
-# trapping data
-#tdat <- read.csv('PortalData/Rodents/Portal_rodent_trapping.csv', header = TRUE, stringsAsFactors = FALSE)
-
 # plot treatments: type of switch
-#pdat <- read.csv('PortalData/SiteandMethods/Portal_plots.csv', header = TRUE, stringsAsFactors = FALSE)
 pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
                                               'XC','CE','CX','XX','CC','CX',
                                               'EC','CC','EE','XX','CC','EC',
@@ -37,128 +30,82 @@ pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
 ##########################################################
 # DATA PREP
 ##########################################################
-
-#---------------------------------------------------------
-# Clean the Data
-#---------------------------------------------------------
 # restrict to only the plots relevant to this project (controls after the switch in 2015)
 rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% c(4,11,14,17,6,13,18,5,7,24))
 
-#dipodat = individual_tag_cleanup(sp=c('DO','DM','DS'), rdat_filtered)
-#smgrandat = individual_tag_cleanup(sp=c('BA','PB','PP','PF','PE','PL','PM','RF','RM','RO'), rdat_filtered)
-
-
 #############################################################
-# DM models
+# run RMARK models on each species of interest; save to csv
 #############################################################
-dmdat = individual_tag_cleanup(c('DM'), rdat_filtered)
-dmdat_trt = merge(dmdat, pdat, by=c('plot'))
-
-mark_dm = create_trmt_hist(dmdat_trt)
-# resulting warnings are probably for animals captured twice in same sampling period
-
-# prep data for RMark
-all_ms <- select(mark_dm, captures) %>% dplyr::rename("ch" = "captures")
-first_per <- min(dmdat_trt$period)
-
-# Process data
-ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
- 
-# Create default design data
-ms.ddl = make.design.data(ms.pr)
- 
-# run model just on after-switch data
-ms.results = run.ms(S_dot = NULL,
-                    S_stratum = list(formula = ~ -1 + stratum),
-                    p_dot = list(formula = ~ 1),
-                    p_stratum = NULL,
-                    Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
-ms.results
-
-rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
-rmark_results
-write.csv(rmark_results, "Data/MARK_DM_top_model_summary_[DATE].csv")
-
-#############################################################
-# PB models
-#############################################################
-pbdat = individual_tag_cleanup('PB', rdat_filtered)
-pbdat_trt = merge(pbdat, pdat, by=c('plot'))
-
-mark_pb = create_trmt_hist(pbdat_trt)
-# resulting warnings are probably for animals captured twice in same sampling period
-
-# prep data for RMark
-all_ms <- select(mark_pb, captures) %>% dplyr::rename("ch" = "captures")
-first_per <- min(pbdat_trt$period)
-
-# Process data
-ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
-
-# Create default design data
-ms.ddl = make.design.data(ms.pr)
-
-# run model just on after-switch data
-ms.results = run.ms(S_dot = NULL,
-                    S_stratum = list(formula = ~ -1 + stratum),
-                    p_dot = list(formula = ~ 1),
-                    p_stratum = NULL,
-                    Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
-ms.results
-
-rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
-rmark_results
-write.csv(rmark_results, "Data/MARK_PB_top_model_summary_[DATE].csv")
-
-#############################################################
-# PP models
-#############################################################
-ppdat = individual_tag_cleanup('PP', rdat_filtered)
-ppdat_trt = merge(ppdat, pdat, by=c('plot'))
-
-mark_pp = create_trmt_hist(ppdat_trt)
-# resulting warnings are probably for animals captured twice in same sampling period
-
-# prep data for RMark
-all_ms <- select(mark_pp, captures) %>% dplyr::rename("ch" = "captures")
-first_per <- min(ppdat_trt$period)
-
-# Process data
-ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
-
-# Create default design data
-ms.ddl = make.design.data(ms.pr)
-
-# run model just on after-switch data
-ms.results = run.ms(S_dot = NULL,
-                    S_stratum = list(formula = ~ -1 + stratum),
-                    p_dot = list(formula = ~ 1),
-                    p_stratum = NULL,
-                    Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
-ms.results
-
-rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
-rmark_results
-write.csv(rmark_results, "Data/MARK_PP_top_model_summary_[DATE].csv")
+# this code runs population models and saves the output to csvs
+# the file names should be changed manually to reflect the date run
+run_species_pop_model(rdat_filtered, sp='DM')
+run_species_pop_model(rdat_filtered, sp='DO')
+# small granivores
+run_species_pop_model(rdat_filtered, sp='PB')
+run_species_pop_model(rdat_filtered, sp='PP')
+run_species_pop_model(rdat_filtered, sp='BA')
+run_species_pop_model(rdat_filtered, sp='PF')
+run_species_pop_model(rdat_filtered, sp='PE')
+run_species_pop_model(rdat_filtered, sp='PL')
+run_species_pop_model(rdat_filtered, sp='PM')
+run_species_pop_model(rdat_filtered, sp='RF')
+run_species_pop_model(rdat_filtered, sp='RO')
+run_species_pop_model(rdat_filtered, sp='RM')
 
 #############################################################
 # make plots
 #############################################################
 
-# read in Mark results if skipping that section
-dm_results <- read.csv("Data/MARK_DM_top_model_summary_20190426.csv", stringsAsFactors = FALSE)
-pb_results <- read.csv("Data/MARK_PB_top_model_summary_20190426.csv", stringsAsFactors = F)
-pp_results <- read.csv("Data/MARK_PP_top_model_summary_20190426.csv", stringsAsFactors = F)
+# read in Mark results
+dm_results <- read.csv("Data/MARK_DM_top_model_summary_[DATE].csv", stringsAsFactors = F)
+do_results <- read.csv("Data/MARK_DO_top_model_summary_[DATE].csv", stringsAsFactors = F)
+pb_results <- read.csv("Data/MARK_PB_top_model_summary_[DATE].csv", stringsAsFactors = F)
+pp_results <- read.csv("Data/MARK_PP_top_model_summary_[DATE].csv", stringsAsFactors = F)
+ba_results <- read.csv("Data/MARK_BA_top_model_summary_[DATE].csv", stringsAsFactors = F)
+pf_results <- read.csv("Data/MARK_PF_top_model_summary_[DATE].csv", stringsAsFactors = F)
+pe_results <- read.csv("Data/MARK_PE_top_model_summary_[DATE].csv", stringsAsFactors = F)
+pl_results <- read.csv("Data/MARK_PL_top_model_summary_[DATE].csv", stringsAsFactors = F)
+pm_results <- read.csv("Data/MARK_PM_top_model_summary_[DATE].csv", stringsAsFactors = F)
+rf_results <- read.csv("Data/MARK_RF_top_model_summary_[DATE].csv", stringsAsFactors = F)
+ro_results <- read.csv("Data/MARK_RO_top_model_summary_[DATE].csv", stringsAsFactors = F)
+rm_results <- read.csv("Data/MARK_RM_top_model_summary_[DATE].csv", stringsAsFactors = F)
 
 # plot RMark results
 dm_plotdat <- prep_RMark_data_for_plotting(dm_results)
-plot_estimated_survival(dm_plotdat, 'D. merriami')
+plot_estimated_survival(dm_plotdat, paste0('D. merriami: n = ',dm_results$n_indiv[1]))
+
+do_plotdat <- prep_RMark_data_for_plotting(do_results)
+plot_estimated_survival(do_plotdat, paste0('D. ordii: n = ',do_results$n_indiv[1]))
 
 pb_plotdat <- prep_RMark_data_for_plotting(pb_results)
-plot_estimated_survival(pb_plotdat, 'C. baileyi')
+plot_estimated_survival(pb_plotdat, paste0('C. baileyi: n = ',pb_results$n_indiv[1]))
 
 pp_plotdat <- prep_RMark_data_for_plotting(pp_results)
-plot_estimated_survival(pp_plotdat, 'C. penicillatus')
+plot_estimated_survival(pp_plotdat, paste0('C. penicillatus: n = ',pp_results$n_indiv[1]))
+
+ba_plotdat <- prep_RMark_data_for_plotting(ba_results)
+plot_estimated_survival(ba_plotdat, paste0('B. taylori: n = ',ba_results$n_indiv[1]))
+
+pf_plotdat <- prep_RMark_data_for_plotting(pf_results)
+plot_estimated_survival(pf_plotdat, paste0('P. flavus: n = ',pf_results$n_indiv[1]))
+
+pe_plotdat <- prep_RMark_data_for_plotting(pe_results)
+plot_estimated_survival(pe_plotdat, paste0('P. eremicus: n = ',pe_results$n_indiv[1]))
+
+pl_plotdat <- prep_RMark_data_for_plotting(pl_results)
+plot_estimated_survival(pl_plotdat, paste0('P. leucopus: n = ',pl_results$n_indiv[1]))
+
+pm_plotdat <- prep_RMark_data_for_plotting(pm_results)
+plot_estimated_survival(pm_plotdat, paste0('P. maniculatus: n = ',pm_results$n_indiv[1]))
+
+rf_plotdat <- prep_RMark_data_for_plotting(rf_results)
+plot_estimated_survival(rf_plotdat, paste0('R. fulvescens: n = ',rf_results$n_indiv[1]))
+
+ro_plotdat <- prep_RMark_data_for_plotting(ro_results)
+plot_estimated_survival(ro_plotdat, paste0('R. montanus: n = ',ro_results$n_indiv[1]))
+
+rm_plotdat <- prep_RMark_data_for_plotting(rm_results)
+plot_estimated_survival(rm_plotdat, paste0('R. megalotis: n = ',rm_results$n_indiv[1]))
 
 #------------------------------------------------------------
 # Number of New PP Individuals Showing Up on Plots
