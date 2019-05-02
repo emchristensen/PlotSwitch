@@ -375,3 +375,38 @@ plot_estimated_survival <- function(data, maintitle){
   return(plot)
   
 }
+
+#' @title new captures of a given species by plot
+#' 
+#' @param species (2 letter species code)
+#' @param rdat original unfiltered rdat dataframe
+new_captures_by_plot <- function(sp, rdat) {
+  # create df of individuals going back to 2012 to make sure we see the first capture of all animals seen in 2015-2018. Includes all plots
+  sp_only = individual_tag_cleanup(sp, dplyr::filter(rdat, period>= 403))
+  
+  # create empty data frame
+  first_captures <- setNames(data.frame(matrix(ncol=length(names(sp_only)), nrow=0)), names(sp_only))
+  
+  # loop through individuals and identify first capture
+  for (g in unique(sp_only$group)) {
+    indiv <- dplyr::filter(sp_only, group==g)
+    first <- dplyr::filter(indiv, period==min(indiv$period)) %>% dplyr::slice(1)
+    first_captures <- rbind(first_captures, first)
+  }
+  
+  # get tally of new individuals by period and plot, and filter for post-switch periods and relevant plots
+  new_per_plot <- first_captures %>%
+    dplyr::select(period, date, plot) %>%
+    group_by(period, date, plot) %>%
+    summarise(count = n()) %>%
+    arrange(period, plot) %>%
+    dplyr::filter(period>=437, plot %in% plotswitchplots) %>%
+    ungroup()
+  
+  alldateplots = new_per_plot %>% expand(date,plot) %>% merge(new_per_plot, all.x=T)
+  alldateplots$count[is.na(alldateplots$count)] <- 0
+  
+  # merge with plot treatment df and get avg new individuals
+  new_per_plot_trt = merge(alldateplots, pdat, all.x=T)
+  return(new_per_plot_trt)
+}
