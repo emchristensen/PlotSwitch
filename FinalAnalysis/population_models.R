@@ -21,6 +21,9 @@ source("FinalAnalysis/population_model_functions.r")
 # rodent file
 rdat <- read.csv('PortalData/Rodents/Portal_rodent.csv', header = TRUE, na.strings = c(""), stringsAsFactors = FALSE)
 
+# trapping data file
+tdat <- read.csv('PortalData/Rodents/Portal_rodent_trapping.csv', header = T, na.strings = c(""), stringsAsFactors = F)
+
 # plot treatments: type of switch
 pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
                                               'XC','CE','CX','XX','CC','CX',
@@ -111,20 +114,25 @@ plot_estimated_survival(rm_plotdat, paste0('R. megalotis: n = ',rm_results$n_ind
 #############################################################
 # Number of New Individuals Showing Up on Plots
 #############################################################
-new_per_plot_trt = new_captures_by_plot('DM',rdat)
+new_per_plot_trt = new_captures_by_plot('DM',rdat,tdat)
 
+# remove rows where count = NA: these are plots that were not sampled
+new_per_plot_trt = new_per_plot_trt[!is.na(new_per_plot_trt$count),]
 # get average by treatment
-new_per_trt = aggregate(new_per_plot_trt$count, by=list(date=new_per_plot_trt$date, treatment=new_per_plot_trt$treatment),
+
+new_per_trt = aggregate(new_per_plot_trt$count, by=list(period=new_per_plot_trt$period, treatment=new_per_plot_trt$treatment),
                         FUN=mean)
 
 summarize(group_by(new_per_trt, treatment),
           mean=mean(x), sd=sd(x), min=min(x), max=max(x))
 
-ggplot(new_per_trt, aes(x=date,y=x,colour=treatment)) +
+ggplot(new_per_trt, aes(x=period,y=x,colour=treatment)) +
   geom_point() +
   geom_line()
 
-anova2w <- aov(x ~ treatment * date, data = new_per_trt)
+anova2w <- aov(x ~ treatment * period, data = new_per_trt)
+summary(anova2w)
+anova2w <- aov(x ~ treatment, data=new_per_trt)
 summary(anova2w)
 
 # plot new PP individuals
