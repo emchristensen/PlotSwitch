@@ -31,7 +31,8 @@ pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
 # DATA PREP
 ##########################################################
 # restrict to only the plots relevant to this project (controls after the switch in 2015)
-rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% c(4,11,14,17,6,13,18,5,7,24))
+plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
+rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
 
 #############################################################
 # run RMARK models on each species of interest; save to csv
@@ -107,53 +108,30 @@ plot_estimated_survival(ro_plotdat, paste0('R. montanus: n = ',ro_results$n_indi
 rm_plotdat <- prep_RMark_data_for_plotting(rm_results)
 plot_estimated_survival(rm_plotdat, paste0('R. megalotis: n = ',rm_results$n_indiv[1]))
 
-#------------------------------------------------------------
-# Number of New PP Individuals Showing Up on Plots
-#------------------------------------------------------------
+#############################################################
+# Number of New Individuals Showing Up on Plots
+#############################################################
+new_per_plot_trt = new_captures_by_plot('DM',rdat)
 
-# make empty dataframe
-first_period <- setNames(data.frame(matrix(ncol = 21, nrow = 0)), names(PP_only))
+# get average by treatment
+new_per_trt = aggregate(new_per_plot_trt$count, by=list(date=new_per_plot_trt$date, treatment=new_per_plot_trt$treatment),
+                        FUN=mean)
 
-# create dataframe of only first period each tag is present
-for (i in 1:length(tags_all)){
-  tmp <- PP_only[PP_only$tag == tags_all[i],] # rows for a given tag
-  tmp2 <- tmp[tmp$period == min(tmp$period),] # row with earliest period
-  first_period <- rbind(first_period, tmp2)   # add to new dataframe
-}
+summarize(group_by(new_per_trt, treatment),
+          mean=mean(x), sd=sd(x), min=min(x), max=max(x))
 
-# total number new PPs (avg plot sum by year)
-new_PP_per_plot <- first_period %>%
-  filter(plot_type != "Removal") %>%
-  group_by(plot, month, year, plot_type) %>%
-  summarise(count = n(species)) %>%
-  ungroup()
+ggplot(new_per_trt, aes(x=date,y=x,colour=treatment)) +
+  geom_point() +
+  geom_line()
 
-new_PP_per_plot <- new_PP_per_plot %>% 
-  group_by(year, plot_type) %>% 
-  summarise(sum_by_year = sum(count))
-
-new_PP_per_plot$time_point <- NA
-
-for (i in 1:nrow(new_PP_per_plot)) {
-  if (new_PP_per_plot$year[i] <= 1997) {
-    new_PP_per_plot$time_point[i] = "Before"
-  } else {
-    new_PP_per_plot$time_point[i] = "After"
-  }
-}
-
-anova2w <- aov(sum_by_year ~ plot_type * time_point, data = new_PP_per_plot)
+anova2w <- aov(x ~ treatment * date, data = new_per_trt)
 summary(anova2w)
 
 # plot new PP individuals
-(plot2c <- plot_new_PP_individuals(new_PP_per_plot))
+#(plot2c <- plot_new_PP_individuals(new_PP_per_plot))
 
 # Make Figure 2
-(plot2 <- plot2a + plot2b - plot2c + plot_layout(ncol = 1))
-
-# ggsave("figures/1989-2010/Figure2.png", plot2, width = 6, height = 7, dpi = 600)
-# ggsave("figures/1989-2010/Figure2.tiff", plot2,
-#        width = 6, height = 7, dpi = 600, compression = "lzw")
+#(plot2 <- plot2a + plot2b - plot2c + plot_layout(ncol = 1))
 
 
 ### RUN ANOVAS ###
