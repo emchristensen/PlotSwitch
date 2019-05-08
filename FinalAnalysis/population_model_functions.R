@@ -288,7 +288,8 @@ run.ms <- function(ms.pr,
 #'              writes the output to csv for later plotting/analysis
 #' @param rdat data frame of rodent data, filtered to the appropriate time period and plots
 #' @param sp species (2-letter character code)
-run_species_pop_model <- function(rdat, sp) {
+#' @param write_cap_history T/F whether to write capture history to csv
+run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
   # plot treatment information (create data frame)
   pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
                                                 'XC','CE','CX','XX','CC','CX',
@@ -305,8 +306,13 @@ run_species_pop_model <- function(rdat, sp) {
   mark_sp = create_trmt_hist(spdat_trt)
   # resulting warnings are probably for animals captured twice in same sampling period
   
+  # write to csv
+  if (write_cap_history == T) {
+    write.csv(mark_sp, file=paste0('Data/capture_history_',sp,'.csv'), row.names = F)
+  }
+  
   # prep data for RMark
-  all_ms <- select(mark_sp, captures) %>% dplyr::rename("ch" = "captures")
+  all_ms <- select(mark_sp, ch = captures)
   first_per <- min(spdat_trt$period)
   
   # Process data
