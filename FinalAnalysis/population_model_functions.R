@@ -250,6 +250,18 @@ run.ms <- function(ms.pr,
   # Create default design data
   ms.ddl = make.design.data(ms.pr)
   
+  # add design covariates for after switch
+  after_switch = as.factor(437:476)
+  
+  ms.ddl$S$after_switch = 0
+  ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
+  
+  ms.ddl$p$after_switch = 0
+  ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
+  
+  ms.ddl$Psi$after_switch = 0
+  ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
+  
   # RMark function for Portal data
   if (is.null(S_dot)) {
     S.stratum = S_stratum
@@ -311,6 +323,9 @@ run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
     write.csv(mark_sp, file=paste0('Data/capture_history_',sp,'.csv'), row.names = F)
   }
   
+  # read info on best model from model selection file
+  bestmodel <- read.csv(paste0('Data/modelselection_',sp,'_20190509.csv'),stringsAsFactors = F, nrows=1)
+  
   # prep data for RMark
   all_ms <- select(mark_sp, ch = captures)
   first_per <- min(spdat_trt$period)
@@ -321,10 +336,10 @@ run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
   # run model just on after-switch data
   ms.results = run.ms(ms.pr,
                       S_dot = NULL,
-                      S_stratum = list(formula = ~ -1 + stratum),
+                      S_stratum = list(formula = as.formula(bestmodel$S)),
                       p_dot = list(formula = ~ 1),
                       p_stratum = NULL,
-                      Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit"))
+                      Psi_s = list(formula = as.formula(bestmodel$Psi), link = "logit"))
   
   # write output to csv
   rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real

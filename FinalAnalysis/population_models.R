@@ -35,7 +35,10 @@ pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
 ##########################################################
 # restrict to only the plots relevant to this project (controls after the switch in 2015)
 plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
-rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
+
+#rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
+rdat_filtered = dplyr::filter(rdat, period>=413, plot %in% plotswitchplots)
+
 
 #############################################################
 # run RMARK models on each species of interest; save to csv
