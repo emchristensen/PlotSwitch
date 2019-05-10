@@ -1,0 +1,17 @@
+"","S","p","Psi","model","npar","AICc","DeltaAICc","weight","Deviance"
+"4","~1","~1","~-1 + stratum:tostratum * after_switch","S(~1)p(~1)Psi(~-1 + stratum:tostratum * after_switch)",8,-124.053482,0,0.818754616750702,3.946518
+"3","~1","~1","~-1 + stratum:tostratum + after_switch","S(~1)p(~1)Psi(~-1 + stratum:tostratum + after_switch)",8,-120.2211867,3.8322953,0.120498436255418,7.7788133
+"2","~1","~1","~-1 + stratum:tostratum","S(~1)p(~1)Psi(~-1 + stratum:tostratum)",8,-118.8513468,5.2021352,0.06074694699388,9.1486532
+"15","~-1 + stratum","~1","~-1 + stratum:tostratum + after_switch","S(~-1 + stratum)p(~1)Psi(~-1 + stratum:tostratum + after_switch)",10,-49.8815017333333,74.1719802666667,0,3.4518316
+"16","~-1 + stratum","~1","~-1 + stratum:tostratum * after_switch","S(~-1 + stratum)p(~1)Psi(~-1 + stratum:tostratum * after_switch)",10,-49.2197649333333,74.8337170666667,0,4.1135684
+"12","~-1 + stratum * after_switch","~1","~-1 + stratum:tostratum * after_switch","S(~-1 + stratum * after_switch)p(~1)Psi(~-1 + stratum:tostratum * after_switch)",10,-49.1686655333333,74.8848164666667,0,4.1646678
+"6","~-1 + stratum + after_switch","~1","~-1 + stratum:tostratum","S(~-1 + stratum + after_switch)p(~1)Psi(~-1 + stratum:tostratum)",10,-45.6303668333333,78.4231151666667,0,7.7029665
+"7","~-1 + stratum + after_switch","~1","~-1 + stratum:tostratum + after_switch","S(~-1 + stratum + after_switch)p(~1)Psi(~-1 + stratum:tostratum + after_switch)",10,-45.6303668333333,78.4231151666667,0,7.7029665
+"8","~-1 + stratum + after_switch","~1","~-1 + stratum:tostratum * after_switch","S(~-1 + stratum + after_switch)p(~1)Psi(~-1 + stratum:tostratum * after_switch)",10,-45.6303668333333,78.4231151666667,0,7.7029665
+"10","~-1 + stratum * after_switch","~1","~-1 + stratum:tostratum","S(~-1 + stratum * after_switch)p(~1)Psi(~-1 + stratum:tostratum)",10,-45.6303668333333,78.4231151666667,0,7.7029665
+"11","~-1 + stratum * after_switch","~1","~-1 + stratum:tostratum + after_switch","S(~-1 + stratum * after_switch)p(~1)Psi(~-1 + stratum:tostratum + after_switch)",10,-45.6303668333333,78.4231151666667,0,7.7029665
+"14","~-1 + stratum","~1","~-1 + stratum:tostratum","S(~-1 + stratum)p(~1)Psi(~-1 + stratum:tostratum)",10,-45.6303668333333,78.4231151666667,0,7.7029665
+"1","~1","~1","~1","S(~1)p(~1)Psi(~1)",3,22.59211,146.645592,0,10.59211
+"5","~-1 + stratum + after_switch","~1","~1","S(~-1 + stratum + after_switch)p(~1)Psi(~1)",5,44.0063584,168.0598404,0,4.0063584
+"9","~-1 + stratum * after_switch","~1","~1","S(~-1 + stratum * after_switch)p(~1)Psi(~1)",5,47.7029665,171.7564485,0,7.7029665
+"13","~-1 + stratum","~1","~1","S(~-1 + stratum)p(~1)Psi(~1)",5,47.7029665,171.7564485,0,7.7029665
