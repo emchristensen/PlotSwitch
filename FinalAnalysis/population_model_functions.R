@@ -324,7 +324,7 @@ run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
   }
   
   # read info on best model from model selection file
-  bestmodel <- read.csv(paste0('Data/modelselection_',sp,'_20190509.csv'),stringsAsFactors = F, nrows=1)
+  bestmodel <- read.csv(paste0('Data/PopModelSelection_437_476/modelselection_',sp,'_20190510.csv'),stringsAsFactors = F, nrows=1)
   
   # prep data for RMark
   all_ms <- select(mark_sp, ch = captures)
@@ -344,7 +344,7 @@ run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
   # write output to csv
   rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
   rmark_results$n_indiv <- n_indiv
-  write.csv(rmark_results, paste0("Data/MARK_", sp, "_top_model_summary_[DATE].csv"))
+  write.csv(rmark_results, paste0("Data/PopModelBest_afteronly/MARK_", sp, "_top_model_summary_20190510.csv"))
 }
 
 #' written by Ellen Bledsoe

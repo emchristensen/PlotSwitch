@@ -36,8 +36,8 @@ pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
 # restrict to only the plots relevant to this project (controls after the switch in 2015)
 plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
 
-#rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
-rdat_filtered = dplyr::filter(rdat, period>=413, plot %in% plotswitchplots)
+rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
+#rdat_filtered = dplyr::filter(rdat, period>=413, plot %in% plotswitchplots)
 
 
 #############################################################
@@ -47,35 +47,37 @@ rdat_filtered = dplyr::filter(rdat, period>=413, plot %in% plotswitchplots)
 # the file names should be changed manually to reflect the date run
 run_species_pop_model(rdat_filtered, sp='DM')
 run_species_pop_model(rdat_filtered, sp='DO')
-# small granivores
-run_species_pop_model(rdat_filtered, sp='PB')
+# small granivores 
+run_species_pop_model(rdat_filtered, sp='RM')
 run_species_pop_model(rdat_filtered, sp='PP')
 run_species_pop_model(rdat_filtered, sp='BA')
-run_species_pop_model(rdat_filtered, sp='PF')
 run_species_pop_model(rdat_filtered, sp='PE')
-run_species_pop_model(rdat_filtered, sp='PL')
+# PF, PB, PL, PM, RF, RO have very few individuals
+run_species_pop_model(rdat_filtered, sp='PF')
+run_species_pop_model(rdat_filtered, sp='PB')
 run_species_pop_model(rdat_filtered, sp='PM')
-run_species_pop_model(rdat_filtered, sp='RF')
 run_species_pop_model(rdat_filtered, sp='RO')
-run_species_pop_model(rdat_filtered, sp='RM')
+#run_species_pop_model(rdat_filtered, sp='PL')
+#run_species_pop_model(rdat_filtered, sp='RF')
+
 
 #############################################################
 # make plots
 #############################################################
 
 # read in Mark results
-dm_results <- read.csv("Data/MARK_DM_top_model_summary_[DATE].csv", stringsAsFactors = F)
-do_results <- read.csv("Data/MARK_DO_top_model_summary_[DATE].csv", stringsAsFactors = F)
-pb_results <- read.csv("Data/MARK_PB_top_model_summary_[DATE].csv", stringsAsFactors = F)
-pp_results <- read.csv("Data/MARK_PP_top_model_summary_[DATE].csv", stringsAsFactors = F)
-ba_results <- read.csv("Data/MARK_BA_top_model_summary_[DATE].csv", stringsAsFactors = F)
-pf_results <- read.csv("Data/MARK_PF_top_model_summary_[DATE].csv", stringsAsFactors = F)
-pe_results <- read.csv("Data/MARK_PE_top_model_summary_[DATE].csv", stringsAsFactors = F)
-pl_results <- read.csv("Data/MARK_PL_top_model_summary_[DATE].csv", stringsAsFactors = F)
-pm_results <- read.csv("Data/MARK_PM_top_model_summary_[DATE].csv", stringsAsFactors = F)
-rf_results <- read.csv("Data/MARK_RF_top_model_summary_[DATE].csv", stringsAsFactors = F)
-ro_results <- read.csv("Data/MARK_RO_top_model_summary_[DATE].csv", stringsAsFactors = F)
-rm_results <- read.csv("Data/MARK_RM_top_model_summary_[DATE].csv", stringsAsFactors = F)
+dm_results <- read.csv("Data/PopModelBest_afteronly/MARK_DM_top_model_summary_20190510.csv", stringsAsFactors = F)
+do_results <- read.csv("Data/PopModelBest_afteronly/MARK_DO_top_model_summary_20190510.csv", stringsAsFactors = F)
+rm_results <- read.csv("Data/PopModelBest_afteronly/MARK_RM_top_model_summary_20190510.csv", stringsAsFactors = F)
+pp_results <- read.csv("Data/PopModelBest_afteronly/MARK_PP_top_model_summary_20190510.csv", stringsAsFactors = F)
+ba_results <- read.csv("Data/PopModelBest/MARK_BA_top_model_summary_20190510.csv", stringsAsFactors = F)
+pe_results <- read.csv("Data/PopModelBest/MARK_PE_top_model_summary_20190510.csv", stringsAsFactors = F)
+pm_results <- read.csv("Data/PopModelBest_afteronly/MARK_PM_top_model_summary_20190510.csv", stringsAsFactors = F)
+ro_results <- read.csv("Data/PopModelBest/MARK_RO_top_model_summary_20190510.csv", stringsAsFactors = F)
+pf_results <- read.csv("Data/PopModelBest/MARK_PF_top_model_summary_20190510.csv", stringsAsFactors = F)
+pb_results <- read.csv("Data/PopModelBest/MARK_PB_top_model_summary_20190510.csv", stringsAsFactors = F)
+#rf_results <- read.csv("Data/PopModelBest/MARK_RF_top_model_summary_20190510.csv", stringsAsFactors = F)
+#pl_results <- read.csv("Data/PopModelBest/MARK_PL_top_model_summary_20190510.csv", stringsAsFactors = F)
 
 # plot RMark results
 dm_plotdat <- prep_RMark_data_for_plotting(dm_results)
