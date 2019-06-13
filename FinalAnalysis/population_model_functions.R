@@ -360,7 +360,7 @@ prep_RMark_data_for_plotting <- function(data){
   data$Treatment = gsub('B', 'Former kangaroo \nrat removal', data$Treatment)
   
   outdata <- data %>% 
-    filter(metric == "S")
+    filter(metric %in% c("S","Psi"))
   
   return(outdata)
   
@@ -372,6 +372,13 @@ plot_estimated_survival <- function(data, maintitle){
   # plot estimated survival metrics from RMark
   
   #x_axis_title <- expression(paste(italic("C. baileyi"), " establishment"))
+  if (data$metric[1] == 'S') {
+    y_label = "Estimated survival"
+  } else if (data$metric[1] == 'Psi') {
+    y_label = "Transition probability"
+  } else {
+    y_label= ''
+  }
   
   plot <- ggplot(data, color = Treatment) +
     geom_pointrange(aes(x = Treatment, y = estimate, 
@@ -380,7 +387,7 @@ plot_estimated_survival <- function(data, maintitle){
                     position = position_dodge(.1), size = .75) +
     scale_colour_manual(values = cbbPalette) + 
     ggtitle(maintitle) +
-    ylab("Estimated survival") + 
+    ylab(y_label) + 
     theme_classic() +
     theme(panel.border = element_rect(fill = NA, colour = "black", size = 1.25),
           plot.subtitle = element_text(size = 14, hjust = -.4),

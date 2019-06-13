@@ -75,57 +75,67 @@ pe_results <- read.csv("Data/PopModelBest/MARK_PE_top_model_summary_20190510.csv
 pm_results <- read.csv("Data/PopModelBest_afteronly/MARK_PM_top_model_summary_20190510.csv", stringsAsFactors = F)
 ro_results <- read.csv("Data/PopModelBest/MARK_RO_top_model_summary_20190510.csv", stringsAsFactors = F)
 pf_results <- read.csv("Data/PopModelBest/MARK_PF_top_model_summary_20190510.csv", stringsAsFactors = F)
-pb_results <- read.csv("Data/PopModelBest/MARK_PB_top_model_summary_20190510.csv", stringsAsFactors = F)
+pb_results <- read.csv("Data/PopModelBest_afteronly/MARK_PB_top_model_summary_20190510.csv", stringsAsFactors = F)
 #rf_results <- read.csv("Data/PopModelBest/MARK_RF_top_model_summary_20190510.csv", stringsAsFactors = F)
 #pl_results <- read.csv("Data/PopModelBest/MARK_PL_top_model_summary_20190510.csv", stringsAsFactors = F)
 
-# plot RMark results
+# plot RMark results -- survival estimate
 dm_plotdat <- prep_RMark_data_for_plotting(dm_results)
-plot_estimated_survival(dm_plotdat, paste0('D. merriami: n = ',dm_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(dm_plotdat,metric =='S'), paste0('D. merriami: n = ',dm_results$n_indiv[1]))
 
 do_plotdat <- prep_RMark_data_for_plotting(do_results)
-plot_estimated_survival(do_plotdat, paste0('D. ordii: n = ',do_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(do_plotdat, metric=='S'), paste0('D. ordii: n = ',do_results$n_indiv[1]))
 
 pb_plotdat <- prep_RMark_data_for_plotting(pb_results)
-plot_estimated_survival(pb_plotdat, paste0('C. baileyi: n = ',pb_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(pb_plotdat, metric=='S'), paste0('C. baileyi: n = ',pb_results$n_indiv[1]))
 
 pp_plotdat <- prep_RMark_data_for_plotting(pp_results)
-plot_estimated_survival(pp_plotdat, paste0('C. penicillatus: n = ',pp_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(pp_plotdat, metric=='S'), paste0('C. penicillatus: n = ',pp_results$n_indiv[1]))
 
 ba_plotdat <- prep_RMark_data_for_plotting(ba_results)
-plot_estimated_survival(ba_plotdat, paste0('B. taylori: n = ',ba_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(pp_plotdat, metric=='S'), paste0('B. taylori: n = ',ba_results$n_indiv[1]))
 
 pf_plotdat <- prep_RMark_data_for_plotting(pf_results)
-plot_estimated_survival(pf_plotdat, paste0('P. flavus: n = ',pf_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(pf_plotdat, metric=='S'), paste0('P. flavus: n = ',pf_results$n_indiv[1]))
 
 pe_plotdat <- prep_RMark_data_for_plotting(pe_results)
-plot_estimated_survival(pe_plotdat, paste0('P. eremicus: n = ',pe_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(pe_plotdat, metric=='S'), paste0('P. eremicus: n = ',pe_results$n_indiv[1]))
 
 pl_plotdat <- prep_RMark_data_for_plotting(pl_results)
-plot_estimated_survival(pl_plotdat, paste0('P. leucopus: n = ',pl_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(pl_plotdat, metric=='S'), paste0('P. leucopus: n = ',pl_results$n_indiv[1]))
 
 pm_plotdat <- prep_RMark_data_for_plotting(pm_results)
-plot_estimated_survival(pm_plotdat, paste0('P. maniculatus: n = ',pm_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(pm_plotdat, metric=='S'), paste0('P. maniculatus: n = ',pm_results$n_indiv[1]))
 
 rf_plotdat <- prep_RMark_data_for_plotting(rf_results)
-plot_estimated_survival(rf_plotdat, paste0('R. fulvescens: n = ',rf_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(rf_plotdat, metric=='S'), paste0('R. fulvescens: n = ',rf_results$n_indiv[1]))
 
 ro_plotdat <- prep_RMark_data_for_plotting(ro_results)
-plot_estimated_survival(ro_plotdat, paste0('R. montanus: n = ',ro_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(ro_plotdat, metric=='S'), paste0('R. montanus: n = ',ro_results$n_indiv[1]))
 
 rm_plotdat <- prep_RMark_data_for_plotting(rm_results)
-plot_estimated_survival(rm_plotdat, paste0('R. megalotis: n = ',rm_results$n_indiv[1]))
+plot_estimated_survival(dplyr::filter(rm_plotdat, metric=='S'), paste0('R. megalotis: n = ',rm_results$n_indiv[1]))
+
+
+# plot Rmark results -- transition (psi) only DM and RM have difference in psi by treatment, and RM doesn't have enough info
+plot_estimated_survival(dplyr::filter(dm_plotdat, metric=='Psi'), paste0('D. merriami: n = ',dm_results$n_indiv[1]))
+#plot_estimated_survival(dplyr::filter(rm_plotdat, metric=='Psi'), paste0('R. megalotis: n = ',rm_results$n_indiv[1]))
 
 #############################################################
 # Number of New Individuals Showing Up on Plots
 #############################################################
-new_per_plot_trt = new_captures_by_plot('DM',rdat,tdat)
+new_per_plot_trt = new_captures_by_plot('DO',rdat,tdat)
 
-# remove rows where count = NA: these are plots that were not sampled
-new_per_plot_trt = new_per_plot_trt[!is.na(new_per_plot_trt$count),]
+# remove rows where plots were not sampled
+new_per_plot_trt = new_per_plot_trt[new_per_plot_trt$sampled==1,]
+new_per_plot_trt$yr = new_per_plot_trt$year
+new_per_plot_trt$yr[new_per_plot_trt$month<4] <- new_per_plot_trt$yr[new_per_plot_trt$month<4]-1
+
+# only complete censuses?
+new_per_plot_trt2 = new_per_plot_trt[!(new_per_plot_trt$period %in% c(445,448,456,464,469,470,471)),]
 # get average by treatment
 
-new_per_trt = aggregate(new_per_plot_trt$count, by=list(period=new_per_plot_trt$period, treatment=new_per_plot_trt$treatment),
+new_per_trt = aggregate(new_per_plot_trt2$count, by=list(period=new_per_plot_trt2$period, treatment=new_per_plot_trt2$treatment),
                         FUN=mean)
 
 summarize(group_by(new_per_trt, treatment),
@@ -139,6 +149,38 @@ anova2w <- aov(x ~ treatment * period, data = new_per_trt)
 summary(anova2w)
 anova2w <- aov(x ~ treatment, data=new_per_trt)
 summary(anova2w)
+
+
+# ==============================================================
+# simpler way of looking at new individuals arriving on plots
+# ==============================================================
+
+new_per_plot_trt = new_captures_by_plot('PP',rdat,tdat)
+
+# remove rows where plots were not sampled
+new_per_plot_trt = new_per_plot_trt[new_per_plot_trt$sampled==1,]
+new_per_plot_trt$yr = new_per_plot_trt$year
+new_per_plot_trt$yr[new_per_plot_trt$month<4] <- new_per_plot_trt$yr[new_per_plot_trt$month<4]-1
+
+
+new_per_plot_yr = aggregate(new_per_plot_trt$count, by=list(plot=new_per_plot_trt$plot,
+                                                            treatment=new_per_plot_trt$treatment,
+                                                            yr=new_per_plot_trt$yr),
+                            FUN=sum) %>% rename(count=x) %>% filter(yr<2018)
+
+test = data.frame(treatment=new_per_plot_yr$treatment, count=new_per_plot_yr$count, yr=new_per_plot_yr$yr)
+
+t = new_per_plot_yr %>% group_by(treatment, yr) %>%
+  summarise(total=sum(count))
+
+# plot: total individuals by treatment and year. boxplots represent spread from multiple plots (3-4)
+ggplot(test, aes(x=treatment, y=count, fill=treatment)) +
+  geom_boxplot() +
+  geom_point(position=position_jitter(.2)) +
+  ylab('# new individuals per plot per year') +
+  ggtitle('DO')
+
+#ggplot(data, aes(x=variety, y=note, fill=treatment)) + geom_boxplot()
 
 # plot new PP individuals
 #(plot2c <- plot_new_PP_individuals(new_PP_per_plot))
@@ -216,80 +258,6 @@ summary(anova2w)
 # new_PP_per_plot_summary <- filter(new_PP_per_plot_summary, year <= 2010)
 # anova2w <- aov(avg_plot_sum_by_year ~ plot_type * time_point, data = new_PP_per_plot_summary)
 # summary(anova2w)
-
-#############################################################
-# System-level Aspects of Patch Preference
-#############################################################
-
-# download biomass data by plot from portalr
-biomass_data <- portalr::biomass(path = "repo", level = "Plot")
-energy_data <- portalr::energy(path = "repo", level = "Plot")
-
-# select certain treatments and filter by time
-biomass_dat <- biomass_data %>%
-  filter(treatment == "control" | treatment == "exclosure", 
-         period >= 118 & period <= 433) # get the right time periods
-energy_dat <- energy_data %>%
-  filter(treatment == "control" | treatment == "exclosure", 
-         period >= 118 & period <= 433) 
-
-
-# add a year column for later summarization
-year_prd_pairs <- unique(tdat[,c("year", "period")]) # get associated years and periods
-biomass_dat$year = NA
-energy_dat$year = NA
-
-for (i in 1:nrow(biomass_dat)){
-  prd <- biomass_dat$period[i]
-  biomass_dat$year[i] = year_prd_pairs$year[year_prd_pairs$period == prd]
-}
-
-for (i in 1:nrow(energy_dat)){
-  prd <- energy_dat$period[i]
-  energy_dat$year[i] = year_prd_pairs$year[year_prd_pairs$period == prd]
-}
-
-#------------------------------------------------------------
-# Biomass Ratios
-#------------------------------------------------------------
-
-# sum across rows and rename column
-biomass_dat_rowSums <- as.data.frame(rowSums(biomass_dat[,4:24]))
-colnames(biomass_dat_rowSums) <- c("rowSums")
-
-# summarise biomass to get total by period and plot type
-biomass_total <- cbind(biomass_dat, biomass_dat_rowSums) %>%
-  group_by(year, treatment) %>%
-  summarise(totals = sum(rowSums))
-
-# change the data structure to run the linear model
-biomass_spread <- tidyr::spread(biomass_total, treatment, totals)
-
-# ratio
-biomass_ratio <- biomass_spread %>% mutate(EX_to_CO_ratio = exclosure/control)
-
-(plot3 <- plot_biomass_ratio(biomass_ratio))
-# ggsave("figures/1989-2010/Figure3.png", plot3, width = 3.5, height = 3, dpi = 600)
-
-## ENERGY ##
-
-# sum across rows and rename column
-energy_dat_rowSums <- as.data.frame(rowSums(energy_dat[,4:24]))
-colnames(energy_dat_rowSums) <- c("rowSums")
-
-# summarise energy to get total by period and plot type
-energy_total <- cbind(energy_dat, energy_dat_rowSums) %>%
-  group_by(year, treatment) %>%
-  summarise(totals = sum(rowSums))
-
-# change the data structure to run the linear model
-energy_spread <- tidyr::spread(energy_total, treatment, totals)
-
-# ratio
-energy_ratio <- energy_spread %>% mutate(EX_to_CO_ratio = exclosure/control)
-
-(plot3_energy <- plot_energy_ratio(energy_ratio))
-# ggsave("figures/1989-2010/Figure3_energy.png", plot3_energy, width = 3.5, height = 3, dpi = 600)
 
 ##########################################################################################
 # scraps
