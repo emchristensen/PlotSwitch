@@ -4,11 +4,13 @@ library(portalr)
 
 ## install older version of portalr if necessary
 # require(devtools)
-# install_version('portalr', version = '0.1.4')
+#install_version('portalr', version = '0.1.4')
 
 # Download the PortalData repo, version 1.53.0 (this will take several minutes)
 data_folder = '.'
 portalr::download_observations(base_folder = data_folder, version = '1.53.0')
+# get most recent version of data if wanted
+portalr::download_observations(base_folder = data_folder, version = 'latest')
 
 # Code to use the data_functions.R file to create timeseries of various rodent metrics.
 
@@ -24,12 +26,12 @@ dat = get_data(startdate = "2013-03-11",
 
 # dipo abundance by plot
 dipoN = make_N_data(species = 'Dipos', dat)
-write.csv(dipoN,'Dipo_counts.csv',row.names=F)
+write.csv(dipoN,'Data/Dipo_counts.csv',row.names=F)
 
 
-# species richness by plot
-sprich = make_speciesrich_data(dat)
-write.csv(sprich,'SpeciesRichness.csv',row.names=F)
+# species richness by plot -- not used in final analysis
+#sprich = make_speciesrich_data(dat)
+#write.csv(sprich,'Data/SpeciesRichness.csv',row.names=F)
 
 
 # total metabolic energy by plot (all granivores combined)
@@ -37,12 +39,12 @@ total_energy = get_community_energy(startdate = "2013-03-11",
                                     min_num_plots = 21,
                                     species='Granivore')
 total_energy = dplyr::filter(total_energy,treatment %in% c('CC','EC','XC'))
-write.csv(total_energy,'TotalCommunityEnergy.csv',row.names=F)
+write.csv(total_energy,'Data/TotalCommunityEnergy.csv',row.names=F)
 
 
 # abundance of small granivores.
 smgran = make_N_data(species='SmGran',dat)
-write.csv(smgran,'SmallGranivores.csv',row.names=F)
+write.csv(smgran,'Data/SmallGranivores.csv',row.names=F)
 
 
 
@@ -63,8 +65,8 @@ dat.winter = merge(winterannuals,treat_table, by='plot') %>%
 dat.summer = merge(summerannuals,treat_table, by='plot') %>%
   dplyr::filter(year %in% c(2008,2011,2014))
 
-write.csv(dat.winter,'WinterAnnualTreatments.csv',row.names=F)
-write.csv(dat.summer,'SummerAnnualTreatments.csv',row.names=F)
+write.csv(dat.winter,'PlantAnalysis/WinterAnnualTreatments.csv',row.names=F)
+write.csv(dat.summer,'PlantAnalysis/SummerAnnualTreatments.csv',row.names=F)
 
 
 # ==============================================================================

@@ -195,10 +195,10 @@ get_community_energy = function(startdate = "2013-03-11", min_num_plots = 24,spe
   if (species=='Dipos') {targetsp = c('DM','DO','DS')}
   if (species %in% unique(dat$species)) {targetsp = species}
   
-  energydat = portalr::get_rodent_data(path='..', level = 'Plot', type='Rodents',
-                                       plots="All", unknowns=FALSE, min_plots=min_num_plots,
-                                       shape="flat", time='date',clean=F,output='energy',
-                                       fillweight = T,na_drop=T)
+  energydat = portalr::summarize_rodent_data(path='..', level = 'Plot', type='Rodents',
+                                             plots="All", unknowns=FALSE, min_plots=min_num_plots,
+                                             shape="flat", time='date',clean=F,output='energy',
+                                             fillweight = T,na_drop=T)
   
   energydat$numericdate = as.numeric(energydat$censusdate) / 1000
   energydat_filtered = dplyr::filter(energydat, censusdate >= startdate, species %in% targetsp)
