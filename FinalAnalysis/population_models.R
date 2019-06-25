@@ -39,6 +39,8 @@ plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
 rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
 #rdat_filtered = dplyr::filter(rdat, period>=413, plot %in% plotswitchplots)
 
+# what if we only went up to March 2017, where krats converged?
+
 
 #############################################################
 # run RMARK models on each species of interest; save to csv

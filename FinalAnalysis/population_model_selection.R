@@ -25,13 +25,20 @@ first_per = 437
 rdat <- read.csv('PortalData/Rodents/Portal_rodent.csv', header = TRUE, na.strings = c(""), stringsAsFactors = FALSE)
 plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
 
-rdat_filtered = dplyr::filter(rdat, period>=first_per, plot %in% plotswitchplots)
+# select data
+#rdat_filtered = dplyr::filter(rdat, period>=first_per, plot %in% plotswitchplots)
+
+# limit data to period before krats converged: March 2015-March 2017
+rdat_filtered = dplyr::filter(rdat, period>=437, 
+                              period<=460, plot %in% plotswitchplots)
+
+
 pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
                                               'XC','CE','CX','XX','CC','CX',
                                               'EC','CC','EE','XX','CC','EC',
                                               'EE','EE','EE','CE','XX','XC'))
 #sp = 'PE'
-for (sp in c('PM','RO','RM','DM','PP')) {
+for (sp in c('PM','RO','RM','DM','PP','DO','BA','DM','DO','PB','PE','PF','PM','PP','RM','RO')) {
   
   # filter main data frame by species and run individual tag cleanup
   spdat = individual_tag_cleanup(sp, rdat_filtered)
@@ -101,7 +108,7 @@ for (sp in c('PM','RO','RM','DM','PP')) {
   
   ms.results = run.ms()
   model.table <- as.data.frame(ms.results$model.table)
-  write.csv(model.table, paste0("Data/PopModelSelection_437_476/modelselection_",sp,"_20190510.csv"))
+  write.csv(model.table, paste0("Data/PopModelSelection_2015_2017/modelselection_",sp,"_20190614.csv"))
 }
 #top_model_summary <- ms.results$S.strat_x_time.p.dot.Psi.strat_x_time$results$real
 #write.csv(top_model_summary, "top_model_summary_20190508.csv")

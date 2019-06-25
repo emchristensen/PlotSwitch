@@ -173,7 +173,7 @@ individual_tag_cleanup = function(sp, dat, interval=5*365, nulls = c(0,-1,'','00
   
   # sort by time (record id) and select columns
   selectdat = new_sp_dat %>% 
-    dplyr::select(recordID, month, day, year, period, plot, species, sex,
+    dplyr::select(recordID, month, day, year, period, plot, note1, stake, species, sex,
                   age, reprod, testes, vagina, pregnant, nipples, lactation,
                   hfl, wgt, tag, note2, ltag, note3, prevrt, prevlet, note5,
                   date, tagunique, group) %>%
