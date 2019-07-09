@@ -126,13 +126,26 @@ plot_estimated_survival(dplyr::filter(dm_plotdat, metric=='Psi'), paste0('D. mer
 #############################################################
 # Number of New Individuals Showing Up on Plots
 #############################################################
-new_per_plot_trt = new_captures_by_plot('DO',rdat,tdat)
+new_per_plot_trt = new_captures_by_plot('DM',rdat,tdat)
 
 # remove rows where plots were not sampled
 new_per_plot_trt = new_per_plot_trt[new_per_plot_trt$sampled==1,]
 new_per_plot_trt$yr = new_per_plot_trt$year
 new_per_plot_trt$yr[new_per_plot_trt$month<4] <- new_per_plot_trt$yr[new_per_plot_trt$month<4]-1
 
+# create column for "years after switch"
+new_per_plot_trt$yr_since_change <- NA
+new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 437:447] <- 1
+new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 448:460] <- 2
+new_per_plot_trt$yr_since_change[new_per_plot_trt$period >460] <- 3 # only 7 months
+
+# calculate total new animals per treatment type in each year since switch
+new_per_plot_trt %>% group_by(yr_since_change, treatment) %>%
+  summarise(total_new_per_year=sum(count)) %>%
+  spread(yr_since_change, total_new_per_year)
+
+
+# =================================
 # only complete censuses?
 new_per_plot_trt2 = new_per_plot_trt[!(new_per_plot_trt$period %in% c(445,448,456,464,469,470,471)),]
 # get average by treatment

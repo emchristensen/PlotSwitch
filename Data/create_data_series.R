@@ -8,9 +8,9 @@ library(portalr)
 
 # Download the PortalData repo, version 1.53.0 (this will take several minutes)
 data_folder = '.'
-portalr::download_observations(base_folder = data_folder, version = '1.53.0')
+portalr::download_observations(path = data_folder, version = '1.53.0')
 # get most recent version of data if wanted
-portalr::download_observations(base_folder = data_folder, version = 'latest')
+portalr::download_observations(path = data_folder, version = 'latest')
 
 # Code to use the data_functions.R file to create timeseries of various rodent metrics.
 
