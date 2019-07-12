@@ -35,6 +35,10 @@ number_plots_stakes = spdat %>% group_by(group, plot) %>%
   merge(pdat, by='plot') %>%
   dplyr::filter(ncaptures>1)
 
+# find individuals that are found in multiple plots
+plots_per_individual <- spdat %>% group_by(group) %>%
+  summarise(nplots = n_distinct(plot))
+
 
 ggplot(number_plots_stakes, aes(x=ncaptures, y=nstakes, color=treatment)) + geom_jitter()
 
