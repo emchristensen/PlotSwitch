@@ -2,6 +2,7 @@
 # Ellen K. Bledsoe, with code from S. Supp
 # March 7, 2018
 # Modified EMC for Plot Switch project 4/22/19
+# Modified 7/31/19
 
 # LIBRARIES and SOURCE CODE #
 
@@ -37,30 +38,26 @@ pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
 plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
 
 rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
-#rdat_filtered = dplyr::filter(rdat, period>=413, plot %in% plotswitchplots)
-
-# what if we only went up to March 2017, where krats converged?
-
 
 #############################################################
 # run RMARK models on each species of interest; save to csv
 #############################################################
-# this code runs population models and saves the output to csvs
+# this code runs population models and saves the output to csvs in Data/PopModelBest_afteronly
 # the file names should be changed manually to reflect the date run
-run_species_pop_model(rdat_filtered, sp='DM')
-run_species_pop_model(rdat_filtered, sp='DO')
+
+date_run = '20190731'
+run_species_pop_model(rdat_filtered, sp='DM', date_run=date_run)
+run_species_pop_model(rdat_filtered, sp='DO', date_run=date_run)
 # small granivores 
-run_species_pop_model(rdat_filtered, sp='RM')
-run_species_pop_model(rdat_filtered, sp='PP')
-run_species_pop_model(rdat_filtered, sp='BA')
-run_species_pop_model(rdat_filtered, sp='PE')
+run_species_pop_model(rdat_filtered, sp='RM', date_run=date_run)
+run_species_pop_model(rdat_filtered, sp='PP', date_run=date_run)
+run_species_pop_model(rdat_filtered, sp='BA', date_run=date_run)
+run_species_pop_model(rdat_filtered, sp='PE', date_run=date_run)
 # PF, PB, PL, PM, RF, RO have very few individuals
-run_species_pop_model(rdat_filtered, sp='PF')
-run_species_pop_model(rdat_filtered, sp='PB')
-run_species_pop_model(rdat_filtered, sp='PM')
-run_species_pop_model(rdat_filtered, sp='RO')
-#run_species_pop_model(rdat_filtered, sp='PL')
-#run_species_pop_model(rdat_filtered, sp='RF')
+run_species_pop_model(rdat_filtered, sp='PF', date_run=date_run)
+run_species_pop_model(rdat_filtered, sp='PB', date_run=date_run)
+run_species_pop_model(rdat_filtered, sp='PM', date_run=date_run)
+run_species_pop_model(rdat_filtered, sp='RO', date_run=date_run)
 
 
 #############################################################
@@ -68,18 +65,16 @@ run_species_pop_model(rdat_filtered, sp='RO')
 #############################################################
 
 # read in Mark results
-dm_results <- read.csv("Data/PopModelBest_afteronly/MARK_DM_top_model_summary_20190510.csv", stringsAsFactors = F)
-do_results <- read.csv("Data/PopModelBest_afteronly/MARK_DO_top_model_summary_20190510.csv", stringsAsFactors = F)
-rm_results <- read.csv("Data/PopModelBest_afteronly/MARK_RM_top_model_summary_20190510.csv", stringsAsFactors = F)
-pp_results <- read.csv("Data/PopModelBest_afteronly/MARK_PP_top_model_summary_20190510.csv", stringsAsFactors = F)
-ba_results <- read.csv("Data/PopModelBest/MARK_BA_top_model_summary_20190510.csv", stringsAsFactors = F)
-pe_results <- read.csv("Data/PopModelBest/MARK_PE_top_model_summary_20190510.csv", stringsAsFactors = F)
-pm_results <- read.csv("Data/PopModelBest_afteronly/MARK_PM_top_model_summary_20190510.csv", stringsAsFactors = F)
-ro_results <- read.csv("Data/PopModelBest/MARK_RO_top_model_summary_20190510.csv", stringsAsFactors = F)
-pf_results <- read.csv("Data/PopModelBest/MARK_PF_top_model_summary_20190510.csv", stringsAsFactors = F)
-pb_results <- read.csv("Data/PopModelBest_afteronly/MARK_PB_top_model_summary_20190510.csv", stringsAsFactors = F)
-#rf_results <- read.csv("Data/PopModelBest/MARK_RF_top_model_summary_20190510.csv", stringsAsFactors = F)
-#pl_results <- read.csv("Data/PopModelBest/MARK_PL_top_model_summary_20190510.csv", stringsAsFactors = F)
+dm_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_DM_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+do_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_DO_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+rm_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_RM_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+pp_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_PP_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+ba_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_BA_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+pe_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_PE_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+pm_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_PM_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+ro_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_RO_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+pf_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_PF_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
+pb_results <- read.csv(paste0("Data/PopModelBest_afteronly/MARK_PB_top_model_summary_",date_run,".csv"), stringsAsFactors = F)
 
 # plot RMark results -- survival estimate
 dm_plotdat <- prep_RMark_data_for_plotting(dm_results)
@@ -103,14 +98,8 @@ plot_estimated_survival(dplyr::filter(pf_plotdat, metric=='S'), paste0('P. flavu
 pe_plotdat <- prep_RMark_data_for_plotting(pe_results)
 plot_estimated_survival(dplyr::filter(pe_plotdat, metric=='S'), paste0('P. eremicus: n = ',pe_results$n_indiv[1]))
 
-pl_plotdat <- prep_RMark_data_for_plotting(pl_results)
-plot_estimated_survival(dplyr::filter(pl_plotdat, metric=='S'), paste0('P. leucopus: n = ',pl_results$n_indiv[1]))
-
 pm_plotdat <- prep_RMark_data_for_plotting(pm_results)
 plot_estimated_survival(dplyr::filter(pm_plotdat, metric=='S'), paste0('P. maniculatus: n = ',pm_results$n_indiv[1]))
-
-rf_plotdat <- prep_RMark_data_for_plotting(rf_results)
-plot_estimated_survival(dplyr::filter(rf_plotdat, metric=='S'), paste0('R. fulvescens: n = ',rf_results$n_indiv[1]))
 
 ro_plotdat <- prep_RMark_data_for_plotting(ro_results)
 plot_estimated_survival(dplyr::filter(ro_plotdat, metric=='S'), paste0('R. montanus: n = ',ro_results$n_indiv[1]))

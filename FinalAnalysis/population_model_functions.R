@@ -241,27 +241,16 @@ create_trmt_hist = function(dat) {
 
 #' written by Ellen Bledsoe
 run.ms <- function(ms.pr,
-                   S_dot = list(formula = ~ 1), 
-                   S_stratum = list(formula =  ~ -1 + stratum + after_switch), 
-                   p_dot = list(formula =  ~ 1), 
-                   p_stratum = list(formula =  ~ -1 + stratum + after_switch), 
-                   Psi_s = list(formula =  ~ -1 + stratum:tostratum + after_switch, link = "logit")) {
-  
+                   S_dot = list(formula = ~ 1),
+                   S_stratum = list(formula =  ~ -1 + stratum),
+                   p_dot = list(formula =  ~ 1),
+                   p_stratum = list(formula =  ~ -1 + stratum),
+                   Psi_s = list(formula =  ~ -1 + stratum:tostratum, link = "logit")) {
+
   # Create default design data
   ms.ddl = make.design.data(ms.pr)
-  
-  # add design covariates for after switch
-  after_switch = as.factor(437:476)
-  
-  ms.ddl$S$after_switch = 0
-  ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
-  
-  ms.ddl$p$after_switch = 0
-  ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
-  
-  ms.ddl$Psi$after_switch = 0
-  ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
-  
+
+ 
   # RMark function for Portal data
   if (is.null(S_dot)) {
     S.stratum = S_stratum
@@ -271,7 +260,7 @@ run.ms <- function(ms.pr,
     S.stratum = S_stratum
     S.dot = S_dot
   }
-  
+
   if (is.null(p_dot)) {
     p.stratum = p_stratum
   } else if (is.null(p_stratum)) {
@@ -280,20 +269,22 @@ run.ms <- function(ms.pr,
     p.stratum = p_stratum
     p.dot = p_dot
   }
-  
+
   Psi.s = Psi_s
-  
+
   # Create model list and run assortment of models
   ms.model.list = create.model.list("Multistrata")
-  
+
   ms.results = mark.wrapper(ms.model.list,
                             data = ms.pr, ddl = ms.ddl,
                             options="SIMANNEAL")
-  
+
   # Return model table and list of models
   return(ms.results)
-  
+
 }
+
+
 
 #' @title run pop model
 #' @description this is a wrapper function that runs tag cleanup, the chosen rmark model, and 
@@ -301,7 +292,8 @@ run.ms <- function(ms.pr,
 #' @param rdat data frame of rodent data, filtered to the appropriate time period and plots
 #' @param sp species (2-letter character code)
 #' @param write_cap_history T/F whether to write capture history to csv
-run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
+#' @param date_run string: date of the run for ID purposes. will be put in input/output file names.
+run_species_pop_model <- function(rdat, sp, write_cap_history = F, date_run) {
   # plot treatment information (create data frame)
   pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
                                                 'XC','CE','CX','XX','CC','CX',
@@ -324,7 +316,7 @@ run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
   }
   
   # read info on best model from model selection file
-  bestmodel <- read.csv(paste0('Data/PopModelSelection_437_476/modelselection_',sp,'_20190510.csv'),stringsAsFactors = F, nrows=1)
+  bestmodel <- read.csv(paste0('Data/PopModelSelection_afteronly/modelselection_',sp,'_',date_run,'.csv'),stringsAsFactors = F, nrows=1)
   
   # prep data for RMark
   all_ms <- select(mark_sp, ch = captures)
@@ -344,7 +336,7 @@ run_species_pop_model <- function(rdat, sp, write_cap_history = F) {
   # write output to csv
   rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
   rmark_results$n_indiv <- n_indiv
-  write.csv(rmark_results, paste0("Data/PopModelBest_afteronly/MARK_", sp, "_top_model_summary_20190510.csv"))
+  write.csv(rmark_results, paste0("Data/PopModelBest_afteronly/MARK_", sp, "_top_model_summary_",date_run,".csv"))
 }
 
 #' written by Ellen Bledsoe
