@@ -30,9 +30,6 @@ Code used in final version of analysis for publication
 
 ## PlantAnalysis
 Data and scripts for comparing plant communities between experimental treatments
-  * __plant_ordination_analysis.R__ code for running pCCA of plant communities
-  * __WinterAnnualTreatments.csv__ table of winter annual plants by species, plot, year. Contains plot treatment info
-  * __SummerAnnualTreatments.csv__ table of summer annual plants by species, plot, year. Contains plot treatment info
 
 ## PracticeScripts
 Scripts generated in exploration phase of project, not used in final analysis
