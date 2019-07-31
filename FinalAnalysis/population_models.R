@@ -115,7 +115,8 @@ plot_estimated_survival(dplyr::filter(dm_plotdat, metric=='Psi'), paste0('D. mer
 #############################################################
 # Number of New Individuals Showing Up on Plots
 #############################################################
-new_per_plot_trt = new_captures_by_plot('DM',rdat,tdat)
+# run this code for both "DM" and "DO"
+new_per_plot_trt = new_captures_by_plot('DO',rdat,tdat)
 
 # remove rows where plots were not sampled
 new_per_plot_trt = new_per_plot_trt[new_per_plot_trt$sampled==1,]
@@ -126,185 +127,90 @@ new_per_plot_trt$yr[new_per_plot_trt$month<4] <- new_per_plot_trt$yr[new_per_plo
 new_per_plot_trt$yr_since_change <- NA
 new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 437:447] <- 1
 new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 448:460] <- 2
-new_per_plot_trt$yr_since_change[new_per_plot_trt$period >460] <- 3 # only 7 months
+new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 461:472] <- 3
+new_per_plot_trt$yr_since_change[new_per_plot_trt$period > 472] <- 4 # April-July 2018
 
 # calculate total new animals per treatment type in each year since switch
-new_per_plot_trt %>% group_by(yr_since_change, treatment) %>%
+t =new_per_plot_trt %>% group_by(yr_since_change, treatment) %>%
   summarise(total_new_per_year=sum(count)) %>%
   spread(yr_since_change, total_new_per_year)
+# WARNING: there are 4 CC plots and only 3 of each EC and XC plots
+# number of new animals per plot per year:
+cbind(t[,1],t[,2:4]/c(4,3,3))
 
-
-# =================================
-# only complete censuses?
-new_per_plot_trt2 = new_per_plot_trt[!(new_per_plot_trt$period %in% c(445,448,456,464,469,470,471)),]
-# get average by treatment
-
-new_per_trt = aggregate(new_per_plot_trt2$count, by=list(period=new_per_plot_trt2$period, treatment=new_per_plot_trt2$treatment),
-                        FUN=mean)
-
-summarize(group_by(new_per_trt, treatment),
-          mean=mean(x), sd=sd(x), min=min(x), max=max(x))
-
-ggplot(new_per_trt, aes(x=period,y=x,colour=treatment)) +
-  geom_point() +
-  geom_line()
-
-anova2w <- aov(x ~ treatment * period, data = new_per_trt)
-summary(anova2w)
-anova2w <- aov(x ~ treatment, data=new_per_trt)
-summary(anova2w)
-
-
-# ==============================================================
-# simpler way of looking at new individuals arriving on plots
-# ==============================================================
-
-new_per_plot_trt = new_captures_by_plot('PP',rdat,tdat)
-
-# remove rows where plots were not sampled
-new_per_plot_trt = new_per_plot_trt[new_per_plot_trt$sampled==1,]
-new_per_plot_trt$yr = new_per_plot_trt$year
-new_per_plot_trt$yr[new_per_plot_trt$month<4] <- new_per_plot_trt$yr[new_per_plot_trt$month<4]-1
-
-
-new_per_plot_yr = aggregate(new_per_plot_trt$count, by=list(plot=new_per_plot_trt$plot,
-                                                            treatment=new_per_plot_trt$treatment,
-                                                            yr=new_per_plot_trt$yr),
-                            FUN=sum) %>% rename(count=x) %>% filter(yr<2018)
-
-test = data.frame(treatment=new_per_plot_yr$treatment, count=new_per_plot_yr$count, yr=new_per_plot_yr$yr)
-
-t = new_per_plot_yr %>% group_by(treatment, yr) %>%
-  summarise(total=sum(count))
-
-# plot: total individuals by treatment and year. boxplots represent spread from multiple plots (3-4)
-ggplot(test, aes(x=treatment, y=count, fill=treatment)) +
-  geom_boxplot() +
-  geom_point(position=position_jitter(.2)) +
-  ylab('# new individuals per plot per year') +
-  ggtitle('DO')
-
-#ggplot(data, aes(x=variety, y=note, fill=treatment)) + geom_boxplot()
-
-# plot new PP individuals
-#(plot2c <- plot_new_PP_individuals(new_PP_per_plot))
-
-# Make Figure 2
-#(plot2 <- plot2a + plot2b - plot2c + plot_layout(ncol = 1))
-
-
-### RUN ANOVAS ###
-# Things to deal with:
-#   - which way to summarize the data
-#   - what about after 2010? seems to be washing out treatment and interaction
-
-# 2-way ANOVA by monthly count
-
-# new_PP_per_plot$time_point <- NA
-# 
-# for (i in 1:nrow(new_PP_per_plot)) {
-#   if (new_PP_per_plot$year[i] < 1997) {
-#     new_PP_per_plot$time_point[i] = "Before"
-#   } else if (new_PP_per_plot$year[i] > 1997){
-#     new_PP_per_plot$time_point[i] = "After"
-#   } else {
-#     if (new_PP_per_plot$month[i] < 7){
-#       new_PP_per_plot$time_point[i] = "Before"
-#     } else {
-#       new_PP_per_plot$time_point[i] = "After"
-#     }
-#   }
-# }
-# 
-# new_PP_per_plot <- filter(new_PP_per_plot, year <= 2010)
-# anova2w <- aov(count ~ plot_type * time_point, data = new_PP_per_plot)
-# summary(anova2w)
-# 
-
-
-# 2-way ANOVA by year
-
-# new_PP_per_plot <- new_PP_per_plot %>% 
-#   group_by(year, plot_type) %>% 
-#   summarise(count = sum(count))
-# 
-# new_PP_per_plot$time_point <- NA
-# 
-# for (i in 1:nrow(new_PP_per_plot)) {
-#   if (new_PP_per_plot$year[i] <= 1997) {
-#     new_PP_per_plot$time_point[i] = "Before"
-#   } else {
-#     new_PP_per_plot$time_point[i] = "After"
-#   }
-# }
-# 
-# new_PP_per_plot <- filter(new_PP_per_plot, year <= 2010)
-# anova2w <- aov(count ~ plot_type * time_point, data = new_PP_per_plot)
-# summary(anova2w)
-# 
-# ggplot(data = new_PP_per_plot, aes(x = year, y = count, color = plot_type)) +
-#   geom_point() +
-#   geom_line() +
-#   theme_bw()
-
-# 2-way ANOVA by avg per plot per year
-
-# new_PP_per_plot_summary$time_point <- NA
-# 
-# for (i in 1:nrow(new_PP_per_plot_summary)) {
-#   if (new_PP_per_plot_summary$year[i] <= 1997) {
-#     new_PP_per_plot_summary$time_point[i] = "Before"
-#   } else {
-#     new_PP_per_plot_summary$time_point[i] = "After"
-#   }
-# }
-# 
-# new_PP_per_plot_summary <- filter(new_PP_per_plot_summary, year <= 2010)
-# anova2w <- aov(avg_plot_sum_by_year ~ plot_type * time_point, data = new_PP_per_plot_summary)
-# summary(anova2w)
 
 ##########################################################################################
 # scraps
 ##############################################################################################
 
-# code for running MARK model including before/after switch data, with a factor for before/after
-rdat_filtered = dplyr::filter(rdat, period>=415, plot %in% c(4,11,14,17,6,13,18,5,7,24))
-dmdat = individual_tag_cleanup(c('DM','DO'), rdat_filtered)
-dmdat_trt = merge(dmdat, pdat, by=c('plot'))
-
-mark_dm = create_trmt_hist(dmdat_trt)
-# resulting warnings are probably for animals captured twice in same sampling period
-
-# prep data for RMark
-all_ms <- select(mark_dm, captures) %>% dplyr::rename("ch" = "captures")
-first_per <- min(dmdat_trt$period)
-
-# Process data
-ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
-
-# Create default design data
-ms.ddl = make.design.data(ms.pr)
-
-# add design covariates for PB era
-after_switch = as.factor(437:476)
-
-ms.ddl$S$after_switch = 0
-ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
-
-ms.ddl$p$after_switch = 0
-ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
-
-ms.ddl$Psi$after_switch = 0
-ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
-
-# Run the models and examine the output
-ms.results = run.ms(S_dot = NULL,
-                    S_stratum = list(formula = ~ -1 + stratum * after_switch),
-                    p_dot = list(formula = ~ 1),
-                    p_stratum = NULL,
-                    Psi_s = list(formula =  ~ -1 + stratum:tostratum * after_switch, link = "logit"))
-rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
-rmark_results
-
-# prep for plotting
-plot_rmark <- prep_RMark_data_for_plotting(rmark_results)
+# ==============================================================
+# another way of looking at new individuals arriving on plots
+# ==============================================================
+# 
+# new_per_plot_trt = new_captures_by_plot('DM',rdat,tdat)
+# 
+# # remove rows where plots were not sampled
+# new_per_plot_trt = new_per_plot_trt[new_per_plot_trt$sampled==1,]
+# new_per_plot_trt$yr = new_per_plot_trt$year
+# new_per_plot_trt$yr[new_per_plot_trt$month<4] <- new_per_plot_trt$yr[new_per_plot_trt$month<4]-1
+# 
+# 
+# new_per_plot_yr = aggregate(new_per_plot_trt$count, by=list(plot=new_per_plot_trt$plot,
+#                                                             treatment=new_per_plot_trt$treatment,
+#                                                             yr=new_per_plot_trt$yr),
+#                             FUN=sum) %>% rename(count=x) %>% filter(yr<2018)
+# 
+# test = data.frame(treatment=new_per_plot_yr$treatment, count=new_per_plot_yr$count, yr=new_per_plot_yr$yr)
+# 
+# t = new_per_plot_yr %>% group_by(treatment, yr) %>%
+#   summarise(total=sum(count))
+# 
+# # plot: total individuals by treatment and year. boxplots represent spread from multiple plots (3-4)
+# ggplot(test, aes(x=treatment, y=count, fill=treatment)) +
+#   geom_boxplot() +
+#   geom_point(position=position_jitter(.2)) +
+#   ylab('# new individuals per plot per year') +
+#   ggtitle('DO')
+# 
+# 
+# # code for running MARK model including before/after switch data, with a factor for before/after
+# rdat_filtered = dplyr::filter(rdat, period>=415, plot %in% c(4,11,14,17,6,13,18,5,7,24))
+# dmdat = individual_tag_cleanup(c('DM','DO'), rdat_filtered)
+# dmdat_trt = merge(dmdat, pdat, by=c('plot'))
+# 
+# mark_dm = create_trmt_hist(dmdat_trt)
+# # resulting warnings are probably for animals captured twice in same sampling period
+# 
+# # prep data for RMark
+# all_ms <- select(mark_dm, captures) %>% dplyr::rename("ch" = "captures")
+# first_per <- min(dmdat_trt$period)
+# 
+# # Process data
+# ms.pr = process.data(all_ms, begin.time = first_per, model = "Multistrata")
+# 
+# # Create default design data
+# ms.ddl = make.design.data(ms.pr)
+# 
+# # add design covariates for PB era
+# after_switch = as.factor(437:476)
+# 
+# ms.ddl$S$after_switch = 0
+# ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
+# 
+# ms.ddl$p$after_switch = 0
+# ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
+# 
+# ms.ddl$Psi$after_switch = 0
+# ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
+# 
+# # Run the models and examine the output
+# ms.results = run.ms(S_dot = NULL,
+#                     S_stratum = list(formula = ~ -1 + stratum * after_switch),
+#                     p_dot = list(formula = ~ 1),
+#                     p_stratum = NULL,
+#                     Psi_s = list(formula =  ~ -1 + stratum:tostratum * after_switch, link = "logit"))
+# rmark_results <- ms.results$S.stratum.p.dot.Psi.s$results$real
+# rmark_results
+# 
+# # prep for plotting
+# plot_rmark <- prep_RMark_data_for_plotting(rmark_results)
