@@ -1,5 +1,7 @@
   # Data
   
+  * __PopModelBest_afteronly__ folder containing best RMARK population model for each species
+  * __PopModelSelection_afteronly__ folder containing writeout from multiple RMARK population models with AIC
   * __create_data_series.R__ code for creating time series data csvs
   * __data_functions.R__ functions used in create_data_series.R
   * __data_figures.R__ code to plot data
