@@ -1,7 +1,5 @@
 # Plant Analysis
 
-**plant_ordination_analysis.R** Code for analysing plant communities for differences between plot types
-
-**SummerAnnualTreatments.csv** Plant data used for analysis: summer annual plant community
-
-**WinterAnnualTreatments.csv** Plant data used for analysis: winter annual plant community
+  * __plant_ordination_analysis.R__ code for running pCCA of plant communities
+  * __WinterAnnualTreatments.csv__ table of winter annual plants by species, plot, year. Contains plot treatment info
+  * __SummerAnnualTreatments.csv__ table of summer annual plants by species, plot, year. Contains plot treatment info
