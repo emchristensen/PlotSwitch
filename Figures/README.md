@@ -1,5 +1,10 @@
 ## Figures
 
+### Main GAM figures
+ * dipo-gam-plots.tiff GAM of Dipo population timeseries
+ * smallgran-gam-plots.tiff GAM of small granivore populations
+ * energy-gam-plots.pdf GAM of total energy
+
 ### Figures comparing winter and summer plant communities between treatments
  * Plants_Exclosure_Removal.tiff
  * Plants_Control_Removal.tiff
