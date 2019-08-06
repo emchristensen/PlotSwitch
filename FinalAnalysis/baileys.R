@@ -1,4 +1,4 @@
-# what are Bailey's doing with the plot switch??
+# Code to analyze C. Baileyi response to plot switch
 library(ggplot2)
 library("mgcv")
 
