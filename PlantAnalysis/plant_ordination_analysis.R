@@ -131,8 +131,8 @@ legend1 <- get_legend(excl_rem_sum)
 excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1, .2))
 excl_rem
 
-ggsave('Figures/Plants_Exclosure_Removal-test.tiff',excl_rem, width=4.2, height=2.5)
-ggsave('Figures/Plants_Exclosure_Removal-test.pdf',excl_rem, width=4.2, height=2.5)
+ggsave('Figures/Plants_Exclosure_Removal.tiff',excl_rem, width=4.2, height=2.5)
+#ggsave('Figures/Plants_Exclosure_Removal-test.pdf',excl_rem, width=4.2, height=2.5)
 
 # controls vs total rodent removals ----
 dat.winter3 = dplyr::filter(dat.winter,treat_before %in% c('removal','control'))
