@@ -5,6 +5,8 @@ library(dplyr)
 library('mgcv')
 library(ggplot2)
 
+cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
+
 # dipos -----
 df1 = read.csv('Data/Dipo_counts.csv') %>% 
   filter(numericdate<16.543) %>%
@@ -33,7 +35,7 @@ summary(dipo.glht)                        # summary
 df2 = read.csv('Data/SmallGranivores.csv') %>% 
   filter(numericdate<16.543) %>%
   mutate(plot = factor(plot))
-ggplot(df2, es(x=censusdate, y=n, colour=treatment)) + geom_jitter(width=.1, height=.2)
+ggplot(df2, aes(x=censusdate, y=n, colour=treatment)) + geom_jitter(width=.1, height=.2)
 
 # model small granivore abundance
 sm.mod <- gam(n ~ treatment + numericdate + s(plot, bs = 're'), data = df2,
