@@ -1,19 +1,20 @@
-source('Data/data_functions.R')
+# This script uses the data_functions.R file to create timeseries of various rodent metrics.
 
-library(portalr)
+source('Data/data_functions.R')
 
 ## install older version of portalr if necessary
 # require(devtools)
-#install_version('portalr', version = '0.1.4')
+#install_version('portalr', version = '0.2.6')
 
-# Download the PortalData repo, version 1.53.0 (this will take several minutes)
+# set location to put PortalData
 data_folder = '.'
+# Download the PortalData repo, version 1.53.0 (this will take several minutes, but only needs to be done once)
 portalr::download_observations(path = data_folder, version = '1.53.0')
 # get most recent version of data if wanted
-portalr::download_observations(path = data_folder, version = 'latest')
+#portalr::download_observations(path = data_folder, version = 'latest')
 
-# Code to use the data_functions.R file to create timeseries of various rodent metrics.
 
+# Plot treatments we are interested in for this project
 treatments = c('CC','EC','XC')
 
 # get abundance data
@@ -50,11 +51,13 @@ write.csv(smgran,'Data/SmallGranivores.csv',row.names=F)
 
 
 # plants
-winterannuals = make_plant_table(selected_plots=1:24,
+winterannuals = make_plant_table(path = data_folder,
+                                 selected_plots=1:24,
                                  plant_community='Winter Annuals',
                                  summer_winter = 'winter',
                                  threshold = 0.33)
-summerannuals = make_plant_table(selected_plots=1:24,
+summerannuals = make_plant_table(path = data_folder,
+                                 selected_plots=1:24,
                                  plant_community='Summer Annuals',
                                  summer_winter = 'summer',
                                  threshold = 0.33)

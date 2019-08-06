@@ -4,6 +4,7 @@ library(portalr)
 ## install older version of portalr if necessary
 # require(devtools)
 # install_version('portalr', version = '0.1.4')
+# install_version('portalr', version = '0.2.6')
 
 
 
@@ -180,12 +181,13 @@ make_speciesrich_data = function(dat) {
 
 #' @title community energy by date
 #' 
+#' @param path path where PortalData was downloaded
 #' @param startdate Census date of the period code used to filter the data
 #' @param min_num_plots integer 1-24: input for abundance() function in portalr (how many plots for a census to be considered complete)
 #'                                    24 is all plots(special case period 457: only 21 plots trapped but all CC, EC, and XC were trapped)
 #' @param species 
 #' 
-get_community_energy = function(startdate = "2013-03-11", min_num_plots = 24,species='Granivore') {
+get_community_energy = function(path='.', startdate = "2013-03-11", min_num_plots = 24,species='Granivore') {
   # select species of interest
   if (species=='All') {targetsp = c('BA','DM','DO','DS','NA','OL','OT','PB','PE','PF','PM','PP','RM','RO','SF','SH')}
   if (species=='Granivore') {targetsp = c('BA','DM','DO','DS','PB','PE','PF','PH','PI','PL','PM','PP','RF','RM','RO')}
@@ -195,7 +197,7 @@ get_community_energy = function(startdate = "2013-03-11", min_num_plots = 24,spe
   if (species=='Dipos') {targetsp = c('DM','DO','DS')}
   if (species %in% unique(dat$species)) {targetsp = species}
   
-  energydat = portalr::summarize_rodent_data(path='..', level = 'Plot', type='Rodents',
+  energydat = portalr::summarize_rodent_data(path=path, level = 'Plot', type='Rodents',
                                              plots="All", unknowns=FALSE, min_plots=min_num_plots,
                                              shape="flat", time='date',clean=F,output='energy',
                                              fillweight = T,na_drop=T)
@@ -238,6 +240,7 @@ avg_3month = function(df) {
 
 #' @title get winter or summer plant data: crosstab
 #'
+#' @param path path where PortalData was downloaded
 #' @param selected_plots plot numbers: 1-24
 #' @param plant_community which plant community (e.g. annuals or perennials; input 'type' in plant_abundance function)
 #' @param summer_winter 'summer' or 'winter' census; or "both" for perennials
@@ -245,8 +248,8 @@ avg_3month = function(df) {
 #'
 #' @return table of plant counts by species
 #'
-make_plant_table = function(selected_plots,plant_community,summer_winter,threshold=0.1) {
-  plant_data = portalr::plant_abundance('repo',level='Plot',type=plant_community,
+make_plant_table = function(path='.',selected_plots,plant_community,summer_winter,threshold=0.1) {
+  plant_data = portalr::plant_abundance(path,level='Plot',type=plant_community,
                                         correct_sp=T,unknowns=F,plots=selected_plots,
                                         shape='flat')
   
