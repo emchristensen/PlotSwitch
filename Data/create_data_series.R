@@ -36,7 +36,8 @@ write.csv(dipoN,'Data/Dipo_counts.csv',row.names=F)
 
 
 # total metabolic energy by plot (all granivores combined)
-total_energy = get_community_energy(startdate = "2013-03-11",
+total_energy = get_community_energy(path = data_folder,
+                                    startdate = "2013-03-11",
                                     min_num_plots = 21,
                                     species='Granivore')
 total_energy = dplyr::filter(total_energy,treatment %in% c('CC','EC','XC'))
