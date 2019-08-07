@@ -131,7 +131,7 @@ legend1 <- get_legend(excl_rem_sum)
 excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1, .2))
 excl_rem
 
-ggsave('Figures/Plants_Exclosure_Removal.tiff',excl_rem, width=4.2, height=2.5)
+ggsave('Figures/Plants_Exclosure_Removal.pdf',excl_rem, width=4.2, height=2.5)
 #ggsave('Figures/Plants_Exclosure_Removal-test.pdf',excl_rem, width=4.2, height=2.5)
 
 # controls vs total rodent removals ----
@@ -186,7 +186,7 @@ legend2 <- get_legend(ctrl_rem_win)
 ctrl_rem <- plot_grid( ctrl_rem_row, legend2, nrow = 2, rel_heights = c(1, .2))
 ctrl_rem
 
-ggsave('Figures/Plants_Control_Removal.tiff',ctrl_rem,width=8,height=5)
+ggsave('Figures/Plants_Control_Removal.pdf',ctrl_rem,width=8,height=5)
 
 
 # controls vs krat exclosures ----
@@ -241,7 +241,7 @@ legend3 <- get_legend(ctrl_excl_win)
 ctrl_excl <- plot_grid( ctrl_excl_row, legend3, nrow = 2, rel_heights = c(1, .2))
 ctrl_excl
 
-ggsave('Figures/Plants_Control_Exclosure.tiff',ctrl_excl, width=6, height=5)
+ggsave('Figures/Plants_Control_Exclosure.pdf',ctrl_excl, width=6, height=5)
 
 
 # other significance tests ----
