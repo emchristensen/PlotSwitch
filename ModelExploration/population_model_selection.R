@@ -1,8 +1,7 @@
 # Running multiple MARK models for model selection
 # Ellen K. Bledsoe
 # June 2018
-# Modified EMC for Plot Switch project 5/8/19
-# Updated 7/31/19
+# Modified by Erica Christensen for Plot Switch project 7/31/19
 
 # LIBRARIES and preliminary parameters
 library(dplyr)
@@ -74,18 +73,6 @@ for (sp in c('PM','RO','RM','DM','PP','DO','BA','DM','DO','PB','PE','PF')) {
   # Create default design data
   ms.ddl = make.design.data(ms.pr)
   
-  # add design covariates for after switch
-  # after_switch = as.factor(437:476)
-  # 
-  # ms.ddl$S$after_switch = 0
-  # ms.ddl$S$after_switch[ms.ddl$S$time %in% after_switch] = 1
-  # 
-  # ms.ddl$p$after_switch = 0
-  # ms.ddl$p$after_switch[ms.ddl$p$time %in% after_switch] = 1
-  # 
-  # ms.ddl$Psi$after_switch = 0
-  # ms.ddl$Psi$after_switch[ms.ddl$Psi$time %in% after_switch] = 1
-  
   # =======================================================
   # Run the models and examine the output
   # =======================================================
@@ -96,6 +83,5 @@ for (sp in c('PM','RO','RM','DM','PP','DO','BA','DM','DO','PB','PE','PF')) {
   model.table <- as.data.frame(ms.results$model.table)
   write.csv(model.table, paste0("Data/PopModelSelection_afteronly/modelselection_",sp,"_20190731.csv"))
 }
-#top_model_summary <- ms.results$S.strat_x_time.p.dot.Psi.strat_x_time$results$real
-#write.csv(top_model_summary, "top_model_summary_20190508.csv")
+
 

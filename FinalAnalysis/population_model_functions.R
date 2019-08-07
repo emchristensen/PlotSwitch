@@ -3,6 +3,7 @@ cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00"
 
 #' @description used by individual_tag_cleanup: will split apart multiple uses of same tag number if captures are
 #'              too far apart in time to be considered the same individual
+#' @author Erica Christensen
 #' @param indiv
 #' @param datframe
 #' 
@@ -26,6 +27,8 @@ split_dup_tags = function(indiv,datframe,interval) {
 #' @param dat data frame of all rodent data from PortalData
 #' @param interval maximum allowable interval between captures before the same tag number should be considered a new individual
 #' @param nulls null values
+#' 
+#' @author Erica Christensen
 #' 
 individual_tag_cleanup = function(sp, dat, interval=5*365, nulls = c(0,-1,'','000000',9999,NA)) {
   sp_dat = dplyr::filter(dat, species %in% sp)
@@ -185,7 +188,7 @@ individual_tag_cleanup = function(sp, dat, interval=5*365, nulls = c(0,-1,'','00
 
 #' @description creates capture history of individual rodents
 #' @param dat data frame of rodent captures; after cleaning by individual_tag_cleanup
-#' Written by Ellen Bledsoe
+#' @author Ellen Bledsoe
 create_trmt_hist = function(dat) {
   individuals <- unique(dat$group)
   prd <- seq(min(dat$period), max(dat$period))
@@ -239,7 +242,7 @@ create_trmt_hist = function(dat) {
 }
 
 
-#' written by Ellen Bledsoe
+#' @author Ellen Bledsoe
 run.ms <- function(ms.pr,
                    S_dot = list(formula = ~ 1),
                    S_stratum = list(formula =  ~ -1 + stratum),
@@ -287,6 +290,7 @@ run.ms <- function(ms.pr,
 
 
 #' @title run pop model
+#' @author Erica Christensen
 #' @description this is a wrapper function that runs tag cleanup, the chosen rmark model, and 
 #'              writes the output to csv for later plotting/analysis
 #' @param rdat data frame of rodent data, filtered to the appropriate time period and plots
@@ -339,7 +343,7 @@ run_species_pop_model <- function(rdat, sp, write_cap_history = F, date_run) {
   write.csv(rmark_results, paste0("Data/PopModelBest_afteronly/MARK_", sp, "_top_model_summary_",date_run,".csv"))
 }
 
-#' written by Ellen Bledsoe
+#' @author Ellen Bledsoe
 prep_RMark_data_for_plotting <- function(data){
 
   # add descriptive columns
@@ -358,12 +362,11 @@ prep_RMark_data_for_plotting <- function(data){
   
 }
 
-# written by Ellen Bledsoe
+#' @author Ellen Bledsoe
 plot_estimated_survival <- function(data, maintitle){
   
   # plot estimated survival metrics from RMark
-  
-  #x_axis_title <- expression(paste(italic("C. baileyi"), " establishment"))
+
   if (data$metric[1] == 'S') {
     y_label = "Estimated survival"
   } else if (data$metric[1] == 'Psi') {
@@ -397,6 +400,7 @@ plot_estimated_survival <- function(data, maintitle){
 }
 
 #' @title new captures of a given species by plot
+#' @author Erica Christensen
 #' 
 #' @param species (2 letter species code)
 #' @param rdat original unfiltered rdat dataframe
