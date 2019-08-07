@@ -1,19 +1,14 @@
 # PP Shifts Paper
 # Ellen K. Bledsoe, with code from S. Supp
 # March 7, 2018
-# Modified EMC for Plot Switch project 4/22/19
-# Modified 7/31/19
+# Modified by Erica Christensen for Plot Switch project 7/31/19
+# This code runs population models for all species, though only D. merriami and D. ordii are discussed in the paper
 
 # LIBRARIES and SOURCE CODE #
 
 library(tidyverse)
-#library(portalr)
-#library(plotrix)
 library(RMark)
-#library(forecast)
-#library(nlme)
-#library(patchwork) # devtools::install_github("thomasp85/patchwork")
-#library(rapportools)
+
 
 source("FinalAnalysis/population_model_functions.r")
 
@@ -40,7 +35,7 @@ plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
 rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
 
 #############################################################
-# run RMARK models on each species of interest; save to csv
+# run RMARK models on each species of interest; save to csvs in Data/PopModelBest_afteronly
 #############################################################
 # this code runs population models and saves the output to csvs in Data/PopModelBest_afteronly
 # the file names should be changed manually to reflect the date run
@@ -135,7 +130,7 @@ t =new_per_plot_trt %>% group_by(yr_since_change, treatment) %>%
   summarise(total_new_per_year=sum(count)) %>%
   spread(yr_since_change, total_new_per_year)
 # WARNING: there are 4 CC plots and only 3 of each EC and XC plots
-# number of new animals per plot per year:
+# number of new animals per plot per year: (these are the numbers reported in the supplement)
 cbind(t[,1],t[,2:4]/c(4,3,3))
 
 
