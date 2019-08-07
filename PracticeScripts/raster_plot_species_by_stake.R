@@ -9,9 +9,8 @@
 #' @param min_period earliest time period to be included in selecting data
 #' 
 raster_of_plot_captures = function(path, group_or_individual, min_period){
-  # load latest version of rodent data
-  data_tables = portalr::load_rodent_data(path)
-  rdat = data_tables$rodent_data
+  # load rodent data
+  rdat <- read.csv(paste0(path,'Rodents/Portal_rodent.csv'), header = TRUE, na.strings = c(""), stringsAsFactors = FALSE)
 
   # table of adjustments to x and y coords to put plots in approximate locations
   plotcoords = data.frame(plot=seq(1,24),

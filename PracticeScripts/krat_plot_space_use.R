@@ -22,7 +22,7 @@ pdat <- data.frame(plot = 1:24, treatment = c('CC','CE','EE','CC','XC','EC',
 # restrict to only the plots relevant to this project (controls after the switch in 2015)
 plotswitchplots = c(4,11,14,17,6,13,18,5,7,24)
 
-dat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
+rdat_filtered = dplyr::filter(rdat, period>=437, plot %in% plotswitchplots)
 sp = 'DM'
 spdat = individual_tag_cleanup(sp, rdat_filtered)
 
@@ -46,7 +46,7 @@ ggplot(number_plots_stakes, aes(x=ncaptures, y=nstakes, color=treatment)) + geom
 # raster plot
 #########################################################
 
-source('FinalAnalysis/raster_plot_species_by_stake.R')
+source('PracticeScripts/raster_plot_species_by_stake.R')
 
 path = './'
 group_or_individual = 'DM'
