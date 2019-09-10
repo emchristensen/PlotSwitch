@@ -11,7 +11,8 @@ library(vegan)
 library(ggplot2)
 library(cowplot)
 
-cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
+cbbPalette <- c("#000000", "#009E73", "#e79f00", "#9ad0f3", "#0072B2", "#D55E00", 
+                "#CC79A7", "#F0E442")
 theme_set(theme_bw())
 
 ## set a seed
@@ -65,7 +66,7 @@ plot_pcca_ellipses = function(pcca.obj, plantdat, title, Palette) {
     #scale_color_discrete(direction=-1) +
     scale_colour_manual(values = Palette,
                         breaks=c("control","exclosure","removal"),
-                        labels=c("long-term\ncontrol", "kangaroo rat\nremoval", "rodent\nremoval")) +
+                        labels=c("Control", "Kangaroo rat+", "Rodent+")) +
     ggtitle(title)
   return(plotobj)
 }
@@ -98,7 +99,7 @@ permutest(win.pcca1,permutations=500) # should be similar to anova on pcca
 win.pcca1$CCA$tot.chi/win.pcca1$tot.chi
 
 # plot with year, plot, treatment
-excl_rem_win = plot_pcca_ellipses(win.pcca1, dat.winter1,'Winter Annuals',Palette=c('#606060',cbPalette[3]))
+excl_rem_win = plot_pcca_ellipses(win.pcca1, dat.winter1,'Winter Annuals',Palette=cbbPalette[c(1,4)])
 excl_rem_win
 #ggsave('Winter_Exclosure_Removal.png',excl_rem_win,width=4,height=3)
 
@@ -115,14 +116,14 @@ permutest(sum.pcca1,permutations=500)
 sum.pcca1$CCA$tot.chi/sum.pcca1$tot.chi
 
 # plot with year, plot, treatment
-excl_rem_sum = plot_pcca_ellipses(sum.pcca1, dat.summer1,'Summer Annuals',Palette=c('#606060',cbPalette[3]))
+excl_rem_sum = plot_pcca_ellipses(sum.pcca1, dat.summer1,'Summer Annuals',Palette=cbbPalette[c(1,4)])
 excl_rem_sum
 #ggsave('Summer_Exclosure_Removal.png',excl_rem_sum,width=4,height=3)
 
 # cowplot grid
 excl_rem_row <- plot_grid( excl_rem_win + theme(legend.position="none"),
                    excl_rem_sum + theme(legend.position="none"),
-                   align = 'vh', axis = 'lrtb',
+                   align = 'h', axis = 'lrtb',
                    labels = c("A", "B"),
                    hjust = -2,
                    nrow = 1)
@@ -131,7 +132,8 @@ legend1 <- get_legend(excl_rem_sum)
 excl_rem <- plot_grid( excl_rem_row, legend1, nrow = 2, rel_heights = c(1, .2))
 excl_rem
 
-ggsave('Figures/Plants_Exclosure_Removal.pdf',excl_rem, width=4.2, height=2.5)
+ggsave('Figures/Plants_Exclosure_Removal.pdf',excl_rem, width=4, height=2.5)
+ggsave('Figures/Plants_Exclosure_Removal.tiff',excl_rem, width=4, height=2.5)
 #ggsave('Figures/Plants_Exclosure_Removal-test.pdf',excl_rem, width=4.2, height=2.5)
 
 # controls vs total rodent removals ----
@@ -152,7 +154,7 @@ permutest(win.pcca3,permutations=500) # should be similar to anova on pcca
 win.pcca3$CCA$tot.chi/win.pcca3$tot.chi
 
 # plot with year, plot, treatment
-ctrl_rem_win = plot_pcca_ellipses(win.pcca3, dat.winter3,'Winter Annual Plants',Palette=cbPalette[c(1,3)])
+ctrl_rem_win = plot_pcca_ellipses(win.pcca3, dat.winter3,'Winter Annual Plants',Palette=cbbPalette[c(6,4)])
 ctrl_rem_win
 #ggsave('Winter_Control_Removal.png',ctrl_rem_win,width=4,height=3)
 
@@ -170,7 +172,7 @@ permutest(sum.pcca3,permutations=500)
 sum.pcca3$CCA$tot.chi/sum.pcca3$tot.chi
 
 # plot with year, plot, treatment
-ctrl_rem_sum = plot_pcca_ellipses(sum.pcca3, dat.summer3,'Summer Annual Plants',Palette=cbPalette[c(1,3)])
+ctrl_rem_sum = plot_pcca_ellipses(sum.pcca3, dat.summer3,'Summer Annual Plants',Palette=cbbPalette[c(6,4)])
 ctrl_rem_sum
 #ggsave('Summer_Control_Removal.png',ctrl_rem_sum,width=4,height=3)
 
@@ -186,8 +188,8 @@ legend2 <- get_legend(ctrl_rem_win)
 ctrl_rem <- plot_grid( ctrl_rem_row, legend2, nrow = 2, rel_heights = c(1, .2))
 ctrl_rem
 
-ggsave('Figures/Plants_Control_Removal.pdf',ctrl_rem,width=8,height=5)
-
+ggsave('Figures/Plants_Control_Removal.pdf',ctrl_rem,width=6,height=4)
+ggsave('Figures/Plants_Control_Removal.tiff',ctrl_rem,width=6,height=4)
 
 # controls vs krat exclosures ----
 dat.winter2 = dplyr::filter(dat.winter,treat_before %in% c('exclosure','control'))
@@ -207,7 +209,7 @@ permutest(win.pcca2,permutations=500) # should be similar to anova on pcca
 win.pcca2$CCA$tot.chi/win.pcca2$tot.chi
 
 # plot with year, plot, treatment
-ctrl_excl_win = plot_pcca_ellipses(win.pcca2, dat.winter2,'Winter Annual Plants',Palette=cbPalette[1:2])
+ctrl_excl_win = plot_pcca_ellipses(win.pcca2, dat.winter2,'Winter Annual Plants',Palette=cbbPalette[c(6,1)])
 ctrl_excl_win
 #ggsave('Winter_Control_Exclosure.png',ctrl_excl_win,width=4,height=3)
 
@@ -225,14 +227,14 @@ permutest(sum.pcca2,permutations=500)
 sum.pcca2$CCA$tot.chi/sum.pcca2$tot.chi
 
 # plot with year, plot, treatment
-ctrl_excl_sum = plot_pcca_ellipses(sum.pcca2, dat.summer2,'Summer Annual Plants',Palette=cbPalette[1:2])
+ctrl_excl_sum = plot_pcca_ellipses(sum.pcca2, dat.summer2,'Summer Annual Plants',Palette=cbbPalette[c(6,1)])
 ctrl_excl_sum
 #ggsave('Summer_Control_Exclosure.png',ctrl_excl_sum,width=4,height=3)
 
 # cowplot grid
 ctrl_excl_row <- plot_grid( ctrl_excl_win + theme(legend.position="none"),
                            ctrl_excl_sum + theme(legend.position="none"),
-                           align = 'vh', axis = 'lrtb',
+                           align = 'h', axis = 'lrtb',
                            labels = c("A", "B"),
                            hjust = -1,
                            nrow = 1)
@@ -241,8 +243,8 @@ legend3 <- get_legend(ctrl_excl_win)
 ctrl_excl <- plot_grid( ctrl_excl_row, legend3, nrow = 2, rel_heights = c(1, .2))
 ctrl_excl
 
-ggsave('Figures/Plants_Control_Exclosure.pdf',ctrl_excl, width=6, height=5)
-
+ggsave('Figures/Plants_Control_Exclosure.pdf',ctrl_excl, width=6, height=4)
+ggsave('Figures/Plants_Control_Exclosure.tiff',ctrl_excl, width=6, height=4)
 
 # other significance tests ----
 ### ADONIS - another test to look for compositional differences, with similar results to above.(from Supp et al 2012)

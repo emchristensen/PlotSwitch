@@ -5,7 +5,7 @@ library(cowplot)
 
 source('FinalAnalysis/analysis_functions.R')
 theme_set(theme_bw())
-cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
+#cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
 cbbPalette <- c("#000000", "#009E73", "#e79f00", "#9ad0f3", "#0072B2", "#D55E00", 
                 "#CC79A7", "#F0E442")
 
@@ -52,7 +52,7 @@ diffPlt
 dipo_plot = plot_grid(d.plt, diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 dipo_plot
 ggsave('Figures/dipo-gam-plots.pdf', dipo_plot, width=4, height = 4.2, dpi=300)
-
+ggsave('Figures/dipo-gam-plots.tiff', dipo_plot, width=4, height = 4.2, dpi=300)
 # =========================================================================================
 # number of small granivores
 smgran <- read.csv('Data/SmallGranivores.csv')
@@ -90,6 +90,7 @@ sg.diffPlt
 sg_plot = plot_grid(sg.plt, sg.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 sg_plot
 ggsave('Figures/smallgran-gam-plots.pdf', sg_plot, width=4, height = 4.2, dpi=300)
+ggsave('Figures/smallgran-gam-plots.tiff', sg_plot, width=4, height = 4.2, dpi=300)
 
 # ========================================================================================
 # Total rodent energy
@@ -127,7 +128,7 @@ energy.diffPlt
 energy_plot = plot_grid(energy.plt, energy.diffPlt, labels = "AUTO", ncol = 1, align = 'v')
 energy_plot
 ggsave('Figures/energy-gam-plots.pdf', energy_plot, width=4, height = 4.2, dpi=300)
-
+ggsave('Figures/energy-gam-plots.tiff', energy_plot, width=4, height = 4.2, dpi=300)
 # # ==========================================================================================
 # # Species richness
 # sprich <- read.csv('Data/SpeciesRichness.csv')

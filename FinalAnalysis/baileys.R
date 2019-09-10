@@ -4,7 +4,8 @@ library("mgcv")
 
 source('Data/data_functions.R')
 theme_set(theme_bw())
-cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
+cbbPalette <- c("#000000", "#009E73", "#e79f00", "#9ad0f3", "#0072B2", "#D55E00", 
+                "#CC79A7", "#F0E442")
 
 dat = get_data(startdate = "2013-03-11",min_num_plots = 24,treatments = c('CC','EC','XC'))
 
@@ -71,16 +72,16 @@ baileys <- ggplot(pb, aes(x = censusdate, y = n, colour = treatment)) +
         axis.text = element_text(size=8)) +
   labs(y = 'Abundance', x = NULL) +
   geom_vline(xintercept=as.Date('2015-04-10')) +
-  scale_colour_manual(name = 'Treatment:', values = cbPalette,
+  scale_colour_manual(name = 'Treatment:', values = cbbPalette[c(6,1,4)],
                       breaks=c("CC","EC","XC"),
-                      labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
-  scale_fill_manual(name = 'Treatment:', values = cbPalette, 
+                      labels=c("Control", "Kangaroo rat+", "Rodent+")) +
+  scale_fill_manual(name = 'Treatment:', values = cbbPalette[c(6,1,4)], 
                     breaks=c("CC","EC","XC"),
-                    labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) 
+                    labels=c("Control", "Kangaroo rat+", "Rodent+")) 
 baileys
 
 ggsave('Figures/BaileysAbundanceGAM.pdf', baileys, width=4, height = 2, dpi=300)
-
+ggsave('Figures/BaileysAbundanceGAM.tiff', baileys, width=4, height = 2, dpi=300)
 
 
 # ============================================================================================

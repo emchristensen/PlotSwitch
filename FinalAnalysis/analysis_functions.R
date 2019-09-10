@@ -20,13 +20,13 @@ plot_gam_prediction = function(modelPred, dat, Palette, ylab='Count') {
           axis.text = element_text(size=8)) +
     scale_colour_manual(name = 'Treatment:', values = Palette,
                         breaks=c("CC","EC","XC"),
-                        labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+                        labels=c("Control", "Kangaroo rat+", "Rodent+")) +
     scale_fill_manual(name = 'Treatment:', values = Palette, 
                       breaks=c("CC","EC","XC"),
-                      labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+                      labels=c("Control", "Kangaroo rat+", "Rodent+")) +
     scale_linetype_manual(name = 'Treatment:', values = c(3,1,2),
                           breaks=c('CC','EC','XC'),
-                          labels=c('long-term\n control', 'kangaroo rat\n removal', 'rodent\n removal')) +
+                          labels=c('Control', 'Kangaroo rat+', 'Rodent+')) +
     geom_vline(xintercept=as.Date('2015-04-10')) 
   return(p.plt)
 }
@@ -49,13 +49,13 @@ plot_smooth_diff = function(diffs,Palette) {
     labs(y = 'Control - \nTreatment', x = NULL) + 
     scale_colour_manual(name = 'Treatment pair:', values = Palette,
                         breaks=c('CC-EC','CC-XC'),
-                        labels=c('Control - Former \n kangaroo rat removal','Control - Former \n rodent removal')) +
+                        labels=c('Control - \nKangaroo rat+','Control - \nRodent+')) +
     scale_fill_manual(name = 'Treatment pair:', values = Palette,
                       breaks=c('CC-EC','CC-XC'),
-                      labels=c('Control - Former \n kangaroo rat removal','Control - Former \n rodent removal')) +
+                      labels=c('Control - \nKangaroo rat+','Control - \nRodent+')) +
     scale_linetype_manual(name = 'Treatment pair:', values = c(1,2),
                           breaks=c('CC-EC','CC-XC'),
-                          labels=c('Control - Former \n kangaroo rat removal','Control - Former \n rodent removal')) +
+                          labels=c('Control - \nKangaroo rat+','Control - \nRodent+')) +
     geom_vline(xintercept=as.Date('2015-04-10')) +
     geom_hline(yintercept=0)
 } 

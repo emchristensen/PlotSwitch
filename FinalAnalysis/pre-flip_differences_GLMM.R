@@ -5,8 +5,8 @@ library(dplyr)
 library('mgcv')
 library(ggplot2)
 
-cbPalette <- c( "#e19c02","#999999", "#56B4E9", "#0072B2", "#D55E00", "#F0E442", "#009E73", "#CC79A7")
-
+cbbPalette <- c("#000000", "#009E73", "#e79f00", "#9ad0f3", "#0072B2", "#D55E00", 
+                "#CC79A7", "#F0E442")
 # dipos -----
 df1 = read.csv('Data/Dipo_counts.csv') %>% 
   filter(numericdate<16.543) %>%
@@ -76,21 +76,22 @@ summary(en.glht)                        # summary
 dipobox = ggplot(df1,aes(x=treatment,y=n, colour=treatment)) + 
   geom_boxplot() +
   ggtitle('Kangaroo rat abundances 2013-2015') +
-  scale_colour_manual(values=cbPalette) +
+  scale_colour_manual(values=cbbPalette[c(6,1,4)]) +
   labs(y = 'Count', x = NULL) +
   scale_x_discrete(breaks=c("CC","EC","XC"),
-                   labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+                   labels=c("Control", "Kangaroo rat+", "Rodent+")) +
   theme(legend.position = 'none')
 dipobox
 ggsave('Figures/DipoCountBoxplot.pdf',dipobox,width=6,height=2.5)
+ggsave('Figures/DipoCountBoxplot.tiff',dipobox,width=6,height=2.5)
 
 smgranbox = ggplot(df2,aes(x=treatment,y=n, colour=treatment)) + 
   geom_boxplot() +
   ggtitle('Small granivore abundances 2013-2015') +
-  scale_colour_manual(values=cbPalette) +
+  scale_colour_manual(values=cbbPalette[c(6,1,4)]) +
   labs(y = 'Count', x = NULL) +
   scale_x_discrete(breaks=c("CC","EC","XC"),
-                   labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+                   labels=c("Control", "Kangaroo rat+", "Rodent+")) +
   theme(legend.position = 'none')
 smgranbox
 
@@ -99,14 +100,15 @@ df2 %>%
   summarise(avg = mean(n), sd = sd(n))
 
 ggsave('Figures/SmallGranivoreBoxplot.pdf',smgranbox,width=6,height=2.5)
+ggsave('Figures/SmallGranivoreBoxplot.tiff',smgranbox,width=6,height=2.5)
 
 energybox = ggplot(df3,aes(x=treatment,y=n, colour=treatment)) + 
   geom_boxplot() +
   ggtitle('Metabolic Flux 2013-2015') +
-  scale_colour_manual(values=cbPalette) +
+  scale_colour_manual(values=cbbPalette[c(6,1,4)]) +
   labs(y = 'Metabolic Flux', x = NULL) +
   scale_x_discrete(breaks=c("CC","EC","XC"),
-                   labels=c("long-term\n control", "kangaroo rat\n removal", "rodent\n removal")) +
+                   labels=c("Control", "Kangaroo rat+", "Rodent+")) +
   theme(legend.position = 'none')
 energybox
 
@@ -115,3 +117,4 @@ df3 %>%
   summarise(avg = mean(n), sd = sd(n))
 
 ggsave('Figures/TotalEnergyBoxplot.pdf',energybox,width=6,height=2.5)
+ggsave('Figures/TotalEnergyBoxplot.tiff',energybox,width=6,height=2.5)
