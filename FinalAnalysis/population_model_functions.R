@@ -1,5 +1,4 @@
 library(igraph)
-cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 #' @description used by individual_tag_cleanup: will split apart multiple uses of same tag number if captures are
 #'              too far apart in time to be considered the same individual
@@ -351,9 +350,10 @@ prep_RMark_data_for_plotting <- function(data){
   data$stratum = gsub(' g1.*$', '', data$X)
   data$stratum = gsub('.* s', '', data$stratum)
 
-  data$Treatment = gsub('C', 'Former rodent \nremoval', data$stratum)
-  data$Treatment = gsub('A', 'Long-term \ncontrol', data$Treatment)
-  data$Treatment = gsub('B', 'Former kangaroo \nrat removal', data$Treatment)
+  data$Treatment = gsub('C', ' Rodent+', data$stratum)
+  data$Treatment = gsub('A', ' Control', data$Treatment)
+  data$Treatment = gsub('B', ' Kangaroo rat+', data$Treatment)
+  data$Treatment = gsub('to', '\nto\n', data$Treatment)
   
   outdata <- data %>% 
     filter(metric %in% c("S","Psi"))
@@ -362,50 +362,54 @@ prep_RMark_data_for_plotting <- function(data){
   
 }
 
-#' @author Ellen Bledsoe
-plot_estimated_survival <- function(data, maintitle){
+#' @author Ellen Bledsoe, modified by Erica Christensen
+#' @param data
+#' @param colorvalues color values for manual color scale (make sure you have the right number)
+#' @param maintitle title for plot
+plot_estimated_survival <- function(data, colorvalues, maintitle){
   
   # plot estimated survival metrics from RMark
 
   if (data$metric[1] == 'S') {
     y_label = "Estimated survival"
+    x_var = 'Treatment'
   } else if (data$metric[1] == 'Psi') {
     y_label = "Transition probability"
+    x_var = 'Transition'
   } else {
     y_label= ''
   }
   
   plot <- ggplot(data, color = Treatment) +
-    geom_pointrange(aes(x = Treatment, y = estimate, 
+    geom_pointrange(aes(x = eval(parse(text=x_var)), y = estimate, 
                         ymin = (estimate - se), ymax = (estimate + se), 
                         color = Treatment), 
-                    position = position_dodge(.1), size = .75) +
-    scale_colour_manual(values = cbbPalette) + 
+                    position = position_dodge(.1), size = .5) +
+    scale_colour_manual(name = 'Treatment:',
+                        values = colorvalues) + 
     ggtitle(maintitle) +
     ylab(y_label) + 
-    theme_classic() +
-    theme(panel.border = element_rect(fill = NA, colour = "black", size = 1.25),
-          plot.subtitle = element_text(size = 14, hjust = -.4),
-          axis.line = element_line(size = .25),
-          axis.title.x = element_text(size = 12, margin = margin(r = 10)),
-          axis.title.y = element_text(size = 12, margin = margin(r = 10)),
-          axis.text.x = element_text(size = 10),
-          axis.text.y = element_text(size = 10),
+    xlab('') +
+    theme(axis.text.x = element_text(size = 7),
+          axis.text.y = element_text(size = 6),
+          axis.title.y = element_text(size = 10),
+          #axis.text.x = element_text(angle=30),
           legend.position = "none",
-          legend.title = element_blank(),
-          plot.margin = margin(l = 5, t = 20))
+          plot.margin = margin(l = 5, t = 0, b = 0, r = 5))
   
   return(plot)
   
 }
 
-#' @title new captures of a given species by plot
+
+
+#' @title new captures of a given species by year since treatment change
 #' @author Erica Christensen
 #' 
 #' @param species (2 letter species code)
 #' @param rdat original unfiltered rdat dataframe
 #' @param tdat trapping data from Portal_rodent_trapping.csv
-new_captures_by_plot <- function(sp, rdat, tdat) {
+new_captures_by_year <- function(sp, rdat, tdat) {
   # create df of individuals going back to 2012 to make sure we see the first capture of all animals seen in 2015-2018. Includes all plots
   sp_only = individual_tag_cleanup(sp, dplyr::filter(rdat, period>= 403))
   
@@ -433,5 +437,29 @@ new_captures_by_plot <- function(sp, rdat, tdat) {
   
   # merge with plot treatment df and get avg new individuals
   new_per_plot_trt = merge(alldateplots, pdat, all.x=T) %>% dplyr::select(plot, period, count, day, month, year, sampled, treatment)
-  return(new_per_plot_trt)
+  
+  # remove rows where plots were not sampled
+  new_per_plot_trt = new_per_plot_trt[new_per_plot_trt$sampled==1,]
+  
+  # calculate average number of new per year after switch
+  new_per_plot_trt$yr = new_per_plot_trt$year
+  new_per_plot_trt$yr[new_per_plot_trt$month<4] <- new_per_plot_trt$yr[new_per_plot_trt$month<4]-1
+  
+  # create column for "years after switch"
+  new_per_plot_trt$yr_since_change <- NA
+  new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 437:447] <- 1
+  new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 448:460] <- 2
+  new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 461:472] <- 3
+  new_per_plot_trt$yr_since_change[new_per_plot_trt$period > 472] <- 4 # April-July 2018
+  
+  # calculate total new animals per treatment type in each year since switch
+  t <- new_per_plot_trt %>% group_by(yr_since_change, treatment) %>%
+    summarise(total_new_per_year=sum(count)) %>%
+    spread(yr_since_change, total_new_per_year)
+  
+  # WARNING: there are 4 CC plots and only 3 of each EC and XC plots
+  # number of new animals per plot per year:
+  new_per_year_trt <- cbind(t[,1],t[,2:4]/c(4,3,3))
+  
+  return(new_per_year_trt)
 }
