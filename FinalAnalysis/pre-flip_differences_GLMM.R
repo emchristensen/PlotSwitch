@@ -82,8 +82,8 @@ dipobox = ggplot(df1,aes(x=treatment,y=n, colour=treatment)) +
                    labels=c("Control", "Kangaroo rat+", "Rodent+")) +
   theme(legend.position = 'none')
 dipobox
-ggsave('Figures/DipoCountBoxplot.pdf',dipobox,width=6,height=2.5)
-ggsave('Figures/DipoCountBoxplot.tiff',dipobox,width=6,height=2.5)
+#ggsave('Figures/DipoCountBoxplot.pdf',dipobox,width=6,height=2.5)
+#ggsave('Figures/DipoCountBoxplot.tiff',dipobox,width=6,height=2.5)
 
 smgranbox = ggplot(df2,aes(x=treatment,y=n, colour=treatment)) + 
   geom_boxplot() +
@@ -116,5 +116,5 @@ df3 %>%
   group_by(treatment) %>%
   summarise(avg = mean(n), sd = sd(n))
 
-ggsave('Figures/TotalEnergyBoxplot.pdf',energybox,width=6,height=2.5)
-ggsave('Figures/TotalEnergyBoxplot.tiff',energybox,width=6,height=2.5)
+#ggsave('Figures/TotalEnergyBoxplot.pdf',energybox,width=6,height=2.5)
+#ggsave('Figures/TotalEnergyBoxplot.tiff',energybox,width=6,height=2.5)
