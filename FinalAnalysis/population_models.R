@@ -71,35 +71,43 @@ dm_transition_plot <- plot_estimated_survival(dm_transitiondat, colorvalues=cbbP
 #############################################################
 # run function to get number of new individuals of given species per year
 new_per_year_trt_do <- new_captures_by_year('DO',rdat,tdat)
-do_newanimals <- gather(new_per_year_trt_do, key='year', value='abund', 2:4)
 
-# group by treatment, color by year?
-ggplot(do_newanimals, aes(x=treatment, y=abund, fill=year)) +
-  geom_bar(position='dodge', stat='identity') +
+# group by year, color by treatment: DO
+ggplot(new_per_year_trt_do, aes(x=xposition, y=total_new_per_year, color=treatment)) +
+  geom_jitter(alpha=.5, width=.03) +
+  geom_errorbarh(aes(xmin=xposition-.05, xmax=xposition+.05, y=mean_by_trt, color=treatment), size=3.5) +
   ylab('Average # new per year') +
   xlab('') +
-  scale_x_discrete(labels=c('Control','Kangaroo rat+','Rodent+'), breaks=c('CC','EC','XC'))
+  scale_x_continuous(labels=c('Year 1','Year 2','Year 3'), breaks=c(1.2,2.2,3.2)) +
+  scale_color_manual(name='Treatment:',
+                     breaks=c('CC','EC','XC'),
+                     labels=c('Control','Kangaroo rat+','Rodent+'),
+                     values = cbbPalette[c(6,1,4)]) +
+  theme(axis.title.y = element_text(size = 10),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        legend.position = "none",
+        plot.margin = margin(l = 5, t = 0, b = 0))
 
 new_per_year_trt_dm <- new_captures_by_year('DM', rdat, tdat)
-dm_newanimals <- gather(new_per_year_trt_dm, key='year', value='abund', 2:4)
 
-# group by year, color by treatment?
-dm_newplot <- ggplot(dm_newanimals, aes(x=year, y=abund, fill=treatment)) +
-  geom_bar(position='dodge', stat='identity', alpha=.9) +
+# group by year, color by treatment: DM
+dm_newplot <- ggplot(new_per_year_trt_dm, aes(x=xposition, y=total_new_per_year, color=treatment)) +
+  geom_jitter(alpha=.5, width=.03) +
+  geom_errorbarh(aes(xmin=xposition-.05, xmax=xposition+.05, y=mean_by_trt, color=treatment), size=3.5) +
   ylab('Average # new per year') +
   xlab('') +
-  scale_x_discrete(labels=c('Year 1','Year 2','Year 3'), breaks=c('1','2','3')) +
-  scale_fill_manual(name='Treatment:',
-                      breaks=c('CC','EC','XC'),
-                      labels=c('Control','Kangaroo rat+','Rodent+'),
-                      values = cbbPalette[c(6,1,4)]) +
+  scale_x_continuous(labels=c('Year 1','Year 2','Year 3'), breaks=c(1.2,2.2,3.2)) +
+  scale_color_manual(name='Treatment:',
+                    breaks=c('CC','EC','XC'),
+                    labels=c('Control','Kangaroo rat+','Rodent+'),
+                    values = cbbPalette[c(6,1,4)]) +
   theme(axis.title.y = element_text(size = 10),
         axis.text.x = element_text(size = 7),
         axis.text.y = element_text(size = 6),
         legend.position = "none",
         plot.margin = margin(l = 5, t = 0, b = 0))
 dm_newplot
-
 ##########################################################
 # Figures for manuscript
 ##########################################################

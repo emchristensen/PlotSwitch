@@ -452,14 +452,21 @@ new_captures_by_year <- function(sp, rdat, tdat) {
   new_per_plot_trt$yr_since_change[new_per_plot_trt$period %in% 461:472] <- 3
   new_per_plot_trt$yr_since_change[new_per_plot_trt$period > 472] <- 4 # April-July 2018
   
+  # create column to arrange treatments on xaxis for plotting
+  xaxisarrangement = data.frame(yr_since_change = c(1,1,1,2,2,2,3,3,3,4,4,4),
+                               treatment = rep(c('CC','EC','XC'),4),
+                               xposition = c(1,1.2,1.4,2,2.2,2.4,3,3.2,3.4,4,4.2,4.4))
+  #new_per_plot_trt2 = merge(new_per_plot_trt, xaxisarrangement)
+  
   # calculate total new animals per treatment type in each year since switch
-  t <- new_per_plot_trt %>% group_by(yr_since_change, treatment) %>%
+  t <- new_per_plot_trt %>% group_by(yr_since_change, treatment, plot) %>%
     summarise(total_new_per_year=sum(count)) %>%
-    spread(yr_since_change, total_new_per_year)
+    merge(xaxisarrangement)  %>%
+    dplyr::filter(yr_since_change<4) %>%
+    group_by(yr_since_change, treatment) %>%
+    mutate(mean_by_trt = mean(total_new_per_year))
   
-  # WARNING: there are 4 CC plots and only 3 of each EC and XC plots
-  # number of new animals per plot per year:
-  new_per_year_trt <- cbind(t[,1],t[,2:4]/c(4,3,3))
+  # NOTE: there are 4 CC plots and only 3 of each EC and XC plots
   
-  return(new_per_year_trt)
+  return(t)
 }
